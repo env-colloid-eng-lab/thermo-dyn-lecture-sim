@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>02 平衡への緩和 | 熱力学シミュレーション</title>
+<link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+<header class="site-header"><div class="inner">
+  <h1>02 平衡状態への緩和</h1><span class="sub">透熱壁で接触させて放置すると…（複合系・部分系）</span>
+  <nav>
+    <a href="../index.html">目次</a>
+    <a href="01-operations.html">01 壁と操作</a>
+    <a href="02-equilibrium.html" aria-current="page">02 平衡への緩和</a>
+    <a href="03-processes.html">03 準静的と不可逆</a>
+    <a href="04-isothermal.html">04 等温過程の収支</a>
+    <a href="05-extensive.html">05 示量と示強</a>
+    <button id="btn-proj" title="文字を大きくする">投影モード</button>
+  </nav>
+</div></header>
+
+<main class="layout">
+  <div class="col">
+    <section class="card">
+      <h2><span class="tag">ミクロ</span>二つの部分系からなる複合系 <span class="hint">外側はすべて断熱壁（孤立系）</span></h2>
+      <div class="canvas-wrap"><canvas id="sim"></canvas></div>
+      <div class="legend">
+        <span><span class="sw adi"></span>断熱壁</span>
+        <span><span class="sw dia"></span>透熱壁</span>
+        <span id="lg-species"><span class="dot p1"></span>流体1　<span class="dot p2"></span>流体2</span>
+        <span id="lg-speed" hidden>遅い<span class="grad"></span>速い</span>
+        <span><span class="dot hot"></span>壁からエネルギーを受け取った衝突</span>
+        <span><span class="dot cold"></span>壁にエネルギーを渡した衝突</span>
+      </div>
+      <h2 style="margin-top:10px"><span class="tag">マクロ</span>部分系ごとの状態量 <span class="hint" id="grp-hint"></span></h2>
+      <div class="table-wrap">
+      <table class="tbl" id="tbl">
+        <thead><tr><th></th><th>粒子数 <i>N</i></th><th class="int">温度 <i>T</i></th><th class="ext">内部エネルギー <i>U</i></th><th>Δ<i>U</i>（＝受け取った熱 <i>Q</i>）</th></tr></thead>
+        <tbody>
+          <tr><td id="n1">部分系1（左）</td><td id="N1"></td><td id="T1"></td><td id="U1"></td><td id="Q1"></td></tr>
+          <tr><td id="n2">部分系2（右）</td><td id="N2"></td><td id="T2"></td><td id="U2"></td><td id="Q2"></td></tr>
+          <tr class="sum"><td>合計（複合系）</td><td id="Ns"></td><td></td><td id="Us"></td><td id="Qs"></td></tr>
+        </tbody>
+      </table>
+      </div>
+      <p class="hint">外側が断熱なので複合系全体の <i>U</i> は一定（Δ<i>U</i>₁ + Δ<i>U</i>₂ ≈ 0。ずれは透熱壁そのものが一時的に蓄えている分）。</p>
+    </section>
+
+    <section class="card">
+      <h2>時間変化</h2>
+      <div class="canvas-wrap"><canvas id="plotT"></canvas></div>
+      <div class="canvas-wrap" style="margin-top:6px"><canvas id="plotU"></canvas></div>
+    </section>
+    <section class="card">
+      <h2><span class="tag">ミクロ↔マクロ</span>それぞれの速さの分布</h2>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:8px">
+        <div class="canvas-wrap"><canvas id="h1"></canvas></div>
+        <div class="canvas-wrap"><canvas id="h2"></canvas></div>
+      </div>
+    </section>
+  </div>
+
+  <div class="col">
+    <section class="card ctrl">
+      <h2>操作パネル</h2>
+      <div class="btns">
+        <button id="btn-play" class="primary"></button>
+        <button id="btn-reset">準備し直す（断熱壁で仕切る）</button>
+      </div>
+      <div class="row"><label for="speed">再生速度</label><input type="range" id="speed" min="-0.7" max="1.6" step="0.05" value="0.30"><output id="speed-val"></output></div>
+
+      <div class="group-title">はじめの状態（準備し直すと反映）</div>
+      <div class="row"><label for="T1in">左の温度 <i>T</i>₁</label><input type="range" id="T1in" min="0.3" max="4" step="0.1" value="2.5"><output id="T1in-val"></output></div>
+      <div class="row"><label for="T2in">右の温度 <i>T</i>₂</label><input type="range" id="T2in" min="0.3" max="4" step="0.1" value="0.5"><output id="T2in-val"></output></div>
+      <div class="row"><label for="N1in">左の粒子数 <i>N</i>₁</label><input type="range" id="N1in" min="40" max="300" step="10" value="160"><output id="N1in-val"></output></div>
+      <div class="row"><label for="N2in">右の粒子数 <i>N</i>₂</label><input type="range" id="N2in" min="40" max="300" step="10" value="160"><output id="N2in-val"></output></div>
+
+      <div class="group-title">仕切り壁を替える（操作）</div>
+      <div class="seg" id="part"><button data-value="adiabatic" aria-pressed="true">断熱壁</button><button data-value="diathermal">透熱壁</button><button data-value="none">取り除く</button></div>
+      <p class="hint" id="part-hint"></p>
+
+      <div class="group-title">表示</div>
+      <div>
+        <label class="check"><input type="checkbox" id="c-speed">色＝速さ</label>
+        <label class="check"><input type="checkbox" id="c-arrow">速度の矢印</label>
+        <label class="check"><input type="checkbox" id="c-heat" checked>熱のやりとり</label>
+      </div>
+    </section>
+
+    <section class="card notes">
+      <h2>ねらい</h2>
+      <p>温度の違う二つの流体を <b>透熱壁</b> で接触させて放置すると、やがてマクロな変化のない状態（<b>平衡状態</b>）に落ち着く。講義の「コーヒーと部屋」の例をミクロに見ます。</p>
+      <h3>やってみよう</h3>
+      <ol>
+        <li>断熱壁のまま待つ。<i>T</i>₁, <i>T</i>₂ は変わる？</li>
+        <li>「透熱壁」に替える。どちらからどちらへエネルギーが移る？　壁のところで粒子の速さはどう変わる？（「色＝速さ」が見やすい）</li>
+        <li>十分に待つ。<i>T</i>₁ と <i>T</i>₂ はどうなる？　<i>U</i>₁ と <i>U</i>₂ は等しくなる？（<i>N</i>₁ ≠ <i>N</i>₂ にして試す）</li>
+        <li>平衡に達したあとも粒子は動き続けている。グラフの細かい揺らぎは何？</li>
+        <li>最後に「取り除く」。二つの流体が混ざる。ここから元の状態に戻るまで待つことはできる？</li>
+      </ol>
+      <div class="q"><b>問い</b>　平衡状態では <i>T</i>₁ = <i>T</i>₂ になりましたが、<i>U</i>₁ = <i>U</i>₂ とは限りません。平衡で等しくなるのは「示強変数」と「示量変数」のどちら？（→ 05 で確かめる）</div>
+      <div class="q"><b>問い</b>　粒子数を 40 個まで減らすと揺らぎはどうなる？　熱力学が「マクロな物質」を対象にするのはなぜ？</div>
+      <details><summary>モデルについて</summary>
+        <p>透熱壁は「小さな熱容量をもつ壁」として模型化しています。粒子が壁に当たると、壁の温度 <i>T</i><sub>w</sub> のマクスウェル分布に従う速度で跳ね返り、そのぶん壁のエネルギーが増減します。両側の粒子が同じ壁とエネルギーをやりとりするので、壁を通して左右の流体の間で熱が移動します（気体＋壁の全エネルギーは厳密に保存）。</p>
+      </details>
+    </section>
+  </div>
+</main>
+
+<script type="module">
+import { Gas, ADIABATIC, DIATHERMAL, mb2d } from '../assets/js/engine.js';
+import { SimView } from '../assets/js/render.js';
+import { TimePlot, HistPlot, SERIES } from '../assets/js/plot.js';
+import { $, fmt, fmtSigned, bindRange, bindCheck, segmented, Loop, bindPlayPause, setupCommon, bindSpeed } from '../assets/js/ui.js';
+
+setupCommon();
+let gas, view, simRate = 0.1, frame = 0, partMode = 'adiabatic';
+let U0 = [0, 0];
+const plotT = new TimePlot($('plotT'), { height: 170, ylabel: '温度 T', yZero: true, window: 600,
+  series: [{ key: 'T1', label: '流体1の温度 T₁', color: SERIES[0] }, { key: 'T2', label: '流体2の温度 T₂', color: SERIES[1] }] });
+const plotU = new TimePlot($('plotU'), { height: 170, ylabel: '内部エネルギー U', yZero: true, window: 600,
+  series: [{ key: 'U1', label: 'U₁', color: SERIES[0] }, { key: 'U2', label: 'U₂', color: SERIES[1] }, { key: 'Us', label: 'U₁+U₂', color: SERIES[3], dash: [6, 4] }] });
+const h1 = new HistPlot($('h1'), { height: 160, title: '流体1', label: '流体1の速さ' });
+const h2 = new HistPlot($('h2'), { height: 160, title: '流体2', label: '流体2の速さ', barColor: 'rgba(120,120,120,0.45)' });
+
+function build() {
+  gas = new Gas({ H: 60, X: 100, Xmin: 100, Xmax: 100, seed: (Math.random() * 1e9) | 0 });
+  gas.setVPartition(50, ADIABATIC);
+  gas.addParticles(+$('N1in').value, +$('T1in').value, { x0: 0, x1: 50, y0: 0, y1: 60 }, 0);
+  gas.addParticles(+$('N2in').value, +$('T2in').value, { x0: 50, x1: 100, y0: 0, y1: 60 }, 1);
+  gas.vpart.Tw = (+$('T1in').value + +$('T2in').value) / 2;
+  gas.vpart.Cw = 20;
+  gas.resetLedger();
+  U0 = groups().map((g) => g.U);
+  if (view) view.g = gas; else view = new SimView($('sim'), gas, { pistonRod: false, Tref: 1.2, drawScale: 2.8 });
+  view.opt.colorMode = $('c-speed').checked ? 'speed' : 'species';
+  view.opt.arrows = $('c-arrow').checked;
+  view.opt.showHeat = $('c-heat').checked;
+  partSeg?.select('adiabatic', false); partMode = 'adiabatic'; hint();
+  plotT.reset(); plotU.reset();
+}
+
+/** 仕切りがあれば部分系ごと、取り除いたら流体の種類ごとに集計 */
+function groups() {
+  const out = [{ N: 0, U: 0 }, { N: 0, U: 0 }];
+  for (let i = 0; i < gas.N; i++) {
+    const k = gas.vpart ? gas.region[i] : gas.species[i];
+    out[k].N++; out[k].U += 0.5 * (gas.vx[i] ** 2 + gas.vy[i] ** 2);
+  }
+  for (const o of out) o.T = o.N ? o.U / o.N : NaN;
+  return out;
+}
+
+function hint() {
+  const t = { adiabatic: '断熱壁：左右の間でエネルギーは移動しない。', diathermal: '透熱壁：壁を通してエネルギー（熱）が移動できる。', none: '仕切りなし：粒子そのものが行き来して混ざる。' };
+  $('part-hint').textContent = t[partMode];
+  $('grp-hint').textContent = gas?.vpart ? '' : '（仕切りを取り除いたので、流体の種類ごとに集計）';
+  $('n1').textContent = gas?.vpart ? '部分系1（左）' : '流体1（青）';
+  $('n2').textContent = gas?.vpart ? '部分系2（右）' : '流体2（白）';
+}
+
+const partSeg = segmented('part', (v) => {
+  partMode = v;
+  if (v === 'none') gas.setVPartition(null);
+  else gas.setVPartition(50, v === 'adiabatic' ? ADIABATIC : DIATHERMAL);
+  hint();
+}, false);
+
+for (const id of ['T1in', 'T2in']) bindRange(id, () => {}, (v) => v.toFixed(1));
+for (const id of ['N1in', 'N2in']) bindRange(id, () => {}, (v) => v.toFixed(0));
+bindSpeed('speed', (v) => { simRate = v; });
+bindCheck('c-speed', (on) => { if (view) view.opt.colorMode = on ? 'speed' : 'species'; $('lg-speed').hidden = !on; $('lg-species').hidden = on; });
+bindCheck('c-arrow', (on) => { if (view) view.opt.arrows = on; });
+bindCheck('c-heat', (on) => { if (view) view.opt.showHeat = on; });
+$('btn-reset').addEventListener('click', build);
+build();
+
+const loop = new Loop((paused) => {
+  if (!paused) {
+    gas.advance(simRate);
+    frame++;
+    const g = groups();
+    const Us = g[0].U + g[1].U;
+    plotT.push(gas.time, { T1: g[0].T, T2: g[1].T });
+    plotU.push(gas.time, { U1: g[0].U, U2: g[1].U, Us });
+    $('N1').textContent = g[0].N; $('N2').textContent = g[1].N; $('Ns').textContent = g[0].N + g[1].N;
+    $('T1').textContent = fmt(g[0].T, 3); $('T2').textContent = fmt(g[1].T, 3);
+    $('U1').textContent = fmt(g[0].U, 1); $('U2').textContent = fmt(g[1].U, 1); $('Us').textContent = fmt(Us, 1);
+    $('Q1').textContent = fmtSigned(g[0].U - U0[0], 1); $('Q2').textContent = fmtSigned(g[1].U - U0[1], 1);
+    $('Qs').textContent = fmtSigned(Us - U0[0] - U0[1], 1);
+    if (frame % 2 === 0) { plotT.draw(); plotU.draw(); }
+    if (frame % 8 === 0) {
+      const vmax = 3.6 * Math.sqrt(Math.max(g[0].T, g[1].T, 0.5));
+      const pick = (k) => (i) => (gas.vpart ? gas.region[i] : gas.species[i]) === k;
+      h1.set(gas.speeds(pick(0)), (v) => mb2d(v, g[0].T), vmax); h1.draw();
+      h2.set(gas.speeds(pick(1)), (v) => mb2d(v, g[1].T), vmax); h2.draw();
+    }
+  }
+  view.draw();
+});
+bindPlayPause('btn-play', loop);
+</script>
+</body>
+</html>

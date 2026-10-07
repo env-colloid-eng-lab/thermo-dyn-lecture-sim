@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>05 示量変数と示強変数 | 熱力学シミュレーション</title>
+<link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+<header class="site-header"><div class="inner">
+  <h1>05 示量変数と示強変数</h1><span class="sub">系を分割する・くっつける ― 相加性と示量性・示強性</span>
+  <nav>
+    <a href="../index.html">目次</a>
+    <a href="01-operations.html">01 壁と操作</a>
+    <a href="02-equilibrium.html">02 平衡への緩和</a>
+    <a href="03-processes.html">03 準静的と不可逆</a>
+    <a href="04-isothermal.html">04 等温過程の収支</a>
+    <a href="05-extensive.html" aria-current="page">05 示量と示強</a>
+    <button id="btn-proj" title="文字を大きくする">投影モード</button>
+  </nav>
+</div></header>
+
+<main class="layout">
+  <div class="col">
+    <section class="card">
+      <h2><span class="tag">ミクロ</span>平衡状態にある流体 <span class="hint" id="mode-hint"></span></h2>
+      <div class="canvas-wrap"><canvas id="sim"></canvas></div>
+      <div class="legend">
+        <span><span class="sw adi"></span>断熱壁</span>
+        <span><span class="sw dia"></span>透熱壁</span>
+        <span id="lg-species"><span class="dot p1"></span>元の系の粒子　<span class="dot p2"></span>コピーの粒子</span>
+      </div>
+      <h2 style="margin-top:12px"><span class="tag">マクロ</span>状態量の比較 <span class="hint">時間平均（ゆらぎをならした値）</span></h2>
+      <div class="table-wrap">
+        <table class="tbl">
+          <thead><tr><th></th>
+            <th class="ext">粒子数 <i>N</i></th><th class="ext">体積 <i>V</i></th><th class="ext">内部エネルギー <i>U</i></th>
+            <th class="int">温度 <i>T</i></th><th class="int">圧力 <i>P</i></th></tr></thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+      <p class="hint"><span style="color:var(--s1)">■</span> 示量変数　<span style="color:#c4511f">■</span> 示強変数。<i>P</i> は各部分系の壁が受ける力から測った値。小さな系ほど揺らぐので、値が落ち着くまで少し待つ。</p>
+    </section>
+  </div>
+
+  <div class="col">
+    <section class="card ctrl">
+      <h2>操作パネル</h2>
+      <div class="btns">
+        <button id="btn-play" class="primary"></button>
+        <button id="btn-reset">はじめから</button>
+      </div>
+      <div class="row"><label for="speed">再生速度</label><input type="range" id="speed" min="-0.7" max="1.6" step="0.05" value="0.48"><output id="speed-val"></output></div>
+
+      <div class="group-title">実験</div>
+      <div class="seg" id="mode"><button data-value="split" aria-pressed="true">A：仕切りで分割する</button><button data-value="join">B：同じ系をくっつける</button></div>
+
+      <div id="ctl-split">
+        <div class="group-title">A：壁を挿入して部分系に分ける</div>
+        <label class="check"><input type="checkbox" id="c-v">縦の仕切り</label>
+        <div class="row"><label for="xv">縦の位置</label><input type="range" id="xv" min="15" max="85" step="1" value="50"><output id="xv-val"></output></div>
+        <label class="check"><input type="checkbox" id="c-h">横の仕切り</label>
+        <div class="row"><label for="yh">横の位置</label><input type="range" id="yh" min="12" max="48" step="1" value="30"><output id="yh-val"></output></div>
+        <div class="row"><label>仕切りの種類</label><div class="seg" id="ptype"><button data-value="adiabatic">断熱</button><button data-value="diathermal" aria-pressed="true">透熱</button></div><span></span></div>
+        <p class="hint">仕切りの位置を動かすと、そこで挿入し直します（比べる基準は「仕切る前の全体」）。挿入した瞬間にどの粒子がどちらに入るかは偶然なので、<i>N</i> の比は数％ずれます（粒子数が少ないことによるゆらぎ）。断熱の仕切りにすると、各部分系の <i>T</i> もそのときの偶然の値のまま固定されます。</p>
+      </div>
+
+      <div id="ctl-join" hidden>
+        <div class="group-title">B：同じ状態の系をもう1つ用意してくっつける</div>
+        <div class="btns">
+          <button id="btn-copy">① 同じ系をとなりに置く</button>
+          <button id="btn-remove" disabled>② 間の仕切りを外す</button>
+        </div>
+        <p class="hint">①で元の系（<i>N, V, U</i>）とまったく同じ状態のコピーを右に並べ、②で一つの系にします。</p>
+      </div>
+    </section>
+
+    <section class="card notes">
+      <h2>ねらい</h2>
+      <p>講義の定義を数値で確かめます。</p>
+      <ul>
+        <li><b>相加性</b>：和の状態の状態変数 ＝ 状態変数の和　<span class="math">X(A ⊕ B) = X(A) + X(B)</span></li>
+        <li><b>示量性</b>：<i>λ</i> 倍した状態の状態変数 ＝ 状態変数の <i>λ</i> 倍　<span class="math">X(λA) = λ X(A)</span></li>
+        <li><b>示強性</b>：<i>λ</i> 倍しても変わらない　<span class="math">Y(λA) = Y(A)</span></li>
+      </ul>
+      <h3>やってみよう</h3>
+      <ol>
+        <li>A：縦の仕切りを入れる。部分系1と2の <i>N, V, U</i> を足すと？ <i>T, P</i> を足すと？</li>
+        <li>仕切りの位置を 25 にする（部分系1は全体の 1/4）。「部分系1 ÷ 全体」の行で <i>N, V, U</i> の比はいくつ？ <i>T, P</i> の比は？</li>
+        <li>縦と横の両方を入れて4つの部分系に（スライドの図A）。</li>
+        <li>B：同じ系をとなりに置いて仕切りを外す。<i>N, V, U</i> は2倍、<i>T, P</i> は？</li>
+      </ol>
+      <div class="q"><b>問い</b>　部分系の温度を足し合わせた「<i>T</i>₁ + <i>T</i>₂」は何かの物理量を表しているでしょうか？　示量変数で相加性が大事なのはなぜ？</div>
+      <div class="q"><b>問い</b>　密度 <i>N/V</i> やエネルギー密度 <i>U/V</i> は示量変数？示強変数？　示量変数どうしの比は？</div>
+    </section>
+  </div>
+</main>
+
+<script type="module">
+import { Gas, ADIABATIC, DIATHERMAL } from '../assets/js/engine.js';
+import { SimView } from '../assets/js/render.js';
+import { $, fmt, bindRange, bindCheck, segmented, Loop, bindPlayPause, setupCommon, bindSpeed } from '../assets/js/ui.js';
+
+setupCommon();
+const H = 60, T0 = 1.0, TAU = 80;
+let gas, view, simRate = 0.1, mode = 'split', ptype = DIATHERMAL;
+let avg = null, ref = null, joinStage = 0, wholeAvg = null, lastT = 0;
+
+// ---------- 時間平均 ----------
+function newAvg() { return { w: 0, N: new Float64Array(4), U: new Float64Array(4), K: new Float64Array(4) }; }
+function accumulate(A, dt) {
+  const dec = Math.exp(-dt / TAU);
+  A.w = A.w * dec + dt;
+  const n = new Float64Array(4), u = new Float64Array(4);
+  for (let i = 0; i < gas.N; i++) { n[gas.region[i]]++; u[gas.region[i]] += 0.5 * (gas.vx[i] ** 2 + gas.vy[i] ** 2); }
+  for (let g = 0; g < 4; g++) {
+    A.N[g] = A.N[g] * dec + n[g] * dt;
+    A.U[g] = A.U[g] * dec + u[g] * dt;
+    A.K[g] = A.K[g] * dec + (n[g] ? u[g] / n[g] : 0) * dt;
+  }
+}
+function readAvg(g) {
+  const A = avg, R = gas.regionRect(g);
+  return { N: A.N[g] / A.w, V: (R.x1 - R.x0) * (R.y1 - R.y0), U: A.U[g] / A.w, T: A.K[g] / A.w, P: gas.P.reg[g] };
+}
+function readWhole() {
+  const A = wholeAvg;
+  return { N: gas.N, V: gas.X * H, U: A.U[0] / A.w, T: A.K[0] / A.w, P: gas.P.all };
+}
+function resetAverages() { avg = newAvg(); gas.resetPressure(); }
+
+// ---------- 準備 ----------
+function build() {
+  joinStage = 0;
+  if (mode === 'split') {
+    gas = new Gas({ H, X: 100, Xmin: 100, Xmax: 100, seed: (Math.random() * 1e9) | 0, pTau: TAU });
+    gas.addParticles(400, T0, { x0: 0, x1: 100, y0: 0, y1: H });
+    $('c-v').checked = false; $('c-h').checked = false;
+  } else {
+    gas = new Gas({ H, X: 50, Xmin: 50, Xmax: 100, seed: (Math.random() * 1e9) | 0, pTau: TAU });
+    gas.piston.target = 50;
+    gas.addParticles(200, T0, { x0: 0, x1: 50, y0: 0, y1: H });
+    $('btn-copy').disabled = false; $('btn-remove').disabled = true;
+  }
+  if (view) view.g = gas; else view = new SimView($('sim'), gas, { pistonRod: false, Tref: T0, drawScale: 2.8, regionLabels: true });
+  resetAverages(); wholeAvg = newAvg(); ref = null; lastT = gas.time;
+  $('lg-species').hidden = mode === 'split';
+  hint();
+}
+
+function hint() {
+  const t = mode === 'split'
+    ? (gas.vpart || gas.hpart ? '— 壁を挿入して部分系に分けた（複合系）' : '— 一つの単純系')
+    : ['— 元の系', '— 元の系とコピーを断熱壁で仕切って並べた', '— くっつけて一つの系にした'][joinStage];
+  $('mode-hint').textContent = t;
+}
+
+// 仕切る前の全体を基準として記録
+function snapshotWhole(label) {
+  const w = wholeAvg.w > 0 ? readWhole() : { N: gas.N, V: gas.X * H, U: gas.kinetic(), T: gas.kinetic() / gas.N, P: gas.P.all };
+  ref = Object.assign({ label }, w);
+}
+
+function applySplit() {
+  if (mode !== 'split') return;
+  const wasWhole = !gas.vpart && !gas.hpart;
+  const v = $('c-v').checked, h = $('c-h').checked;
+  if (wasWhole && (v || h)) snapshotWhole('仕切る前の全体');
+  gas.setVPartition(v ? +$('xv').value : null, ptype);
+  gas.setHPartition(h ? +$('yh').value : null, ptype);
+  if (!v && !h) ref = null;
+  resetAverages();
+  hint();
+}
+
+segmented('mode', (v) => {
+  mode = v;
+  $('ctl-split').hidden = v !== 'split'; $('ctl-join').hidden = v !== 'join';
+  build();
+}, false);
+segmented('ptype', (v) => { ptype = v === 'adiabatic' ? ADIABATIC : DIATHERMAL; if (gas) applySplit(); }, false);
+bindCheck('c-v', () => gas && applySplit(), false);
+bindCheck('c-h', () => gas && applySplit(), false);
+bindRange('xv', () => { if (gas && $('c-v').checked) applySplit(); }, (v) => v.toFixed(0), false);
+bindRange('yh', () => { if (gas && $('c-h').checked) applySplit(); }, (v) => v.toFixed(0), false);
+$('xv-val').textContent = $('xv').value; $('yh-val').textContent = $('yh').value;
+bindSpeed('speed', (v) => { simRate = v; });
+$('btn-reset').addEventListener('click', build);
+
+$('btn-copy').addEventListener('click', () => {
+  snapshotWhole('元の系（くっつける前）');
+  const n = gas.N;
+  gas.X = 100; gas.piston.target = 100; gas.Xmin = 100;
+  for (let i = 0; i < n; i++) {
+    const j = gas.N++;
+    // コピー：位置を右へずらし、速度は上下反転（同じ状態だが同じ動きにならないように）
+    gas.x[j] = gas.px[j] = gas.x[i] + 50; gas.y[j] = gas.py[j] = H - gas.y[i];
+    gas.vx[j] = gas.vx[i]; gas.vy[j] = -gas.vy[i];
+    gas.species[j] = 1;
+  }
+  gas.setVPartition(50, ADIABATIC);
+  gas.resetLedger();
+  resetAverages(); wholeAvg = newAvg();
+  joinStage = 1; hint();
+  $('btn-copy').disabled = true; $('btn-remove').disabled = false;
+});
+$('btn-remove').addEventListener('click', () => {
+  gas.setVPartition(null);
+  resetAverages();
+  joinStage = 2; hint();
+  $('btn-remove').disabled = true;
+});
+
+build();
+
+// ---------- 表 ----------
+const NAMES_SPLIT = ['部分系1', '部分系2', '部分系3', '部分系4'];
+function row(label, d, cls = '', dig = { N: 1, V: 0, U: 1, T: 3, P: 4 }) {
+  return `<tr class="${cls}"><td>${label}</td>` +
+    `<td class="ext">${typeof d.N === 'string' ? d.N : fmt(d.N, dig.N)}</td>` +
+    `<td class="ext">${typeof d.V === 'string' ? d.V : fmt(d.V, dig.V)}</td>` +
+    `<td class="ext">${typeof d.U === 'string' ? d.U : fmt(d.U, dig.U)}</td>` +
+    `<td class="int">${typeof d.T === 'string' ? d.T : fmt(d.T, dig.T)}</td>` +
+    `<td class="int">${typeof d.P === 'string' ? d.P : fmt(d.P, dig.P)}</td></tr>`;
+}
+function ratioRow(label, a, b) {
+  const r = (k) => (Number.isFinite(a[k] / b[k]) ? '×' + (a[k] / b[k]).toFixed(2) : '–');
+  return `<tr class="whole"><td>${label}</td><td class="ext">${r('N')}</td><td class="ext">${r('V')}</td><td class="ext">${r('U')}</td><td class="int">${r('T')}</td><td class="int">${r('P')}</td></tr>`;
+}
+
+function renderTable() {
+  const regs = gas.activeRegions();
+  const names = mode === 'split' ? NAMES_SPLIT : (joinStage === 1 ? ['元の系', 'コピー'] : [joinStage === 2 ? 'くっつけた系' : '元の系']);
+  let html = '';
+  const vals = regs.map((g) => readAvg(g));
+  regs.forEach((g, k) => { html += row(names[mode === 'split' ? g : k], vals[k]); });
+  if (regs.length > 1) {
+    const sum = { N: 0, V: 0, U: 0, T: 0, P: 0 };
+    for (const v of vals) for (const k in sum) sum[k] += v[k];
+    html += row('合計（足し算）', { N: sum.N, V: sum.V, U: sum.U, T: fmt(sum.T, 3) + ' ?', P: fmt(sum.P, 4) + ' ?' }, 'sum');
+  }
+  if (ref) {
+    html += row(ref.label, ref, 'whole');
+    const target = vals[0];
+    const lbl = mode === 'split' ? `${names[regs[0]]} ÷ ${ref.label}` : `${names[0]} ÷ ${ref.label}`;
+    html += ratioRow(lbl, target, ref);
+  }
+  $('tbody').innerHTML = html;
+}
+
+let frame = 0;
+const loop = new Loop((paused) => {
+  if (!paused) {
+    gas.advance(simRate);
+    gas.measure();
+    const dt = gas.time - lastT; lastT = gas.time;
+    accumulate(avg, dt);
+    // 全体（仕切りを無視）の平均も並行してとる
+    {
+      const dec = Math.exp(-dt / TAU), U = gas.kinetic();
+      wholeAvg.w = wholeAvg.w * dec + dt;
+      wholeAvg.U[0] = wholeAvg.U[0] * dec + U * dt;
+      wholeAvg.K[0] = wholeAvg.K[0] * dec + (U / gas.N) * dt;
+    }
+    if (++frame % 6 === 0) renderTable();
+  }
+  view.draw();
+});
+bindPlayPause('btn-play', loop);
+</script>
+</body>
+</html>

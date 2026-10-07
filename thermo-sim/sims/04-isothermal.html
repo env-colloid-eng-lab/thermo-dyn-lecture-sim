@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>04 等温過程のエネルギー収支 | 熱力学シミュレーション</title>
+<link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+<header class="site-header"><div class="inner">
+  <h1>04 等温過程のエネルギー収支</h1><span class="sub">仕事 W をしたのに ΔU = 0 ？ ― エネルギーは熱として環境へ</span>
+  <nav>
+    <a href="../index.html">目次</a>
+    <a href="01-operations.html">01 壁と操作</a>
+    <a href="02-equilibrium.html">02 平衡への緩和</a>
+    <a href="03-processes.html">03 準静的と不可逆</a>
+    <a href="04-isothermal.html" aria-current="page">04 等温過程の収支</a>
+    <a href="05-extensive.html">05 示量と示強</a>
+    <button id="btn-proj" title="文字を大きくする">投影モード</button>
+  </nav>
+</div></header>
+
+<main class="layout">
+  <div class="col">
+    <section class="card">
+      <h2><span class="tag">ミクロ</span>温度一定の環境の中の気体 <span class="hint" id="mode-hint"></span></h2>
+      <div class="canvas-wrap"><canvas id="sim"></canvas></div>
+      <div class="legend">
+        <span><span class="sw adi"></span>断熱壁</span>
+        <span><span class="sw dia"></span>透熱壁</span>
+        <span><span class="dot hot"></span>環境から粒子へエネルギーが入った衝突</span>
+        <span><span class="dot cold"></span>粒子から環境へエネルギーが出た衝突</span>
+        <span id="lg-speed" hidden>遅い<span class="grad"></span>速い</span>
+      </div>
+
+      <h2 style="margin-top:12px"><span class="tag">マクロ</span>エネルギーの流れ <span class="hint">矢印の動き＝いまの流れの向き、数字＝「測り直す」からの累計</span></h2>
+      <div class="flow">
+        <div class="box out"><span class="t">外界（ピストンを動かす人）</span><span class="n" id="f-out"></span><span class="t">がした仕事</span></div>
+        <div class="arrow"><span>仕事 <i>W</i></span><div class="bar" id="a-W"></div><span id="r-Wrate"></span></div>
+        <div class="box sys"><span class="t">系（気体）の内部エネルギー変化</span><span class="n" id="f-dU"></span><span class="t" id="f-U"></span></div>
+        <div class="arrow"><span>熱 −<i>Q</i></span><div class="bar q" id="a-Q"></div><span id="r-Qrate"></span></div>
+        <div class="box bath"><span class="t">熱源（環境）が受け取ったエネルギー</span><span class="n" id="f-bath"></span><span class="t">＝ −Q</span></div>
+      </div>
+      <div class="bars">
+        <div class="b"><span>仕事 <i>W</i>（入った）</span><div class="track"><div class="zero"></div><div class="fill" id="b-W" style="background:var(--s2)"></div></div><output id="o-W"></output></div>
+        <div class="b"><span>Δ<i>U</i>（系にたまった）</span><div class="track"><div class="zero"></div><div class="fill" id="b-dU" style="background:var(--s1)"></div></div><output id="o-dU"></output></div>
+        <div class="b"><span>−<i>Q</i>（環境へ出た）</span><div class="track"><div class="zero"></div><div class="fill" id="b-Q" style="background:var(--hot)"></div></div><output id="o-Q"></output></div>
+      </div>
+      <div class="ledger">
+        <span class="term"><b>ΔU</b><span id="l-dU"></span></span><span class="op">=</span>
+        <span class="term"><b>Q</b><span id="l-Q"></span></span><span class="op">+</span>
+        <span class="term"><b>W</b><span id="l-W"></span></span>
+        <span class="note">粒子とピストンの衝突（仕事）・粒子と透熱壁の衝突（熱）でのエネルギー変化を1回ずつすべて足し合わせた値。</span>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>時間変化</h2>
+      <div class="canvas-wrap"><canvas id="plotE"></canvas></div>
+      <div class="canvas-wrap" style="margin-top:6px"><canvas id="plotT"></canvas></div>
+    </section>
+  </div>
+
+  <div class="col">
+    <section class="card ctrl">
+      <h2>操作パネル</h2>
+      <div class="btns">
+        <button id="btn-play" class="primary"></button>
+        <button id="btn-reset">はじめから</button>
+        <button id="btn-ledger">測り直す（W=Q=0）</button>
+      </div>
+      <div class="row"><label for="speed">再生速度</label><input type="range" id="speed" min="-0.7" max="1.6" step="0.05" value="0.78"><output id="speed-val"></output></div>
+
+      <div class="group-title">壁の種類</div>
+      <div class="seg" id="walls"><button data-value="dia" aria-pressed="true">透熱壁（等温過程）</button><button data-value="adi">断熱壁（断熱過程）</button></div>
+      <div class="row"><label for="Tb">環境の温度 <i>T</i></label><input type="range" id="Tb" min="0.5" max="2" step="0.05" value="1"><output id="Tb-val"></output></div>
+
+      <div class="group-title">操作1：ピストン</div>
+      <div class="seg" id="pspeed"><button data-value="0.03" aria-pressed="true">ゆっくり（準静的に近い）</button><button data-value="0.5">速い</button></div>
+      <div class="btns" style="margin-top:6px">
+        <button id="btn-comp">◀ 圧縮する（V → V/2）</button>
+        <button id="btn-exp">膨張する ▶（V → 元へ）</button>
+        <button id="btn-stop">止める</button>
+      </div>
+
+      <div class="group-title">表示</div>
+      <div>
+        <label class="check"><input type="checkbox" id="c-heat" checked>熱のやりとり</label>
+        <label class="check"><input type="checkbox" id="c-trace">1粒子を追跡</label>
+        <label class="check"><input type="checkbox" id="c-speed">色＝速さ</label>
+      </div>
+    </section>
+
+    <section class="card notes">
+      <h2>ねらい</h2>
+      <p>理想気体の内部エネルギーは温度だけで決まるので、等温過程では Δ<i>U</i> = 0。それなのにピストンで仕事 <i>W</i> をした。<b>そのエネルギーはどこへ行ったのか？</b></p>
+      <h3>やってみよう</h3>
+      <ol>
+        <li>「透熱壁」「ゆっくり」で <b>圧縮</b>。<i>W</i> は増えるのに Δ<i>U</i> ≈ 0。−<i>Q</i>（環境が受け取ったエネルギー）はどうなる？</li>
+        <li>「1粒子を追跡」：粒子はピストンに当たると速くなり、透熱壁に当たるとエネルギーを環境に渡す（青い輪）。ミクロに見た「熱」の正体。</li>
+        <li><b>膨張</b> させる。今度は気体が外へ仕事をし（<i>W</i> &lt; 0）、環境から熱が入ってくる（赤い輪が増える）。</li>
+        <li>「断熱壁」に替えて同じ圧縮をする。Δ<i>U</i> = <i>W</i>、温度が上がる。</li>
+      </ol>
+      <div class="q"><b>問い</b>　人がピストンでした仕事 <i>W</i> は自分で決められます。でも、そのエネルギーが熱として環境へ逃げていくのは、私たちの意志とは無関係に起こります。講義の「熱の本性」と結びつけて説明してみよう。</div>
+      <div class="q"><b>問い</b>　等温圧縮のとき、ΔU はぴったり 0 ではなく小さく揺らいでいます。なぜ？（粒子数が無限に大きいと？）</div>
+      <details><summary>理論値（2次元理想気体）</summary>
+        <p>等温準静的に <i>V</i>₀ → <i>V</i>₁ と変化させると <span class="math">W = NkT ln(V₀/V₁)</span>。<i>N</i>=300, <i>T</i>=1 で体積を半分にすると <span class="math">W = 300 × ln 2 ≈ 208</span>、<span class="math">Q = −W</span>。シミュレーションでは粒子の大きさの効果と有限の速さのため数％大きくなります。</p>
+      </details>
+    </section>
+  </div>
+</main>
+
+<script type="module">
+import { Gas, ADIABATIC, DIATHERMAL } from '../assets/js/engine.js';
+import { SimView } from '../assets/js/render.js';
+import { TimePlot, SERIES } from '../assets/js/plot.js';
+import { $, fmt, fmtSigned, bindRange, bindCheck, segmented, Loop, bindPlayPause, setupCommon, updateLedger, bindSpeed } from '../assets/js/ui.js';
+
+setupCommon();
+const H = 60, X0 = 100, N = 300;
+let gas, view, simRate = 0.1, frame = 0, wallMode = 'dia', speed = 0.03, Tb = 1;
+let hist = [];
+
+const plotE = new TimePlot($('plotE'), { height: 200, ylabel: 'エネルギー（累計）', yZero: true, window: 3000,
+  series: [{ key: 'W', label: '仕事 W', color: SERIES[1] }, { key: 'mQ', label: '環境へ −Q', color: '#d6453d', dash: [6, 4] }, { key: 'dU', label: 'ΔU', color: SERIES[0] }] });
+const plotT = new TimePlot($('plotT'), { height: 150, ylabel: '温度 T', yZero: true, window: 3000,
+  series: [{ key: 'T', label: '気体の温度 T', color: SERIES[0] }, { key: 'Tb', label: '環境の温度', color: SERIES[1], dash: [6, 4] }] });
+
+function applyWalls() {
+  const t = wallMode === 'dia' ? DIATHERMAL : ADIABATIC;
+  gas.walls = { left: t, top: t, bottom: t };
+  gas.bath = { left: true, top: true, bottom: true };
+  gas.Tbath = Tb;
+  $('mode-hint').textContent = wallMode === 'dia' ? '— 透熱壁：環境と熱をやりとりできる' : '— 断熱壁：環境があっても熱は通らない';
+}
+
+function build() {
+  gas = new Gas({ H, X: X0, Xmin: 40, Xmax: 110, seed: (Math.random() * 1e9) | 0 });
+  gas.addParticles(N, Tb, { x0: 0, x1: X0, y0: 0, y1: H });
+  gas.piston.target = X0; gas.piston.speed = speed;
+  applyWalls();
+  if (view) view.g = gas; else view = new SimView($('sim'), gas, { envPad: 5, Tref: 1, drawScale: 2.8 });
+  view.opt.showHeat = $('c-heat').checked;
+  view.opt.colorMode = $('c-speed').checked ? 'speed' : 'species';
+  gas.tracerOn = $('c-trace').checked;
+  hist = []; plotE.reset(); plotT.reset();
+}
+
+segmented('walls', (v) => { wallMode = v; if (gas) applyWalls(); }, false);
+segmented('pspeed', (v) => { speed = parseFloat(v); if (gas) gas.piston.speed = speed; }, false);
+bindRange('Tb', (v) => { Tb = v; if (gas) gas.Tbath = v; }, (v) => v.toFixed(2), false);
+bindSpeed('speed', (v) => { simRate = v; });
+bindCheck('c-heat', (on) => { if (view) view.opt.showHeat = on; });
+bindCheck('c-trace', (on) => { if (gas) { gas.tracerOn = on; gas.tracer = []; } });
+bindCheck('c-speed', (on) => { if (view) view.opt.colorMode = on ? 'speed' : 'species'; $('lg-speed').hidden = !on; });
+$('btn-comp').addEventListener('click', () => { gas.piston.speed = speed; gas.piston.target = Math.max(gas.Xmin, gas.X / 2); });
+$('btn-exp').addEventListener('click', () => { gas.piston.speed = speed; gas.piston.target = X0; });
+$('btn-stop').addEventListener('click', () => { gas.piston.target = gas.X; });
+$('btn-reset').addEventListener('click', build);
+$('btn-ledger').addEventListener('click', () => { gas.resetLedger(); hist = []; plotE.reset(); });
+build();
+
+function setBar(id, v, scale) {
+  const el = $(id), w = Math.min(50, (Math.abs(v) / scale) * 50);
+  el.style.left = v >= 0 ? '50%' : (50 - w) + '%';
+  el.style.width = w + '%';
+}
+function setArrow(id, rate, thr) {
+  const el = $(id);
+  el.classList.toggle('idle', Math.abs(rate) < thr);
+  el.classList.toggle('rev', rate < 0);
+}
+
+const loop = new Loop((paused) => {
+  if (!paused) {
+    gas.advance(simRate);
+    gas.measure();
+    frame++;
+    const s = gas.stats();
+    hist.push([gas.time, s.W, s.Q]);
+    while (hist.length > 2 && hist[0][0] < gas.time - 500) hist.shift();
+    const dt = hist.length > 1 ? hist[hist.length - 1][0] - hist[0][0] : 1;
+    const Wrate = hist.length > 1 ? (s.W - hist[0][1]) / dt : 0;
+    const Qrate = hist.length > 1 ? (s.Q - hist[0][2]) / dt : 0;
+    setArrow('a-W', Wrate, 0.005);
+    setArrow('a-Q', -Qrate, 0.04);
+    $('r-Wrate').textContent = `${fmtSigned(Wrate, 2)} /t`;
+    $('r-Qrate').textContent = `${fmtSigned(-Qrate, 2)} /t`;
+    $('f-out').textContent = fmtSigned(s.W, 1);
+    $('f-dU').textContent = fmtSigned(s.dU, 1);
+    $('f-U').textContent = `U = ${fmt(s.U, 1)}（T = ${fmt(s.T, 2)}）`;
+    $('f-bath').textContent = fmtSigned(-s.Q, 1);
+    const scale = Math.max(50, Math.abs(s.W), Math.abs(s.Q), Math.abs(s.dU));
+    setBar('b-W', s.W, scale); setBar('b-dU', s.dU, scale); setBar('b-Q', -s.Q, scale);
+    $('o-W').textContent = fmtSigned(s.W, 1); $('o-dU').textContent = fmtSigned(s.dU, 1); $('o-Q').textContent = fmtSigned(-s.Q, 1);
+    updateLedger('l-', s);
+    plotE.push(gas.time, { W: s.W, mQ: -s.Q, dU: s.dU });
+    plotT.push(gas.time, { T: s.T, Tb: wallMode === 'dia' ? gas.Tbath : NaN });
+    if (frame % 2 === 0) { plotE.draw(); plotT.draw(); }
+  }
+  view.draw();
+});
+bindPlayPause('btn-play', loop);
+</script>
+</body>
+</html>

@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>熱力学シミュレーション | ミクロとマクロで見る熱力学</title>
+<meta name="description" content="壁・操作・過程・第一法則・示量/示強を、粒子の運動（ミクロ）と状態量（マクロ）を対応させながら操作できる熱力学の教育用シミュレーション。">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+<header class="site-header"><div class="inner">
+  <h1>ミクロとマクロで見る熱力学</h1><span class="sub">物理学：熱力学パート　インタラクティブ教材</span>
+  <nav>
+    <a href="index.html" aria-current="page">目次</a>
+    <a href="sims/01-operations.html">01 壁と操作</a>
+    <a href="sims/02-equilibrium.html">02 平衡への緩和</a>
+    <a href="sims/03-processes.html">03 準静的と不可逆</a>
+    <a href="sims/04-isothermal.html">04 等温過程の収支</a>
+    <a href="sims/05-extensive.html">05 示量と示強</a>
+    <button id="btn-proj" title="文字を大きくする">投影モード</button>
+  </nav>
+</div></header>
+
+<section class="hero">
+  <p>熱力学は完全にマクロな視点で組み立てられた理論です。でも、その「設定」や「操作」がミクロには何をしているのかを見ておくと、仕事・熱・内部エネルギーの違いがぐっとつかみやすくなります。ここでは容器の中の粒子（ミクロ）を実際に動かしながら、温度 <i>T</i>・圧力 <i>P</i>・体積 <i>V</i>・内部エネルギー <i>U</i>・仕事 <i>W</i>・熱 <i>Q</i>（マクロ）がどう決まり、どう変わるかを確かめます。</p>
+  <div class="legend" style="font-size:.9em">
+    <b style="color:var(--ink)">図の約束：</b>
+    <span><span class="sw adi"></span>断熱壁（熱を通さない）</span>
+    <span><span class="sw dia"></span>透熱壁（熱を通す）</span>
+    <span><span class="sw fluid"></span>流体</span>
+    <span><span class="dot p1"></span><span class="dot p2"></span>流体の粒子</span>
+  </div>
+</section>
+
+<section class="toc">
+  <a class="item" href="sims/01-operations.html">
+    <span class="num">01</span>
+    <h2>壁と操作</h2>
+    <p>断熱壁と透熱壁。ピストン（操作1）、撹拌（操作2）、熱源との接触（操作3）で、粒子の運動と <i>T, P, U</i> がどう変わるか。</p>
+    <div class="kw">設定・平衡状態・操作・力学的操作／熱的操作・速さの分布</div>
+  </a>
+  <a class="item" href="sims/02-equilibrium.html">
+    <span class="num">02</span>
+    <h2>平衡状態への緩和</h2>
+    <p>温度の違う二つの流体を透熱壁で接触させて放置すると、やがてマクロな変化のない状態に落ち着く。</p>
+    <div class="kw">平衡状態・部分系と複合系・熱の移動・ゆらぎ</div>
+  </a>
+  <a class="item" href="sims/03-processes.html">
+    <span class="num">03</span>
+    <h2>準静的過程と不可逆過程</h2>
+    <p>ピストンをゆっくり／速く往復させる、真空へ自由膨張させる。P–V 図で仕事を見る。</p>
+    <div class="kw">過程・準静的過程・可逆性・断熱過程・等温過程・不可逆な断熱過程</div>
+  </a>
+  <a class="item" href="sims/04-isothermal.html">
+    <span class="num">04</span>
+    <h2>等温過程のエネルギー収支</h2>
+    <p>理想気体を等温で圧縮すると、した仕事はすべて熱として環境へ。Δ<i>U</i> = <i>Q</i> + <i>W</i> をエネルギーの流れとして見る。</p>
+    <div class="kw">熱力学第一法則・仕事と熱・熱の本性</div>
+  </a>
+  <a class="item" href="sims/05-extensive.html">
+    <span class="num">05</span>
+    <h2>示量変数と示強変数</h2>
+    <p>系を壁で分割する／同じ系をくっつける。<i>N, V, U</i> は足し算でき、<i>T, P</i> は変わらない。</p>
+    <div class="kw">状態変数・相加性・示量性・示強性</div>
+  </a>
+</section>
+
+<section class="foot">
+  <div class="card notes">
+    <h2>このシミュレーションのモデル</h2>
+    <ul>
+      <li>2次元の剛体円板気体（粒子どうしは弾性衝突）。単位は粒子の質量 <i>m</i> = 1、ボルツマン定数 <i>k</i><sub>B</sub> = 1 の無次元単位。</li>
+      <li>2次元・単原子なので自由度は 2：<span class="math">U = NkT</span>、<span class="math">PV = NkT</span>（<i>V</i> は面積、<i>P</i> は単位長さあたりの力）、比熱比 <span class="math">γ = 2</span>。3次元の <span class="math">U = (3/2)NkT</span> との違いは自由度の数。</li>
+      <li><b>仕事 <i>W</i></b>：動くピストン・回る撹拌翼に粒子が当たったときの運動エネルギー変化の合計。<b>熱 <i>Q</i></b>：熱源と接した透熱壁に粒子が当たったときの運動エネルギー変化の合計。どちらも衝突1回ごとに数えているので Δ<i>U</i> = <i>Q</i> + <i>W</i> は（丸め誤差を除き）厳密に成り立つ。</li>
+      <li>断熱壁は鏡面反射。熱源と接した透熱壁に当たった粒子は熱源の温度のマクスウェル分布に従う速度で跳ね返る。</li>
+      <li>符号の約束は講義と同じ：<i>W</i> は系がされた仕事、<i>Q</i> は系が受け取った熱。</li>
+    </ul>
+    <h3>授業での使い方のヒント</h3>
+    <ul>
+      <li>右上の「投影モード」で文字が大きくなります。スペースキーで再生／一時停止。</li>
+      <li>各ページに「やってみよう」と「問い」があります。レポート課題の素材にも使えます。</li>
+      <li>インストール不要。スマートフォンでも動きます（ネット接続はページを開くときだけ）。</li>
+    </ul>
+  </div>
+</section>
+<p class="foot">作成：杉本 卓也（筑波大学 生命環境系）／ 教育目的で自由に利用・改変できます（MIT License）。</p>
+
+<script type="module">
+import { setupCommon } from './assets/js/ui.js';
+setupCommon();
+</script>
+</body>
+</html>

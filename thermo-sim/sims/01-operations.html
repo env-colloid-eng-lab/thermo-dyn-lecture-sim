@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>01 壁と操作 | 熱力学シミュレーション</title>
+<link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+<header class="site-header"><div class="inner">
+  <h1>01 壁と操作</h1><span class="sub">断熱壁・透熱壁／操作1（ピストン）・操作2（撹拌）・操作3（熱源）</span>
+  <nav>
+    <a href="../index.html">目次</a>
+    <a href="01-operations.html" aria-current="page">01 壁と操作</a>
+    <a href="02-equilibrium.html">02 平衡への緩和</a>
+    <a href="03-processes.html">03 準静的と不可逆</a>
+    <a href="04-isothermal.html">04 等温過程の収支</a>
+    <a href="05-extensive.html">05 示量と示強</a>
+    <button id="btn-proj" title="文字を大きくする">投影モード</button>
+  </nav>
+</div></header>
+
+<main class="layout">
+  <div class="col">
+    <section class="card">
+      <h2><span class="tag">ミクロ</span>容器の中の粒子 <span class="hint" id="state-hint"></span></h2>
+      <div class="canvas-wrap"><canvas id="sim"></canvas></div>
+      <div class="legend">
+        <span><span class="sw adi"></span>断熱壁</span>
+        <span><span class="sw dia"></span>透熱壁</span>
+        <span><span class="sw fluid"></span>流体</span>
+        <span id="lg-speed" hidden>遅い<span class="grad"></span>速い</span>
+        <span><span class="dot hot"></span>熱を受け取った衝突</span>
+        <span><span class="dot cold"></span>熱を渡した衝突</span>
+      </div>
+      <h2 style="margin-top:10px"><span class="tag">マクロ</span>状態量（その瞬間の値）</h2>
+      <div class="readouts">
+        <div class="stat ext"><span class="k">粒子数 <i>N</i></span><span class="v" id="r-N"></span></div>
+        <div class="stat ext"><span class="k">体積（面積）<i>V</i></span><span class="v" id="r-V"></span></div>
+        <div class="stat ext"><span class="k">内部エネルギー <i>U</i></span><span class="v" id="r-U"></span></div>
+        <div class="stat int"><span class="k">温度 <i>T</i> = <i>U</i>/<i>N</i></span><span class="v" id="r-T"></span></div>
+        <div class="stat int"><span class="k">圧力 <i>P</i>（壁が受ける力）</span><span class="v" id="r-P"></span></div>
+        <div class="stat int"><span class="k"><i>NkT</i>/<i>V</i>（状態方程式）</span><span class="v" id="r-Pk"></span></div>
+        <div class="stat"><span class="k">平均の速さ ⟨<i>v</i>⟩</span><span class="v" id="r-v"></span></div>
+      </div>
+      <div class="ledger" aria-live="off">
+        <span class="term"><b>ΔU</b><span id="l-dU"></span></span><span class="op">=</span>
+        <span class="term"><b>Q</b><span id="l-Q"></span></span><span class="op">+</span>
+        <span class="term"><b>W</b><span id="l-W"></span></span>
+        <span class="op" style="font-size:1em">（<i>W</i> の内訳：ピストン <span id="l-Wp"></span>、撹拌 <span id="l-Ws"></span>）</span>
+        <span class="note">「測り直す」を押した時点からの合計。<i>W</i>：気体がされた仕事、<i>Q</i>：気体が受け取った熱。粒子1個1個の衝突でのエネルギー変化をすべて足し合わせています。</span>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>時間変化</h2>
+      <div class="canvas-wrap"><canvas id="plotT"></canvas></div>
+      <div class="canvas-wrap" style="margin-top:6px"><canvas id="plotP"></canvas></div>
+    </section>
+    <section class="card">
+      <h2><span class="tag">ミクロ↔マクロ</span>粒子の速さの分布</h2>
+      <div class="canvas-wrap"><canvas id="hist"></canvas></div>
+      <p class="hint">温度 <i>T</i> は粒子1個あたりの平均運動エネルギー（2次元なので <span class="math">U = NkT</span>）。分布の形が同じ <i>T</i> のマクスウェル分布に重なっていれば「平衡状態」。灰色の破線ははじめ（<i>T</i>=1）の分布。<br>運動エネルギーは速さの2乗に比例するので、<b>温度が2倍になっても速さは √2 ≈ 1.4 倍</b> にしかならない（⟨<i>v</i>⟩ = √(π<i>T</i>/2)）。見た目の違いがわかりにくいときは、色・矢印・この分布で比べてみよう。</p>
+    </section>
+  </div>
+
+  <div class="col">
+    <section class="card ctrl">
+      <h2>操作パネル</h2>
+      <div class="btns">
+        <button id="btn-play" class="primary"></button>
+        <button id="btn-reset">はじめから</button>
+        <button id="btn-ledger" title="W, Q, ΔU を 0 にして、ここから測り直す">測り直す（W=Q=0）</button>
+      </div>
+      <div class="row"><label for="speed">再生速度</label><input type="range" id="speed" min="-0.7" max="1.6" step="0.05" value="0.00"><output id="speed-val"></output></div>
+
+      <div class="group-title">壁の種類（どの壁が熱を通すか）</div>
+      <div class="row"><label>左の壁</label><div class="seg" id="w-left"><button data-value="adiabatic" aria-pressed="true">断熱</button><button data-value="diathermal">透熱</button></div><span></span></div>
+      <div class="row"><label>上の壁</label><div class="seg" id="w-top"><button data-value="adiabatic" aria-pressed="true">断熱</button><button data-value="diathermal">透熱</button></div><span></span></div>
+      <div class="row"><label>下の壁</label><div class="seg" id="w-bottom"><button data-value="adiabatic" aria-pressed="true">断熱</button><button data-value="diathermal">透熱</button></div><span></span></div>
+      <p class="hint">ピストン（右の壁）はいつも断熱です。</p>
+
+      <div class="group-title">操作3：熱的操作</div>
+      <div class="seg" id="bathmode"><button data-value="none" aria-pressed="true">なし</button><button data-value="contact">熱源に接触（左）</button><button data-value="env">温度一定の環境におく</button></div>
+      <div class="row"><label for="Tb">熱源の温度 <i>T</i></label><input type="range" id="Tb" min="0.2" max="4" step="0.05" value="2"><output id="Tb-val"></output></div>
+      <p class="hint" id="bath-hint"></p>
+
+      <div class="group-title">操作1：ピストンを動かす（力学的操作）</div>
+      <div class="row"><label for="pos">ピストンの位置</label><input type="range" id="pos" min="45" max="110" step="1" value="90"><output id="pos-val"></output></div>
+      <div class="row"><label for="pspeed">動かす速さ</label><input type="range" id="pspeed" min="-2.3" max="0.5" step="0.05" value="-1"><output id="pspeed-val"></output></div>
+      <p class="hint">粒子の典型的な速さは √(2<i>T</i>) ≈ 1.4（<i>T</i>=1）。これより十分遅く動かすと「準静的」に近づく。</p>
+
+      <div class="group-title">操作2：撹拌する（体積を変えない力学的操作）</div>
+      <div class="btns"><button id="btn-stir" aria-pressed="false">撹拌翼を回す</button></div>
+      <div class="row"><label for="omega">回転の速さ</label><input type="range" id="omega" min="0.02" max="0.2" step="0.01" value="0.08"><output id="omega-val"></output></div>
+
+      <div class="group-title">表示</div>
+      <div>
+        <label class="check"><input type="checkbox" id="c-speed" checked>色＝速さ</label>
+        <label class="check"><input type="checkbox" id="c-arrow">速度の矢印</label>
+        <label class="check"><input type="checkbox" id="c-trace">1粒子を追跡</label>
+        <label class="check"><input type="checkbox" id="c-heat" checked>熱のやりとり</label>
+      </div>
+    </section>
+
+    <section class="card notes">
+      <h2>ねらい</h2>
+      <p>講義の「設定」に出てきた <b>壁</b> と <b>操作1〜3</b> を、粒子の運動（ミクロ）と状態量 <i>T, P, V, U</i>（マクロ）に対応づけて確かめます。</p>
+      <h3>やってみよう</h3>
+      <ol>
+        <li>すべて断熱壁のまま、ピストンを左へ動かす（圧縮）。粒子はピストンに当たると <b>速くなって跳ね返る</b>。<i>T</i> と <i>U</i> はどうなる？ <i>W</i> は？</li>
+        <li>ピストンを右へ動かす（膨張）。今度は粒子が遅くなって跳ね返る。気体は外に仕事を「した」（<i>W</i> &lt; 0）。</li>
+        <li>撹拌翼を回す。体積は変わらないのに <i>U</i> が増える（操作2も力学的操作）。逆向きに回したら元に戻る？</li>
+        <li>「熱源に接触」を選ぶ。左の壁が <b>断熱</b> のときと <b>透熱</b> のときで何が違う？</li>
+        <li>「環境におく」＋すべて透熱にして待つ。<i>T</i> は環境の温度に落ち着く（平衡状態への遷移）。</li>
+      </ol>
+      <div class="q"><b>問い</b>　ミクロに見ると、仕事 <i>W</i> と熱 <i>Q</i> はどちらも「粒子と壁の衝突でのエネルギーのやりとり」です。では、二つの違いは何でしょう？（ヒント：<i>W</i> は人が動かす壁、<i>Q</i> は熱源と接した壁。どちらを人が制御できる？）</div>
+      <details><summary>モデルについて</summary>
+        <p>2次元の剛体円板気体（質量 <i>m</i>=1、<i>k</i><sub>B</sub>=1 の無次元単位）。粒子どうしは弾性衝突します。断熱壁は鏡のように反射、熱源と接した透熱壁に当たった粒子は熱源の温度のマクスウェル分布に従う速度で跳ね返ります。2次元・単原子なので自由度は2で <span class="math">U = NkT</span>、<span class="math">PV = NkT</span>（<i>V</i> は面積、<i>P</i> は単位長さあたりの力）。</p>
+        <p>描画では見やすさのため粒子を実際の衝突半径より大きく描いています。</p>
+      </details>
+    </section>
+  </div>
+</main>
+
+<script type="module">
+import { Gas, ADIABATIC, DIATHERMAL, mb2d } from '../assets/js/engine.js';
+import { SimView } from '../assets/js/render.js';
+import { TimePlot, HistPlot, SERIES } from '../assets/js/plot.js';
+import { $, fmt, fmtSigned, bindRange, bindCheck, segmented, Loop, bindPlayPause, setupCommon, updateLedger, bindSpeed } from '../assets/js/ui.js';
+
+setupCommon();
+let gas, view, simRate = 0.1, frame = 0;
+const T0 = 1.0;
+
+function build() {
+  gas = new Gas({ H: 60, X: 90, Xmin: 45, Xmax: 110, seed: (Math.random() * 1e9) | 0 });
+  Object.assign(gas.stirrer, { present: true, on: false, cx: 28, cy: 30, L: 24, omega: +$('omega').value });
+  gas.addParticles(180, T0, { x0: 0, x1: 90, y0: 0, y1: 60 });
+  gas.pTau = 20;
+  gas.piston.target = 90;
+  if (view) { view.g = gas; } else {
+    view = new SimView($('sim'), gas, { bathPad: 13, envPad: 5, Tref: T0, drawScale: 2.8 });
+  }
+  applyWalls(); applyBath();
+  $('pos').value = 90; $('pos-val').textContent = '90';
+  $('btn-stir').setAttribute('aria-pressed', 'false');
+  plotT?.reset(); plotP?.reset();
+}
+
+const plotT = new TimePlot($('plotT'), { height: 170, ylabel: '温度 T', yZero: true,
+  series: [{ key: 'T', label: '気体の温度 T', color: SERIES[0] }, { key: 'Tb', label: '熱源の温度', color: SERIES[1], dash: [6, 4] }] });
+const plotP = new TimePlot($('plotP'), { height: 170, ylabel: '圧力 P', yZero: true,
+  series: [{ key: 'P', label: 'P（壁が受ける力）', color: SERIES[0] }, { key: 'Pk', label: 'NkT/V', color: SERIES[2], dash: [6, 4] }] });
+const hist = new HistPlot($('hist'), { height: 180, vmax: 5 });
+
+// ---- 壁 ----
+const wallSegs = {};
+function applyWalls() {
+  for (const side of ['left', 'top', 'bottom']) if (wallSegs[side]) gas.walls[side] = wallSegs[side].value;
+  updateHints();
+}
+for (const side of ['left', 'top', 'bottom']) wallSegs[side] = segmented('w-' + side, () => applyWalls(), false);
+
+// ---- 熱源 ----
+let bathMode = 'none';
+function applyBath() {
+  gas.bath = { left: bathMode !== 'none', top: bathMode === 'env', bottom: bathMode === 'env' };
+  updateHints();
+}
+segmented('bathmode', (v) => { bathMode = v; applyBath(); }, false);
+bindRange('Tb', (v) => { if (gas) gas.Tbath = v; }, (v) => v.toFixed(2), false);
+
+function updateHints() {
+  if (!gas) return;
+  const sides = { left: '左', top: '上', bottom: '下' };
+  const contact = Object.keys(sides).filter((s) => gas.bath[s]);
+  let msg = '';
+  if (!contact.length) msg = '熱源とは接していません。';
+  else {
+    const open = contact.filter((s) => gas.walls[s] === DIATHERMAL);
+    const closed = contact.filter((s) => gas.walls[s] === ADIABATIC);
+    if (!open.length) msg = `熱源と接していますが、接している壁（${closed.map((s) => sides[s]).join('・')}）が断熱壁なので熱は通りません。`;
+    else msg = `透熱壁（${open.map((s) => sides[s]).join('・')}）を通して熱源とエネルギーをやりとりできます。` + (closed.length ? `（${closed.map((s) => sides[s]).join('・')}は断熱）` : '');
+  }
+  $('bath-hint').textContent = msg;
+  const anyDia = Object.values(gas.walls).some((w) => w === DIATHERMAL);
+  $('state-hint').textContent = !anyDia && true ? '— すべて断熱壁：熱のやりとりなし' : '';
+}
+
+// ---- ピストン・撹拌 ----
+bindRange('pos', (v) => { if (gas) gas.piston.target = v; }, (v) => v.toFixed(0), false);
+bindRange('pspeed', (v) => { if (gas) gas.piston.speed = Math.pow(10, v); }, (v) => Math.pow(10, v).toPrecision(2), true);
+bindRange('omega', (v) => { if (gas) gas.stirrer.omega = v; }, (v) => v.toFixed(2), true);
+$('btn-stir').addEventListener('click', (e) => {
+  gas.stirrer.on = !gas.stirrer.on;
+  e.currentTarget.setAttribute('aria-pressed', String(gas.stirrer.on));
+});
+
+// ---- 表示 ----
+bindCheck('c-speed', (on) => { view && (view.opt.colorMode = on ? 'speed' : 'species'); $('lg-speed').hidden = !on; });
+bindCheck('c-arrow', (on) => { view && (view.opt.arrows = on); });
+bindCheck('c-trace', (on) => { if (gas) { gas.tracerOn = on; gas.tracer = []; } });
+bindCheck('c-heat', (on) => { view && (view.opt.showHeat = on); });
+bindSpeed('speed', (v) => { simRate = v; });
+
+$('btn-reset').addEventListener('click', () => {
+  build();
+  gas.Tbath = +$('Tb').value;
+  gas.piston.speed = Math.pow(10, +$('pspeed').value);
+  view.opt.arrows = $('c-arrow').checked; gas.tracerOn = $('c-trace').checked;
+});
+$('btn-ledger').addEventListener('click', () => gas.resetLedger());
+
+build();
+gas.Tbath = +$('Tb').value;
+gas.piston.speed = Math.pow(10, +$('pspeed').value);
+view.opt.colorMode = $('c-speed').checked ? 'speed' : 'species';
+view.opt.arrows = $('c-arrow').checked;
+gas.tracerOn = $('c-trace').checked;
+
+const loop = new Loop((paused) => {
+  if (!paused) {
+    gas.advance(simRate);
+    gas.measure();
+    frame++;
+    const s = gas.stats();
+    const bathOn = Object.keys(gas.bath).some((k) => gas.bath[k] && gas.walls[k] === DIATHERMAL);
+    plotT.push(gas.time, { T: s.T, Tb: bathOn ? gas.Tbath : NaN });
+    plotP.push(gas.time, { P: s.Pwall, Pk: s.Pkin });
+    $('r-N').textContent = s.N;
+    $('r-V').textContent = fmt(s.V, 0);
+    $('r-U').textContent = fmt(s.U, 1);
+    $('r-T').textContent = fmt(s.T, 3);
+    $('r-P').textContent = fmt(s.Pwall, 4);
+    $('r-Pk').textContent = fmt(s.Pkin, 4);
+    if (frame % 6 === 0) { const sp = gas.speeds(); $('r-v').textContent = fmt(sp.reduce((a, b) => a + b, 0) / Math.max(1, sp.length), 2); }
+    updateLedger('l-', s);
+    $('l-Wp').textContent = fmtSigned(s.Wpiston, 1);
+    $('l-Ws').textContent = fmtSigned(s.Wstir, 1);
+    if (frame % 2 === 0) { plotT.draw(); plotP.draw(); }
+    if (frame % 6 === 0) {
+      const T = s.T;
+      hist.set(gas.speeds(), (v) => mb2d(v, T), Math.max(6, 3.6 * Math.sqrt(T)), { fn: (v) => mb2d(v, T0), label: 'はじめ（T=1）の分布' });
+      hist.draw();
+    }
+    $('pos-val').textContent = gas.X.toFixed(0);
+  }
+  view.draw();
+});
+bindPlayPause('btn-play', loop);
+</script>
+</body>
+</html>

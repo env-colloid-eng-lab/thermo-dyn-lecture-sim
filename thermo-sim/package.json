@@ -1,0 +1,12 @@
+{
+  "name": "thermo-sim",
+  "version": "0.1.0",
+  "private": true,
+  "description": "ミクロとマクロで見る熱力学 ― 教育用インタラクティブ・シミュレーション",
+  "type": "module",
+  "scripts": {
+    "test": "node tests/physics-test.mjs",
+    "serve": "python3 -m http.server 8000"
+  },
+  "license": "MIT"
+}

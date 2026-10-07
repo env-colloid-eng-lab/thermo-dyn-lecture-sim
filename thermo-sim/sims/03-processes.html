@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>03 準静的過程と不可逆過程 | 熱力学シミュレーション</title>
+<link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+<header class="site-header"><div class="inner">
+  <h1>03 準静的過程と不可逆過程</h1><span class="sub">ピストンをゆっくり／速く動かす・自由膨張・P–V 図と仕事</span>
+  <nav>
+    <a href="../index.html">目次</a>
+    <a href="01-operations.html">01 壁と操作</a>
+    <a href="02-equilibrium.html">02 平衡への緩和</a>
+    <a href="03-processes.html" aria-current="page">03 準静的と不可逆</a>
+    <a href="04-isothermal.html">04 等温過程の収支</a>
+    <a href="05-extensive.html">05 示量と示強</a>
+    <button id="btn-proj" title="文字を大きくする">投影モード</button>
+  </nav>
+</div></header>
+
+<main class="layout">
+  <div class="col">
+    <section class="card">
+      <h2><span class="tag">ミクロ</span>シリンダーの中の気体 <span class="hint" id="mode-hint"></span></h2>
+      <div class="canvas-wrap"><canvas id="sim"></canvas></div>
+      <div class="legend">
+        <span><span class="sw adi"></span>断熱壁</span>
+        <span><span class="sw dia"></span>透熱壁</span>
+        <span id="lg-speed" hidden>遅い<span class="grad"></span>速い</span>
+      </div>
+      <div class="readouts">
+        <div class="stat ext"><span class="k">体積 <i>V</i></span><span class="v" id="r-V"></span></div>
+        <div class="stat int"><span class="k">温度 <i>T</i></span><span class="v" id="r-T"></span></div>
+        <div class="stat int"><span class="k">圧力 <i>NkT</i>/<i>V</i></span><span class="v" id="r-P"></span></div>
+        <div class="stat ext"><span class="k">内部エネルギー <i>U</i></span><span class="v" id="r-U"></span></div>
+        <div class="stat"><span class="k">ピストンの速さ</span><span class="v" id="r-u"></span></div>
+      </div>
+      <div class="ledger">
+        <span class="term"><b>ΔU</b><span id="l-dU"></span></span><span class="op">=</span>
+        <span class="term"><b>Q</b><span id="l-Q"></span></span><span class="op">+</span>
+        <span class="term"><b>W</b><span id="l-W"></span></span>
+        <span class="note">「はじめから」または実験の準備をした時点からの合計（<i>W</i>：気体がされた仕事、<i>Q</i>：気体が受け取った熱）。</span>
+      </div>
+      <div id="result" class="q" hidden></div>
+    </section>
+
+    <section class="card">
+      <h2><span class="tag">マクロ</span>P–V 図 <span class="hint">塗りつぶし＝直近の操作でピストンがした仕事 <span class="math">−∫P dV</span></span></h2>
+      <div class="canvas-wrap"><canvas id="pv"></canvas></div>
+      <p class="hint"><b style="color:#eb6834">橙</b>：ピストンが実際に受けた力から求めた圧力（＝仕事を決める圧力）。<b style="color:#2a78d6">青</b>：その瞬間の内部エネルギーから状態方程式で求めた圧力 <span class="math">NkT/V</span>。ゆっくり動かすと二つは重なり、速く動かすとずれる。</p>
+      <div class="canvas-wrap" style="margin-top:6px"><canvas id="plotT"></canvas></div>
+    </section>
+  </div>
+
+  <div class="col">
+    <section class="card ctrl">
+      <h2>操作パネル</h2>
+      <div class="btns">
+        <button id="btn-play" class="primary"></button>
+        <button id="btn-reset">はじめから</button>
+      </div>
+      <div class="row"><label for="speed">再生速度</label><input type="range" id="speed" min="-0.7" max="1.6" step="0.05" value="0.00"><output id="speed-val"></output></div>
+
+      <div class="group-title">条件（はじめからやり直します）</div>
+      <div class="seg" id="cond"><button data-value="adi" aria-pressed="true">断熱（すべて断熱壁）</button><button data-value="iso">等温（透熱壁＋環境 <i>T</i>=1）</button></div>
+
+      <div class="group-title">ピストンを動かす速さ</div>
+      <div class="seg" id="pspeed">
+        <button data-value="0.02" aria-pressed="true">準静的</button>
+        <button data-value="0.06">ゆっくり</button>
+        <button data-value="0.8">速い</button>
+        <button data-value="2.5">とても速い</button>
+      </div>
+      <p class="hint">粒子の典型的な速さは約 1.4（<i>T</i>=1）。準静的では再生速度を上げると待ち時間が短くなります。</p>
+
+      <div class="group-title">操作1：ピストン</div>
+      <div class="row"><label for="xc">圧縮したときの位置</label><input type="range" id="xc" min="35" max="90" step="1" value="50"><output id="xc-val"></output></div>
+      <div class="btns">
+        <button id="btn-comp">◀ 圧縮する</button>
+        <button id="btn-exp">膨張する ▶（元の位置へ）</button>
+        <button id="btn-cycle" class="primary">1往復（圧縮→膨張）</button>
+        <button id="btn-stop">止める</button>
+      </div>
+
+      <div class="group-title">自由膨張（真空への膨張）</div>
+      <div class="btns">
+        <button id="btn-fe-prep">準備：右半分を真空にする</button>
+        <button id="btn-fe-go" disabled>仕切りを外す</button>
+      </div>
+
+      <div class="group-title">表示</div>
+      <div>
+        <label class="check"><input type="checkbox" id="c-speed">色＝速さ</label>
+        <label class="check"><input type="checkbox" id="c-arrow">速度の矢印</label>
+      </div>
+    </section>
+
+    <section class="card notes">
+      <h2>ねらい</h2>
+      <p><b>準静的過程</b>：流体の圧力とピストンを動かす力がいつも釣り合ったまま、微小な変化を積み重ねる過程。<b>可逆</b>（逆の操作で元に戻せる）。一方、速い操作は途中で平衡が崩れ、<b>不可逆</b>になる。</p>
+      <h3>やってみよう</h3>
+      <ol>
+        <li>「断熱」「準静的」で <b>1往復</b>（再生速度を上げてよい）。戻ってきたとき <i>T</i> は元に戻った？ 往復の <i>W</i> は？</li>
+        <li>「断熱」「とても速い」で 1往復。今度は？ P–V 図で橙と青はどうずれる？</li>
+        <li>「等温」「準静的」で圧縮。<i>W</i> &gt; 0 なのに Δ<i>U</i> ≈ 0。エネルギーはどこへ？（→ 04）</li>
+        <li>自由膨張：準備して仕切りを外す。<i>W</i>, <i>Q</i>, Δ<i>U</i>, <i>T</i> は？ 途中の状態を P–V 図に描けるだろうか？</li>
+      </ol>
+      <div class="q"><b>問い</b>　断熱壁で囲まれていても、速く往復させると気体の <i>U</i> は増えてしまいます（<b>不可逆な断熱過程</b>）。逆に、断熱のまま <i>U</i> だけを減らして元に戻す操作はあるでしょうか？</div>
+      <div class="q"><b>問い</b>　速く圧縮すると、ピストンの前に粒子が「たまり」、ピストンが受ける圧力が <span class="math">NkT/V</span> より大きくなります。そのぶん仕事はどうなる？ 速く膨張させるときは？</div>
+      <details><summary>理論との比較（2次元理想気体）</summary>
+        <p>2次元単原子理想気体では <span class="math">U = NkT</span>、<span class="math">C<sub>V</sub> = Nk</span>、<span class="math">γ = 2</span>。</p>
+        <ul>
+          <li>断熱準静的：<span class="math">PV² = 一定</span>、<span class="math">TV = 一定</span>（体積を半分にすると <i>T</i> は2倍）</li>
+          <li>等温準静的：<span class="math">W = NkT ln(V₀/V₁)</span>、<span class="math">ΔU = 0</span>、<span class="math">Q = −W</span></li>
+        </ul>
+        <p>このシミュレーションの粒子は大きさをもつ（剛体円板）ので、強く圧縮すると圧力が理想気体より数％大きくなります。</p>
+      </details>
+    </section>
+  </div>
+</main>
+
+<script type="module">
+import { Gas, ADIABATIC, DIATHERMAL } from '../assets/js/engine.js';
+import { SimView } from '../assets/js/render.js';
+import { XYPlot, TimePlot, SERIES } from '../assets/js/plot.js';
+import { $, fmt, fmtSigned, bindRange, bindCheck, segmented, Loop, bindPlayPause, setupCommon, updateLedger, bindSpeed } from '../assets/js/ui.js';
+
+setupCommon();
+const H = 60, X0 = 100, N = 300, T0 = 1.0;
+let gas, view, simRate = 0.1, frame = 0, cond = 'adi', speed = 0.02, speedCtl;
+let legs = [], cur = null, cycle = null, fe = null, refState = null;
+
+const pv = new XYPlot($('pv'), { height: 300, xmin: 0, xmax: 6600, ymin: 0, ymax: null, xlabel: 'V（面積）', ylabel: 'P' });
+const plotT = new TimePlot($('plotT'), { height: 150, ylabel: '温度 T', yZero: true, window: 1500,
+  series: [{ key: 'T', label: '気体の温度 T', color: SERIES[0] }] });
+
+function Vsys() { return gas.vpart ? gas.vpart.x * H : gas.X * H; }
+
+function newGas(X, nRect) {
+  gas = new Gas({ H, X: X0, Xmin: 35, Xmax: 110, seed: (Math.random() * 1e9) | 0, pTau: 6 });
+  if (cond === 'iso') {
+    gas.walls = { left: DIATHERMAL, top: DIATHERMAL, bottom: DIATHERMAL };
+    gas.bath = { left: true, top: true, bottom: true };
+    gas.Tbath = T0;
+  }
+  return gas;
+}
+
+function setRefs() {
+  const s = { V: Vsys(), U: gas.kinetic() };
+  const P0 = s.U / s.V, V0 = s.V, T = s.U / gas.N;
+  refState = { V0, P0, T };
+  pv.refs = [
+    { label: `等温線 (T=${T.toFixed(2)})`, color: '#9a988f', dash: [5, 4], fn: (V) => (P0 * V0) / V },
+    { label: '断熱線 PV²=一定', color: SERIES[2], dash: [2, 3], fn: (V) => P0 * (V0 / V) ** 2 },
+  ];
+  const Vmin = gas.Xmin * H;
+  pv.opt.ymax = Math.min(P0 * (V0 / Vmin) ** 2 * 1.15, P0 * 6);
+}
+
+function build() {
+  newGas();
+  gas.addParticles(N, T0, { x0: 0, x1: X0, y0: 0, y1: H });
+  gas.piston.target = X0; gas.piston.speed = speed;
+  if (view) view.g = gas; else view = new SimView($('sim'), gas, { envPad: 5, Tref: T0, drawScale: 2.8 });
+  view.opt.colorMode = $('c-speed').checked ? 'speed' : 'species';
+  view.opt.arrows = $('c-arrow').checked;
+  legs = []; cur = null; cycle = null; fe = null;
+  $('btn-fe-go').disabled = true; $('result').hidden = true;
+  setRefs(); plotT.reset();
+  $('mode-hint').textContent = cond === 'adi' ? '— 断熱：Q = 0' : '— 等温：温度 T=1 の環境の中、すべて透熱壁';
+}
+
+function startLeg(target) {
+  if (speed <= 0.02 && simRate < 1 && speedCtl) speedCtl.set(30);
+  gas.piston.target = target;
+  gas.piston.speed = speed;
+  cur = { ppts: [], epts: [[Vsys(), gas.kinetic() / Vsys()]], lastV: Vsys(), lastW: gas.ledger.Wpiston,
+          bin: H * Math.min(10, 3 + 4 * speed) };
+  legs.push(cur);
+  if (legs.length > 6) legs.shift();
+}
+
+function recordLeg() {
+  if (!cur) return;
+  const V = Vsys();
+  if (Math.abs(V - cur.lastV) >= cur.bin) {
+    const Pp = -(gas.ledger.Wpiston - cur.lastW) / (V - cur.lastV);
+    cur.ppts.push([(V + cur.lastV) / 2, Pp]);
+    cur.epts.push([V, gas.kinetic() / V]);
+    cur.lastV = V; cur.lastW = gas.ledger.Wpiston;
+  }
+}
+
+/** 雑音を減らすため隣り合う3点で移動平均 */
+function smooth(p) {
+  if (p.length < 3) return p;
+  return p.map((q, k) => {
+    const a = p[Math.max(0, k - 1)], c = p[Math.min(p.length - 1, k + 1)];
+    return [q[0], (a[1] + 2 * q[1] + c[1]) / 4];
+  });
+}
+
+function updatePV() {
+  pv.paths = [];
+  legs.forEach((L, k) => {
+    const last = k === legs.length - 1;
+    pv.paths.push({ label: k === 0 ? '状態方程式 NkT/V' : '', color: SERIES[0], pts: L.epts, width: 2 });
+    pv.paths.push({ label: k === 0 ? 'ピストンが受けた圧力' : '', color: SERIES[1], pts: smooth(L.ppts), width: 2, fill: last && !L.free });
+    if (L.free) pv.paths.push({ label: '自由膨張の始点と終点（途中は非平衡）', color: '#77756f', pts: L.free, width: 1.5, dash: [6, 5], ends: true });
+  });
+  pv.marker = [Vsys(), gas.kinetic() / Vsys()];
+  pv.draw();
+}
+
+segmented('cond', (v) => { cond = v; build(); }, false);
+segmented('pspeed', (v) => {
+  speed = parseFloat(v); if (gas) gas.piston.speed = speed;
+  // 準静的は時間がかかるので再生速度を自動で上げる（手動で変更可）
+  if (speedCtl) speedCtl.set(speed <= 0.02 ? 30 : speed <= 0.06 ? 10 : speed <= 1 ? 1.5 : 1);
+}, false);
+bindRange('xc', () => {}, (v) => v.toFixed(0));
+speedCtl = bindSpeed('speed', (v) => { simRate = v; });
+bindCheck('c-speed', (on) => { if (view) view.opt.colorMode = on ? 'speed' : 'species'; $('lg-speed').hidden = !on; });
+bindCheck('c-arrow', (on) => { if (view) view.opt.arrows = on; });
+
+function leaveFreeExpansion() {
+  if (fe) { build(); }
+}
+$('btn-comp').addEventListener('click', () => { leaveFreeExpansion(); cycle = null; startLeg(+$('xc').value); });
+$('btn-exp').addEventListener('click', () => { leaveFreeExpansion(); cycle = null; startLeg(X0); });
+$('btn-stop').addEventListener('click', () => { cycle = null; gas.piston.target = gas.X; cur = null; });
+$('btn-cycle').addEventListener('click', () => {
+  leaveFreeExpansion();
+  if (Math.abs(gas.X - X0) > 0.5) { startLeg(X0); cycle = { stage: 'return' }; }
+  else beginCycle();
+});
+function beginCycle() {
+  cycle = { stage: 'compress', T0: gas.kinetic() / gas.N, W0: gas.ledger.Wpiston + gas.ledger.Wstir, Q0: gas.ledger.Q, U0: gas.kinetic() };
+  setRefs();
+  legs = [];
+  startLeg(+$('xc').value);
+  $('result').hidden = true;
+}
+
+$('btn-fe-prep').addEventListener('click', () => {
+  cond = 'adi';
+  document.querySelector('#cond button[data-value=adi]').setAttribute('aria-pressed', 'true');
+  document.querySelector('#cond button[data-value=iso]').setAttribute('aria-pressed', 'false');
+  newGas();
+  gas.setVPartition(X0 / 2, ADIABATIC);
+  gas.addParticles(N, T0, { x0: 0, x1: X0 / 2, y0: 0, y1: H });
+  gas.piston.target = X0;
+  view.g = gas;
+  legs = []; cur = null; cycle = null; fe = { stage: 'ready' };
+  setRefs(); plotT.reset();
+  $('btn-fe-go').disabled = false; $('result').hidden = true;
+  $('mode-hint').textContent = '— 自由膨張：右半分は真空（粒子なし）';
+});
+$('btn-fe-go').addEventListener('click', () => {
+  if (!fe || fe.stage !== 'ready') return;
+  const V1 = Vsys(), P1 = gas.kinetic() / V1;
+  fe = { stage: 'run', t0: gas.time, V1, P1, T1: gas.kinetic() / gas.N };
+  gas.setVPartition(null);
+  $('btn-fe-go').disabled = true;
+});
+
+$('btn-reset').addEventListener('click', build);
+build();
+
+const loop = new Loop((paused) => {
+  if (!paused) {
+    gas.advance(simRate);
+    gas.measure();
+    frame++;
+    recordLeg();
+    // 1往復の自動進行
+    if (cycle && Math.abs(gas.X - gas.piston.target) < 1e-9) {
+      if (cycle.stage === 'return') beginCycle();
+      else if (cycle.stage === 'compress') { cycle.stage = 'expand'; startLeg(X0); }
+      else if (cycle.stage === 'expand') { cycle.stage = 'relax'; cycle.t1 = gas.time; cur = null; }
+      else if (cycle.stage === 'relax' && gas.time - cycle.t1 > 60) {
+        const T1 = gas.kinetic() / gas.N;
+        const W = gas.ledger.Wpiston + gas.ledger.Wstir - cycle.W0, Q = gas.ledger.Q - cycle.Q0, dU = gas.kinetic() - cycle.U0;
+        const lbl = { 0.02: '準静的', 0.06: 'ゆっくり', 0.8: '速い', 2.5: 'とても速い' }[speed] ?? speed;
+        $('result').innerHTML = `<b>1往復の結果（${cond === 'adi' ? '断熱' : '等温'}・${lbl}）</b>　体積は元に戻った。` +
+          `温度 ${cycle.T0.toFixed(3)} → ${T1.toFixed(3)}、往復で気体がされた仕事 <i>W</i> = ${fmtSigned(W, 1)}、熱 <i>Q</i> = ${fmtSigned(Q, 1)}、Δ<i>U</i> = ${fmtSigned(dU, 1)}。` +
+          (cond === 'adi'
+            ? (Math.abs(T1 / cycle.T0 - 1) < 0.04 ? '　→ ほぼ元の状態に戻った（可逆）。' : '　→ 元の状態に戻らない（不可逆）。外からした仕事が内部エネルギーとして残った。')
+            : (W > 0.05 * N * T0 ? '　→ 往復で外からした正味の仕事が、熱として環境へ捨てられた（不可逆）。' : '　→ 正味の仕事はほぼ 0（可逆）。'));
+        $('result').hidden = false;
+        cycle = null;
+      }
+    }
+    // 自由膨張
+    if (fe && fe.stage === 'run' && gas.time - fe.t0 > 150) {
+      const V2 = Vsys(), P2 = gas.kinetic() / V2;
+      legs.push({ ppts: [], epts: [], free: [[fe.V1, fe.P1], [V2, P2]] });
+      const T2 = gas.kinetic() / gas.N;
+      $('result').innerHTML = `<b>自由膨張の結果</b>　体積 ${fe.V1.toFixed(0)} → ${V2.toFixed(0)}、温度 ${fe.T1.toFixed(3)} → ${T2.toFixed(3)}、<i>W</i> = ${fmtSigned(gas.ledger.Wpiston, 1)}、<i>Q</i> = ${fmtSigned(gas.ledger.Q, 1)}。` +
+        '真空に向かって膨張するときピストンや壁は動かないので仕事は 0、断熱なので熱も 0、よって Δ<i>U</i> = 0（理想気体なら <i>T</i> も不変）。P–V 図の灰色の線は始めと終わりを結んだだけで、途中は平衡状態ではないため P–V 図上に「経路」は描けない。';
+      $('result').hidden = false;
+      fe.stage = 'done';
+    }
+    const s = gas.stats();
+    const V = Vsys();
+    $('r-V').textContent = fmt(V, 0);
+    $('r-T').textContent = fmt(s.T, 3);
+    $('r-P').textContent = fmt(s.U / V, 4);
+    $('r-U').textContent = fmt(s.U, 1);
+    $('r-u').textContent = fmt(Math.abs(gas.piston.u), 2);
+    updateLedger('l-', s);
+    plotT.push(gas.time, { T: s.T });
+    if (frame % 2 === 0) { updatePV(); plotT.draw(); }
+  }
+  view.draw();
+});
+bindPlayPause('btn-play', loop);
+</script>
+</body>
+</html>
