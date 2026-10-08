@@ -105,7 +105,8 @@ export function convectiveAdjust(T, C, z, gammaCrit) {
           return (E + gammaCrit * Cz) / Cs;
         };
         let A = fit(i, j);
-        while (j + 1 < T.length && T[j + 1] > A - gammaCrit * z[j + 1] + 1e-9) { j++; A = fit(i, j); }
+        // そろえた直線より上の層が冷たすぎる（減率が限界を超える）なら、その層もまとまりに入れる
+        while (j + 1 < T.length && T[j + 1] < A - gammaCrit * z[j + 1] - 1e-9) { j++; A = fit(i, j); }
         for (let k = i; k <= j; k++) T[k] = A - gammaCrit * z[k];
         changed = true;
       }
@@ -113,4 +114,54 @@ export function convectiveAdjust(T, C, z, gammaCrit) {
     if (!changed) break;
   }
   return T.map((v, i) => C[i] * (v - T0[i]));
+}
+
+/**
+ * 1本の気柱（放射対流モデル、第8章）。等しい質量の N 層（下から上へ）と地表。
+ *   長波：灰色大気。光学的厚さ τ(p) = τ_s (p/p_s)^2（水蒸気のように下層に多い）、層の透過率 t = exp(−1.66 Δτ)
+ *   短波：吸収する太陽放射 Φ_abs をすべて地表が吸収する（簡単のため）
+ *   温度の更新：各層 C_i dT_i/dt = 流入 − 流出（式 8.2）。対流ありなら、その後に限界減率への対流調整（エネルギー保存）
+ *   層の高さは静水圧平衡（dz = (R_d T/g) d ln p）から毎回求める
+ */
+export class Column {
+  constructor(o = {}) {
+    this.o = Object.assign({ N: 20, ps: 1000, tauS: 4, phiAbs: 240, Cs: 2e6, gammaCrit: 6.5, convect: true }, o);
+    const { N, ps } = this.o;
+    this.pb = Array.from({ length: N + 1 }, (_, i) => ps * (1 - i / N));            // 層の境界の圧力（hPa）
+    this.pm = Array.from({ length: N }, (_, i) => (this.pb[i] + this.pb[i + 1]) / 2); // 層の代表の圧力
+    this.C = this.pb.slice(0, N).map((p, i) => (CP * (p - this.pb[i + 1]) * 100) / G);   // 層の熱容量 J m⁻² K⁻¹
+    this.Ts = 250; this.T = new Array(N).fill(250); this.t = 0;
+    this.radHeat = new Array(N).fill(0); this.convHeat = new Array(N + 1).fill(0);
+    this.setTau(this.o.tauS);
+  }
+  setTau(tauS) {
+    this.o.tauS = tauS;
+    const { ps } = this.o, tau = (p) => tauS * (p / ps) ** 2;
+    this.trans = this.pm.map((_, i) => Math.exp(-1.66 * (tau(this.pb[i]) - tau(this.pb[i + 1]))));
+  }
+  /** 地表と各層の高さ（km）：地表 0、層は代表の圧力の高さ（いちばん上の層の上端は圧力 0 なので使わない） */
+  heights() {
+    const z = [0];
+    let zb = 0;
+    for (let i = 0; i < this.T.length; i++) {
+      const zm = zb + ((RD * this.T[i]) / G) * Math.log(this.pb[i] / this.pm[i]) / 1000;
+      z.push(zm);
+      if (i < this.T.length - 1) zb = zm + ((RD * this.T[i]) / G) * Math.log(this.pm[i] / this.pb[i + 1]) / 1000;
+    }
+    return z;
+  }
+  fluxes() { return grayFluxes(this.Ts, this.T, this.trans, this.o.phiAbs); }
+  step(dt) {
+    const f = this.fluxes();
+    for (let i = 0; i < this.T.length; i++) { const dT = (f.heat[i] * dt) / this.C[i]; this.T[i] += dT; this.radHeat[i] = (f.heat[i] / this.C[i]) * 86400; }
+    this.Ts += (f.surfaceHeat * dt) / this.o.Cs;
+    if (this.o.convect) {
+      const all = [this.Ts, ...this.T], C = [this.o.Cs, ...this.C];
+      const q = convectiveAdjust(all, C, this.heights(), this.o.gammaCrit);
+      this.Ts = all[0]; for (let i = 0; i < this.T.length; i++) this.T[i] = all[i + 1];
+      this.convHeat = q.map((e, i) => (e / C[i] / dt) * 86400);   // K/day
+    } else this.convHeat.fill(0);
+    this.t += dt;
+    return f;
+  }
 }

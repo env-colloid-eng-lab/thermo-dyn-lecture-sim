@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>17 Radiative-convective equilibrium | Thermodynamics Simulations</title>
+<link rel="icon" href="../../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body>
+<header class="site-header"><div class="inner">
+  <h1>17 Radiative-convective equilibrium</h1><span class="sub">Application: solve the budget of each layer to get the vertical temperature profile ― gray-atmosphere radiation and energy-conserving convective adjustment (the idea of the Manabe model)</span>
+  <nav>
+    <a href="../index.html">Contents</a>
+    <a href="01-operations.html">01 Walls & operations</a>
+    <a href="02-equilibrium.html">02 Relaxation to equilibrium</a>
+    <a href="03-processes.html">03 Quasi-static vs. irreversible</a>
+    <a href="04-isothermal.html">04 Isothermal energy balance</a>
+    <a href="05-extensive.html">05 Extensive & intensive</a>
+    <a href="06-heat-capacity.html">06 Heat capacity</a>
+    <a href="07-entropy.html">07 Entropy</a>
+    <a href="08-heat-engines.html">08 Heat engines</a>
+    <a href="09-osmosis.html">09 Osmotic pressure</a>
+    <a href="10-max-work.html">10 Reversible vs. irreversible</a>
+    <a href="11-sedimentation.html">11 Sedimentation</a>
+    <a href="12-partitions.html">12 Partitions & equilibrium</a>
+    <a href="13-chain.html">13 Chain elasticity</a>
+    <a href="14-stability.html">14 Atmospheric stability</a>
+    <a href="15-greenhouse.html">15 Radiation & greenhouse</a>
+    <a href="16-phase.html">16 Phase equilibrium & vapor</a>
+    <a href="17-rce.html" aria-current="page">17 Radiative-convective eq.</a>
+    <a href="../../sims/17-rce.html" lang="ja" hreflang="ja">日本語</a>
+    <button id="btn-proj" title="Enlarge text">Projector mode</button>
+  </nav>
+</div></header>
+
+<main class="layout">
+  <div class="col">
+    <section class="card">
+      <h2><span class="tag">Macro</span>Vertical temperature profile <span class="hint">20 layers of equal mass + the surface. Everything starts at 250 K. "With convection" and "radiation only" are computed side by side under the same conditions</span></h2>
+      <div class="canvas-wrap"><canvas id="plotT"></canvas></div>
+      <div class="readouts wrap">
+        <div class="stat int"><span class="k">Surface temperature (with convection)</span><span class="v" id="r-Ts">–</span></div>
+        <div class="stat"><span class="k">Surface temperature (radiation only)</span><span class="v" id="r-Tr">–</span></div>
+        <div class="stat"><span class="k">Outgoing longwave radiation OLR (with convection)</span><span class="v" id="r-olr">–</span></div>
+        <div class="stat"><span class="k">Top-of-atmosphere budget Φ<sub>abs</sub> − OLR</span><span class="v" id="r-imb">–</span></div>
+        <div class="stat"><span class="k">Height reached by convection (tropopause)</span><span class="v" id="r-trop">–</span></div>
+        <div class="stat"><span class="k">Days elapsed</span><span class="v" id="r-day">0</span></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2><span class="tag">Macro</span>Heating rate of each layer (with convection) <span class="hint">heating by radiation and by convection. In the steady state their sum is 0</span></h2>
+      <div class="canvas-wrap"><canvas id="plotH"></canvas></div>
+      <div class="canvas-wrap" style="margin-top:6px"><canvas id="plotS"></canvas></div>
+    </section>
+  </div>
+
+  <div class="col">
+    <section class="card ctrl">
+      <h2>Controls</h2>
+      <div class="btns">
+        <button id="btn-play" class="primary"></button>
+        <button id="btn-reset">Start over (all 250 K)</button>
+      </div>
+      <div class="row"><label for="speed">Time speed (days/frame)</label><input type="range" id="speed" min="-0.5" max="1.3" step="0.05" value="0.3"><output id="speed-val"></output></div>
+      <div class="group-title">Conditions (may be changed while running)</div>
+      <div class="row"><label for="tau">Infrared optical depth τ<sub>s</sub></label><input type="range" id="tau" min="0.3" max="4" step="0.1" value="1.6"><output id="tau-val"></output></div>
+      <div class="row"><label for="phi">Absorbed solar radiation Φ<sub>abs</sub> (W m⁻²)</label><input type="range" id="phi" min="200" max="280" step="1" value="240"><output id="phi-val"></output></div>
+      <div class="row"><label for="gc">Critical lapse rate Γ<sub>crit</sub> (K/km)</label><input type="range" id="gc" min="4" max="9.8" step="0.1" value="6.5"><output id="gc-val"></output></div>
+      <p class="hint" style="margin:0">Increasing τ<sub>s</sub> corresponds to adding infrared-absorbing gases (water vapor, CO₂) in the gray approximation. Γ<sub>crit</sub> = 9.8 is the dry adiabatic lapse rate; 6.5 is a typical value for convection including condensation of water vapor.</p>
+    </section>
+
+    <section class="card notes">
+      <h2>Goal</h2>
+      <p>Write the first law "heat capacity × rate of temperature change = inflow − outflow" not for the whole Earth but for each thin layer of the atmosphere. Updating temperatures little by little from each layer's radiative inflow and outflow, <b>radiation alone</b> makes the lapse rate near the surface too large, and the atmosphere becomes convectively unstable (14). In reality convection carries heat upward and keeps the lapse rate near a critical value. Representing this by <b>energy-conserving convective adjustment</b> gives <b>radiative-convective equilibrium</b>, where radiative cooling and convective heating balance.</p>
+      <p>Although called an equilibrium, it is a steady state, not a thermodynamic equilibrium: energy from the Sun keeps entering at the surface, being carried upward by convection and radiation, and leaving to space.</p>
+      <h3>Try it</h3>
+      <ol>
+        <li>Play and wait until both profiles settle into a steady state. How many K warmer is the radiation-only surface than the one with convection? In both, Φ<sub>abs</sub> = OLR at the top of the atmosphere.</li>
+        <li>Heating-rate plot: in the troposphere, radiation cools (negative) and convection warms (positive). In the stratosphere (above where convection reaches) both are 0.</li>
+        <li>Increase τ<sub>s</sub> (strengthen the greenhouse effect). The surface warms; what happens aloft? The tropopause height?</li>
+        <li>With Γ<sub>crit</sub> = 9.8 (dry), is the surface temperature higher or lower than with 6.5?</li>
+      </ol>
+      <div class="q"><b>Question</b> If convective adjustment just rewrites the temperature gradient, what is no longer conserved? This page keeps <span class="math">Σ C<sub>i</sub>T<sub>i</sub></span>, weighted by the heat capacity of each layer. Adjusting a lower layer at 300 K and an upper layer at 280 K (equal heat capacities, 1 km apart) to 9.77 K/km gives what temperatures?</div>
+      <div class="q"><b>Question</b> In layers with convection, the radiative budget is not 0. Why does the temperature still not change? Distinguish the local budget from the whole-Earth budget at the top of the atmosphere.</div>
+      <div class="q"><b>Question</b> The radiation-only atmosphere had too large a lapse rate near the surface. By the criterion of 14 (potential temperature decreasing upward), is it stable or unstable?</div>
+      <details><summary>Inside the model (an educational gray atmosphere)</summary>
+        <p>The upward and downward longwave fluxes at the layer boundaries are computed from below and from above (the formulas of section 8.1): <span class="math">U<sub>i</sub> = t<sub>i</sub>U<sub>i−1</sub> + (1 − t<sub>i</sub>)σT<sub>i</sub>⁴</span>, <span class="math">D<sub>i−1</sub> = t<sub>i</sub>D<sub>i</sub> + (1 − t<sub>i</sub>)σT<sub>i</sub>⁴</span>, with <span class="math">U₀ = σT<sub>s</sub>⁴</span> at the surface and <span class="math">D = 0</span> from space. Layer transmission is <span class="math">t = exp(−1.66Δτ)</span>, with optical depth concentrated in the lower layers, <span class="math">τ(p) = τ<sub>s</sub>(p/p<sub>s</sub>)²</span>.</p>
+        <p>Each layer's temperature is advanced in 6-hour steps with <span class="math">(c<sub>p</sub>Δp/g) dT/dt = inflow − outflow</span> (eq. 8.2). All solar radiation is absorbed at the surface (for simplicity). In the column with convection, after each update, any part where the lapse rate of the surface and layers exceeds Γ<sub>crit</sub> is set onto a Γ<sub>crit</sub> line while keeping the heat-capacity-weighted total energy. Layer heights come from hydrostatic balance, <span class="math">dz = (R<sub>d</sub>T/g) d ln p</span>.</p>
+        <p>This is an educational model to show the idea of radiative-convective equilibrium; it does not reproduce the 1967 Manabe–Wetherald model (wavelength-dependent absorption, water vapor set by fixed relative humidity, etc.). Being gray, details such as the temperature aloft do not match reality.</p>
+      </details>
+    </section>
+  </div>
+</main>
+
+<script type="module">
+import { Column } from '../../assets/js/climate.js';
+import { XYPlot, TimePlot, SERIES } from '../../assets/js/plot.js';
+import { $, fmt, fmtSigned, bindRange, Loop, bindPlayPause, setupCommon } from '../../assets/js/ui.js';
+
+setupCommon();
+const DT = 6 * 3600;   // one update = 6 hours
+let tau = 1.6, phi = 240, gc = 6.5, daysPerFrame = 2;
+let rce, rad;
+
+const plotT = new XYPlot($('plotT'), { height: 340, xmin: 180, xmax: 340, ymin: 0, ymax: 26, xlabel: 'T (K)', ylabel: 'height z (km)', xd: 1, yd: 2 });
+const plotH = new XYPlot($('plotH'), { height: 280, xmin: -3, xmax: 3, ymin: 0, ymax: 26, xlabel: 'heating rate (K/day)', ylabel: 'height z (km)', xd: 2, yd: 2 });
+const plotS = new TimePlot($('plotS'), { height: 170, ylabel: 'surface temperature (K)', window: 600, xlabel: 'days elapsed',
+  series: [{ key: 'c', label: 'with convection', color: '#d6453d' }, { key: 'r', label: 'radiation only', color: SERIES[0], dash: [6, 4] }] });
+
+function make(convect) { return new Column({ tauS: tau, phiAbs: phi, gammaCrit: gc, convect }); }
+function reset() { rce = make(true); rad = make(false); plotS.reset(); }
+
+/** (T, z) points of the surface and layers */
+const profile = (c) => { const z = c.heights(); return [[c.Ts, 0], ...c.T.map((T, i) => [T, z[i + 1]])]; };
+
+function update(f) {
+  const z = rce.heights(), zt = Math.ceil(z[z.length - 1] + 2);   // up to the representative height of the top layer
+  // the highest layer reached by convection (nonzero convective heating)
+  let trop = 0; for (let i = 0; i < rce.T.length; i++) if (Math.abs(rce.convHeat[i + 1]) > 1e-6) trop = z[i + 1];
+  $('r-Ts').textContent = `${fmt(rce.Ts, 1)} K`; $('r-Tr').textContent = `${fmt(rad.Ts, 1)} K`;
+  $('r-olr').textContent = `${fmt(f.olr, 1)} W m⁻²`; $('r-imb').textContent = `${fmtSigned(phi - f.olr, 2)} W m⁻²`;
+  $('r-trop').textContent = trop > 0 ? `${fmt(trop, 1)} km` : '–';
+  $('r-day').textContent = fmt(rce.t / 86400, 0);
+  const pr = profile(rce), pd = profile(rad);
+  const Ts = pr.concat(pd).map((p) => p[0]);
+  Object.assign(plotT.opt, { xmin: Math.floor((Math.min(...Ts) - 10) / 10) * 10, xmax: Math.ceil((Math.max(...Ts) + 10) / 10) * 10, ymax: zt });
+  plotT.paths = [
+    { label: 'with convection (→ radiative-convective eq.)', color: '#d6453d', pts: pr, width: 2.5 },
+    { label: 'radiation only (→ radiative eq.)', color: SERIES[0], pts: pd, width: 2, dash: [6, 4] },
+    { label: `critical lapse rate ${fmt(gc, 1)} K/km`, color: '#77756f', pts: [[rce.Ts, 0], [rce.Ts - gc * zt, zt]], width: 1.2, dash: [2, 3] },
+  ];
+  plotT.marker = null;
+  plotT.draw();
+  // heating rates
+  const rh = rce.radHeat.map((v, i) => [v, z[i + 1]]), ch = rce.convHeat.slice(1).map((v, i) => [v, z[i + 1]]);
+  const sum = rce.radHeat.map((v, i) => [v + rce.convHeat[i + 1], z[i + 1]]);
+  const mx = Math.max(1, ...rh.map((p) => Math.abs(p[0])), ...ch.map((p) => Math.abs(p[0])));
+  Object.assign(plotH.opt, { xmin: -Math.ceil(mx * 1.1), xmax: Math.ceil(mx * 1.1), ymax: zt });
+  plotH.paths = [
+    { label: 'radiative heating', color: SERIES[0], pts: rh, width: 2.2 },
+    { label: 'convective heating', color: SERIES[1], pts: ch, width: 2.2 },
+    { label: 'sum', color: '#1f1f1f', pts: sum, width: 1.4, dash: [4, 3] },
+  ];
+  plotH.draw();
+}
+
+bindRange('tau', (v) => { tau = v; rce?.setTau(v); rad?.setTau(v); }, (v) => v.toFixed(1), false);
+bindRange('phi', (v) => { phi = v; if (rce) { rce.o.phiAbs = v; rad.o.phiAbs = v; } }, (v) => v.toFixed(0), false);
+bindRange('gc', (v) => { gc = v; if (rce) rce.o.gammaCrit = v; }, (v) => v.toFixed(1), false);
+bindRange('speed', (v) => { daysPerFrame = Math.pow(10, v); }, (v) => Math.pow(10, v).toFixed(1));
+$('btn-reset').addEventListener('click', reset);
+reset();
+
+let frame = 0, last = rce.fluxes();
+const loop = new Loop((paused) => {
+  if (!paused) {
+    const n = Math.max(1, Math.round((daysPerFrame * 86400) / DT));
+    for (let k = 0; k < n; k++) { last = rce.step(DT); rad.step(DT); }
+    frame++;
+    plotS.push(rce.t / 86400, { c: rce.Ts, r: rad.Ts });
+  }
+  if (frame % 2 === 0 || paused) { update(last); plotS.draw(); }
+});
+bindPlayPause('btn-play', loop);
+</script>
+</body>
+</html>

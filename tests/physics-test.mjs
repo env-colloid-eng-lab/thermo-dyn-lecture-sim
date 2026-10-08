@@ -381,6 +381,17 @@ const f = (v, d = 3) => Number(v).toFixed(d);
   CL.convectiveAdjust(T2, C, z, 6.5);
   const ok = T2.every((v, i) => i === 0 || T2[i - 1] - v <= 6.5 + 1e-9);
   check('対流調整: エネルギー保存・不安定がなくなる', ok && Math.abs(T2.reduce((a, v, i) => a + C[i] * v, 0) - E0) < 1e-9, T2.map((v) => f(v, 1)).join(','));
+  // 調整した直線より上の層が冷たすぎるときは、その層もまとめて調整する
+  const T3 = [300, 299, 280, 250], C3 = [1, 1, 1, 1], z3 = [0, 1, 2, 3], E3 = T3.reduce((a, v) => a + v, 0);
+  CL.convectiveAdjust(T3, C3, z3, 6.5);
+  check('対流調整: 上へ広がる不安定もまとめて直す', T3.every((v, i) => i === 0 || T3[i - 1] - v <= 6.5 + 1e-9) && Math.abs(T3.reduce((a, v) => a + v, 0) - E3) < 1e-9, T3.map((v) => f(v, 1)).join(','));
+  // 気柱モデル：定常状態で大気上端の収支 0、対流のない上空は放射平衡、対流圏の減率 = 限界減率
+  const col = new CL.Column({ tauS: 1.6 }), rad = new CL.Column({ tauS: 1.6, convect: false });
+  let fc, fr;
+  for (let k = 0; k < 6000; k++) { fc = col.step(21600); fr = rad.step(21600); }
+  const zc = col.heights(), top = col.T.length - 1;
+  check('放射対流平衡: 大気上端で Φ_abs = OLR、成層圏は放射平衡', Math.abs(fc.olr - 240) < 0.05 && Math.abs(fc.heat[top]) < 0.01, `OLR=${f(fc.olr, 2)} T_s=${f(col.Ts, 1)}`);
+  check('放射対流平衡: 地表付近の減率 = 6.5 K/km、放射平衡だけより地表が冷たい', Math.abs((col.T[0] - col.T[1]) / (zc[2] - zc[1]) - 6.5) < 0.05 && rad.Ts > col.Ts + 10, `放射平衡のみ T_s=${f(rad.Ts, 1)}`);
   const N2 = CL.bruntN2(288, 6.5);
   check('浮力振動数: Γ_env < Γ_d で N² > 0、周期 ≈ 10 分', N2 > 0 && Math.abs(2 * Math.PI / Math.sqrt(N2) / 60 - 9.8) < 1.5, `周期=${f(2 * Math.PI / Math.sqrt(N2) / 60, 1)} 分`);
   const a = CL.lapseProfile(5, 288.15, 1000, CL.GAMMA_D), th = CL.potentialTemp(a.T, a.p);

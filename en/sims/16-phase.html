@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>16 Phase equilibrium and water vapor | Thermodynamics Simulations</title>
+<link rel="icon" href="../../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body>
+<header class="site-header"><div class="inner">
+  <h1>16 Phase equilibrium and water vapor</h1><span class="sub">Application: does water evaporate or condense? ― chemical potential, saturation vapor pressure, relative humidity</span>
+  <nav>
+    <a href="../index.html">Contents</a>
+    <a href="01-operations.html">01 Walls & operations</a>
+    <a href="02-equilibrium.html">02 Relaxation to equilibrium</a>
+    <a href="03-processes.html">03 Quasi-static vs. irreversible</a>
+    <a href="04-isothermal.html">04 Isothermal energy balance</a>
+    <a href="05-extensive.html">05 Extensive & intensive</a>
+    <a href="06-heat-capacity.html">06 Heat capacity</a>
+    <a href="07-entropy.html">07 Entropy</a>
+    <a href="08-heat-engines.html">08 Heat engines</a>
+    <a href="09-osmosis.html">09 Osmotic pressure</a>
+    <a href="10-max-work.html">10 Reversible vs. irreversible</a>
+    <a href="11-sedimentation.html">11 Sedimentation</a>
+    <a href="12-partitions.html">12 Partitions & equilibrium</a>
+    <a href="13-chain.html">13 Chain elasticity</a>
+    <a href="14-stability.html">14 Atmospheric stability</a>
+    <a href="15-greenhouse.html">15 Radiation & greenhouse</a>
+    <a href="16-phase.html" aria-current="page">16 Phase equilibrium & vapor</a>
+    <a href="17-rce.html">17 Radiative-convective eq.</a>
+    <a href="../../sims/16-phase.html" lang="ja" hreflang="ja">日本語</a>
+    <button id="btn-proj" title="Enlarge text">Projector mode</button>
+  </nav>
+</div></header>
+
+<main class="layout">
+  <div class="col">
+    <section class="card">
+      <h2><span class="tag">Micro</span>Molecules leaving and entering the water surface <span class="hint">Stochastic model: the rate of leaving depends only on temperature; the rate of entering is proportional to the amount of vapor</span></h2>
+      <div class="canvas-wrap"><canvas id="sim"></canvas></div>
+      <div class="readouts wrap">
+        <div class="stat int"><span class="k">Temperature <i>T</i></span><span class="v" id="r-T">–</span></div>
+        <div class="stat"><span class="k">Vapor pressure <i>e</i> (from the molecule count, smoothed)</span><span class="v" id="r-e">–</span></div>
+        <div class="stat"><span class="k">Saturation vapor pressure <i>e<sub>s</sub></i>(<i>T</i>)</span><span class="v" id="r-es">–</span></div>
+        <div class="stat"><span class="k">Relative humidity <i>e</i>/<i>e<sub>s</sub></i></span><span class="v" id="r-H">–</span></div>
+        <div class="stat"><span class="k">Δμ = μ<sub>vapor</sub> − μ<sub>liquid</sub> = <i>RT</i> ln(<i>e</i>/<i>e<sub>s</sub></i>)</span><span class="v" id="r-mu">–</span></div>
+      </div>
+      <p class="q" id="r-dir" style="margin-top:8px"></p>
+      <div class="canvas-wrap"><canvas id="plotN"></canvas></div>
+    </section>
+
+    <section class="card">
+      <h2><span class="tag">Macro</span>Saturation vapor pressure curve (Clausius–Clapeyron) <span class="hint">Black dot = current (<i>T</i>, <i>e</i>). Below the curve: evaporation; above: condensation</span></h2>
+      <div class="canvas-wrap"><canvas id="plotE"></canvas></div>
+      <div class="readouts wrap">
+        <div class="stat"><span class="k">Dew point <i>T<sub>d</sub></i> (<i>e<sub>s</sub></i>(<i>T<sub>d</sub></i>) = <i>e</i>)</span><span class="v" id="r-Td">–</span></div>
+        <div class="stat"><span class="k">Increase per 1 K, <i>L<sub>v</sub></i>/<i>R<sub>v</sub>T</i>²</span><span class="v" id="r-rate">–</span></div>
+      </div>
+      <h2 style="margin-top:12px"><span class="tag">Macro</span>Comparing chemical potentials <span class="hint">changing the temperature at the current vapor pressure <i>e</i>. The phase with the lower value is stable</span></h2>
+      <div class="canvas-wrap"><canvas id="plotMu"></canvas></div>
+    </section>
+  </div>
+
+  <div class="col">
+    <section class="card ctrl">
+      <h2>Controls</h2>
+      <div class="btns">
+        <button id="btn-play" class="primary"></button>
+        <button id="btn-reset">Start over (no vapor)</button>
+      </div>
+      <div class="row"><label for="T">Temperature <i>T</i> (K)</label><input type="range" id="T" min="273" max="310" step="1" value="293"><output id="T-val"></output></div>
+      <div class="group-title">Top of the container</div>
+      <div class="seg" id="lid"><button data-value="closed" aria-pressed="true">Lid on (sealed)</button><button data-value="open">Blown away by wind</button></div>
+      <div class="group-title">Add or remove vapor (operation)</div>
+      <div class="btns">
+        <button id="btn-add">Add vapor</button>
+        <button id="btn-rem">Remove half the vapor</button>
+      </div>
+      <p class="hint" style="margin:0">Keeping the amount of vapor (<i>e</i>) while changing the temperature changes the relative humidity. Keeping the relative humidity requires <i>e</i> to change.</p>
+    </section>
+
+    <section class="card notes">
+      <h2>Goal</h2>
+      <p>Above a water surface, molecules go back and forth between liquid and vapor. Moving <i>dn</i> from liquid to vapor changes the Gibbs free energy by <span class="math">dG = (μ<sub>vapor</sub> − μ<sub>liquid</sub>)dn</span>. At constant temperature and pressure the change proceeds in the direction that lowers <i>G</i> (= the second law), so water moves <b>from the phase with higher chemical potential to the one with lower</b>. The vapor pressure at which the two are equal is the <b>saturation vapor pressure</b> <i>e<sub>s</sub></i>(<i>T</i>).</p>
+      <p>Microscopically, the number of molecules leaving the surface depends only on temperature, and the number entering is proportional to the amount of vapor. Where the two balance is saturation: no net transfer (molecules keep going back and forth).</p>
+      <h3>Try it</h3>
+      <ol>
+        <li>Play with "Lid on". The vapor increases and <i>e</i> approaches <i>e<sub>s</sub></i>(<i>T</i>) and stops (relative humidity 100%).</li>
+        <li>Raise the temperature. <i>e<sub>s</sub></i> increases by about 6–7% per 1 K. More evaporates until the new saturation.</li>
+        <li>After saturation, lower the temperature. The dot goes above the curve (supersaturated), vapor condenses and <i>e</i> drops. The temperature where condensation starts is the dew point.</li>
+        <li>What happens when "Add vapor" makes it supersaturated? And "Remove half"? In both cases the sign of Δμ decides which way the water moves.</li>
+        <li>With "Blown away by wind", saturation is never reached and evaporation continues (laundry dries).</li>
+      </ol>
+      <div class="q"><b>Question</b> Raising the temperature from 300 K to 303 K multiplies the saturation vapor pressure by about 1.196. What changes if you keep the amount of vapor (<i>e</i>) fixed, and what changes if you keep the relative humidity fixed?</div>
+      <div class="q"><b>Question</b> May we say that "both evaporation and condensation stop" in equilibrium? Answer by watching the molecules leaving and entering above.</div>
+      <div class="q"><b>Question</b> When the temperature rises, the chemical potential of the vapor falls faster than that of the liquid (the slopes in the plot), because the vapor has larger entropy. Use this to explain why the saturation vapor pressure increases with temperature.</div>
+      <details><summary>Summary of formulas</summary>
+        <p>Phase equilibrium: <span class="math">μ<sub>liquid</sub>(T, p) = μ<sub>vapor</sub>(T, p)</span>. Requiring coexistence as the temperature changes gives the Clapeyron equation <span class="math">dp/dT = Δs/Δv = L/(TΔv)</span>. Neglecting the liquid volume and treating the vapor as an ideal gas gives <span class="math">d ln e<sub>s</sub>/dT = L<sub>v</sub>/(R<sub>v</sub>T²)</span> (Clausius–Clapeyron). Integrating with constant latent heat, <span class="math">e<sub>s</sub>(T) = e<sub>s</sub>(T₀) exp[(L<sub>v</sub>/R<sub>v</sub>)(1/T₀ − 1/T)]</span>. Here 6.11 hPa at <i>T</i>₀ = 273.15 K, <i>L<sub>v</sub></i> = 2.5×10⁶ J/kg, <i>R<sub>v</sub></i> = 461 J/(kg K).</p>
+        <p>For an ideal-gas vapor <span class="math">μ<sub>vapor</sub>(T, e) = μ<sub>vapor</sub>(T, e<sub>s</sub>) + RT ln(e/e<sub>s</sub>)</span>, and at saturation <span class="math">μ<sub>vapor</sub>(T, e<sub>s</sub>) = μ<sub>liquid</sub></span>, so <span class="math">Δμ = RT ln(e/e<sub>s</sub>)</span> (per mol).</p>
+        <p>In the stochastic model above, the rate of leaving the surface is set to match <i>e<sub>s</sub></i>(<i>T</i>); intermolecular attraction is not computed (the hard disks in this material have no attraction, so they cannot form a liquid). The rate of entering is proportional to the rate at which vapor molecules hit the surface.</p>
+      </details>
+    </section>
+  </div>
+</main>
+
+<script type="module">
+import { satVapor, dewPoint, deltaMuVapor, LV, RV } from '../../assets/js/climate.js';
+import { XYPlot, TimePlot, SERIES } from '../../assets/js/plot.js';
+import { $, fmt, fmtSigned, bindRange, segmented, Loop, bindPlayPause, setupCommon } from '../../assets/js/ui.js';
+
+setupCommon();
+// stochastic model: box width 1, height 1, water surface at YL; molecules fly straight at a fixed speed v(T) and bounce off walls
+const YL = 0.18, TREF = 293, NREF = 120, V0 = 0.35, MAXN = 600;
+let T = 293, lid = 'closed', mol = [], splash = [], time = 0, evap = 0, cond = 0, rates = { e: 0, c: 0 }, eSm = 0;
+
+const speed = () => V0 * Math.sqrt(T / TREF);
+// rate at which one molecule hits the surface (2D, random direction, fixed speed: ⟨downward speed⟩ = v/π)
+const hitRate = () => speed() / Math.PI / (1 - YL);
+// leaving rate (number per unit time), set so that e = e_s(T) at saturation in a sealed box
+const evapRate = () => hitRate() * NREF * (satVapor(T) / satVapor(TREF)) * (TREF / T);
+const vaporP = () => mol.length * (satVapor(TREF) / NREF) * (T / TREF);   // vapor pressure from the number of molecules (hPa)
+
+const plotN = new TimePlot($('plotN'), { height: 170, ylabel: 'hPa', yZero: true, window: 120, xlabel: 'time',
+  series: [{ key: 'e', label: 'vapor pressure e', color: 'rgba(42,120,214,0.45)' }, { key: 'sm', label: 'smoothed', color: SERIES[0] }, { key: 'es', label: 'saturation e_s(T)', color: '#77756f', dash: [6, 4] }] });
+const plotE = new XYPlot($('plotE'), { height: 240, xmin: 270, xmax: 312, ymin: 0, ymax: 80, xlabel: 'T (K)', ylabel: 'e (hPa)', xd: 1, yd: 2 });
+const plotMu = new XYPlot($('plotMu'), { height: 220, xmin: 270, xmax: 312, ymin: -2, ymax: 2, xlabel: 'T (K)', ylabel: 'μ (kJ/mol, zero at dew point)', xd: 1, yd: 3 });
+
+function addMol(n, y0) {
+  for (let k = 0; k < n && mol.length < MAXN; k++) {
+    const a = Math.random() * Math.PI * 2;
+    mol.push({ x: Math.random(), y: y0 ?? YL + (1 - YL) * Math.random(), a });
+  }
+}
+function reset() { mol = []; splash = []; time = 0; evap = 0; cond = 0; eSm = 0; plotN.reset(); }
+
+function step(dt) {
+  const v = speed();
+  // leaving (Poisson process)
+  let n = 0; const lam = evapRate() * dt;
+  for (let L = Math.exp(-lam), p = Math.random(); p > L; p *= Math.random()) n++;
+  for (let k = 0; k < n && mol.length < MAXN; k++) {
+    const a = Math.acos(1 - 2 * Math.random());   // upward, more often near the surface normal (∝ sin a), so directions in the gas are random
+    const m = { x: Math.random(), y: YL + 1e-6, a: -a };
+    mol.push(m); splash.push({ x: m.x, t: time, up: true }); evap++;
+  }
+  // fly, bounce, enter
+  const keep = [];
+  for (const m of mol) {
+    m.x += v * Math.cos(m.a) * dt; m.y -= v * Math.sin(m.a) * dt;
+    if (m.x < 0) { m.x = -m.x; m.a = Math.PI - m.a; } else if (m.x > 1) { m.x = 2 - m.x; m.a = Math.PI - m.a; }
+    if (m.y > 1) {
+      if (lid === 'open') continue;                       // blown away by the wind
+      m.y = 2 - m.y; m.a = -m.a;
+    }
+    if (m.y < YL) { splash.push({ x: m.x, t: time, up: false }); cond++; continue; }   // enters the water
+    keep.push(m);
+  }
+  mol = keep;
+  time += dt;
+  if (splash.length > 200) splash.splice(0, splash.length - 200);
+}
+
+// --- drawing of the container ---
+const cv = $('sim');
+let dpr = 1;
+function resize() {
+  dpr = window.devicePixelRatio || 1;
+  const w = cv.parentElement.clientWidth || 600, h = Math.round(Math.min(320, w * 0.5));
+  cv.style.width = w + 'px'; cv.style.height = h + 'px'; cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
+}
+if (typeof ResizeObserver !== 'undefined') new ResizeObserver(() => { resize(); draw(); }).observe(cv.parentElement);
+resize();
+function draw() {
+  const ctx = cv.getContext('2d'), W = cv.width, H = cv.height, pad = 8 * dpr;
+  const X = (x) => pad + x * (W - 2 * pad), Y = (y) => H - pad - y * (H - 2 * pad);
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = '#f4f6fb'; ctx.fillRect(X(0), Y(1), X(1) - X(0), Y(YL) - Y(1));
+  ctx.fillStyle = '#5b8fd6'; ctx.fillRect(X(0), Y(YL), X(1) - X(0), Y(0) - Y(YL));            // liquid water
+  ctx.strokeStyle = '#2F5597'; ctx.lineWidth = 2 * dpr; ctx.strokeRect(X(0), Y(1), X(1) - X(0), Y(0) - Y(1));
+  if (lid === 'open') {   // no lid: wind arrows on top
+    ctx.fillStyle = '#ffffff'; ctx.fillRect(X(0) + dpr, Y(1) - 2 * dpr, X(1) - X(0) - 2 * dpr, 4 * dpr);
+    ctx.strokeStyle = 'rgba(95,94,90,0.7)'; ctx.lineWidth = 1.5 * dpr;
+    for (const f of [0.2, 0.5, 0.8]) { const y = Y(1) + 2 * dpr; ctx.beginPath(); ctx.moveTo(X(f - 0.08), y); ctx.lineTo(X(f + 0.08), y); ctx.lineTo(X(f + 0.06), y - 3 * dpr); ctx.stroke(); }
+  }
+  for (const s of splash) {
+    const age = time - s.t; if (age > 1.2) continue;
+    ctx.beginPath(); ctx.arc(X(s.x), Y(YL), (3 + 8 * age) * dpr, Math.PI, 2 * Math.PI);
+    ctx.strokeStyle = s.up ? `rgba(214,69,61,${1 - age / 1.2})` : `rgba(42,120,214,${1 - age / 1.2})`; ctx.lineWidth = 1.5 * dpr; ctx.stroke();
+  }
+  ctx.fillStyle = '#2a78d6';
+  for (const m of mol) { ctx.beginPath(); ctx.arc(X(m.x), Y(m.y), 3 * dpr, 0, 7); ctx.fill(); }
+  ctx.fillStyle = '#ffffff'; ctx.font = `${12 * dpr}px sans-serif`; ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
+  ctx.fillText(`Liquid water  T = ${T} K`, X(0) + 6 * dpr, Y(0) - 4 * dpr);
+  ctx.fillStyle = '#1f1f1f'; ctx.textBaseline = 'top';
+  ctx.fillText(`leaving ${fmt(rates.e, 1)} /time, entering ${fmt(rates.c, 1)} /time`, X(0) + 6 * dpr, Y(1) + 6 * dpr);
+}
+
+function update() {
+  // the molecule count fluctuates, so readouts and the judgement use a smoothed value (the plot shows raw values)
+  const eRaw = vaporP(); eSm += 0.06 * (eRaw - eSm);
+  const e = eSm, es = satVapor(T), H = e / es;
+  $('r-T').textContent = `${T} K`;
+  $('r-e').textContent = `${fmt(e, 1)} hPa`; $('r-es').textContent = `${fmt(es, 1)} hPa`;
+  $('r-H').textContent = `${fmt(100 * H, 0)} %`;
+  const dmu = e > 0 ? deltaMuVapor(T, e, es) / 1000 : -Infinity;
+  $('r-mu').textContent = Number.isFinite(dmu) ? `${fmtSigned(dmu, 2)} kJ/mol` : '−∞';
+  const el = $('r-dir');
+  if (Math.abs(H - 1) < 0.06) el.innerHTML = '<b>Saturated (phase equilibrium)</b>: μ<sub>vapor</sub> ≈ μ<sub>liquid</sub>. Leaving and entering balance, with no net transfer (within fluctuations).';
+  else if (H < 1) el.innerHTML = '<b>Unsaturated</b>: μ<sub>vapor</sub> &lt; μ<sub>liquid</sub> (Δμ &lt; 0). Moving water from liquid to vapor lowers <i>G</i>, so there is <b>net evaporation</b>.';
+  else el.innerHTML = '<b>Supersaturated</b>: μ<sub>vapor</sub> &gt; μ<sub>liquid</sub> (Δμ &gt; 0). Moving water from vapor to liquid lowers <i>G</i>, so there is <b>net condensation</b>.';
+  plotN.push(time, { e: eRaw, es, sm: e });
+  // the e_s(T) curve
+  const Td = e > 0 ? dewPoint(e) : NaN;
+  $('r-Td').textContent = Number.isFinite(Td) ? `${fmt(Td, 1)} K` : '–';
+  $('r-rate').textContent = `${fmt(100 * LV / (RV * T * T), 1)} %/K`;
+  plotE.opt.ymax = Math.max(70, e * 1.2);
+  plotE.refs = [{ label: 'saturation vapor pressure e_s(T)', color: SERIES[3], fn: (x) => satVapor(x) }];
+  plotE.paths = Number.isFinite(Td) && Td > 270 ? [{ label: 'dew point', color: '#77756f', pts: [[Td, 0], [Td, e], [T, e]], dash: [4, 4], width: 1.4 }] : [];
+  plotE.marker = [T, e];
+  plotE.draw();
+  // chemical potentials (changing T at the current e): μ_liquid = −s_l (T − T_d), μ_vapor = μ_liquid + RT ln(e/e_s(T))
+  if (Number.isFinite(Td)) {
+    const sl = 0.07;   // kJ/(mol K) (rough molar entropy of liquid water, to show the slopes)
+    const muL = (x) => -sl * (x - Td), muV = (x) => muL(x) + deltaMuVapor(x, e, satVapor(x)) / 1000;
+    const lo = Math.max(270, Td - 15), hi = Math.min(312, Td + 15);
+    Object.assign(plotMu.opt, { xmin: lo, xmax: hi, ymin: Math.min(muL(hi), muV(hi)) - 0.3, ymax: Math.max(muL(lo), muV(lo)) + 0.3 });
+    plotMu.refs = [{ label: 'μ liquid', color: '#5b8fd6', fn: muL }, { label: `μ vapor (e = ${fmt(e, 1)} hPa)`, color: '#d6453d', fn: muV }];
+    plotMu.paths = [{ label: 'dew point (crossing)', color: '#77756f', pts: [[Td, plotMu.opt.ymin], [Td, plotMu.opt.ymax]], dash: [4, 4], width: 1.2 }];
+    plotMu.marker = T >= lo && T <= hi ? [T, Math.min(muL(T), muV(T))] : null;
+  } else { plotMu.refs = []; plotMu.paths = []; plotMu.marker = null; }
+  plotMu.draw();
+}
+
+bindRange('T', (v) => { T = v; }, (v) => v.toFixed(0), false);
+segmented('lid', (v) => { lid = v; }, false);
+$('btn-add').addEventListener('click', () => addMol(60));
+$('btn-rem').addEventListener('click', () => { mol = mol.filter(() => Math.random() < 0.5); });
+$('btn-reset').addEventListener('click', reset);
+reset();
+
+let frame = 0, last = { t: 0, e: 0, c: 0 };
+const loop = new Loop((paused) => {
+  if (!paused) {
+    for (let k = 0; k < 4; k++) step(0.02);
+    frame++;
+    if (time - last.t >= 2) { rates = { e: (evap - last.e) / (time - last.t), c: (cond - last.c) / (time - last.t) }; last = { t: time, e: evap, c: cond }; }
+  }
+  draw();
+  if (frame % 3 === 0 || paused) { update(); plotN.draw(); }
+});
+bindPlayPause('btn-play', loop);
+</script>
+</body>
+</html>
