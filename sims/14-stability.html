@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>14 空気塊と大気の安定性 | 熱力学シミュレーション</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+<header class="site-header"><div class="inner">
+  <h1>14 空気塊と大気の安定性</h1><span class="sub">応用：持ち上げた空気は戻るか、昇り続けるか ― 断熱膨張・温位・浮力</span>
+  <nav>
+    <a href="../index.html">目次</a>
+    <a href="01-operations.html">01 壁と操作</a>
+    <a href="02-equilibrium.html">02 平衡への緩和</a>
+    <a href="03-processes.html">03 準静的と不可逆</a>
+    <a href="04-isothermal.html">04 等温過程の収支</a>
+    <a href="05-extensive.html">05 示量と示強</a>
+    <a href="06-heat-capacity.html">06 熱容量</a>
+    <a href="07-entropy.html">07 エントロピー</a>
+    <a href="08-heat-engines.html">08 熱機関</a>
+    <a href="09-osmosis.html">09 浸透圧</a>
+    <a href="10-max-work.html">10 可逆と不可逆</a>
+    <a href="11-sedimentation.html">11 沈降平衡</a>
+    <a href="12-partitions.html">12 仕切りと平衡条件</a>
+    <a href="13-chain.html">13 鎖の弾性</a>
+    <a href="14-stability.html" aria-current="page">14 大気の安定性</a>
+    <a href="15-greenhouse.html">15 放射収支と温室効果</a>
+    <a href="16-phase.html">16 相平衡と水蒸気</a>
+    <a href="17-rce.html">17 放射対流平衡</a>
+    <a href="../en/sims/14-stability.html" lang="en" hreflang="en">English</a>
+    <button id="btn-proj" title="文字を大きくする">投影モード</button>
+  </nav>
+</div></header>
+
+<main class="layout">
+  <div class="col">
+    <section class="card">
+      <h2><span class="tag">マクロ</span>周囲の気温と、持ち上げた空気塊の温度 <span class="hint">実際の乾燥空気（3次元）の値。空気塊は周囲と熱をやりとりせず（断熱）、周囲と同じ圧力に膨張する</span></h2>
+      <div class="canvas-wrap"><canvas id="plotT"></canvas></div>
+      <div class="readouts">
+        <div class="stat"><span class="k">周囲の気温減率 Γ<sub>env</sub></span><span class="v" id="r-ge">–</span></div>
+        <div class="stat"><span class="k">乾燥断熱減率 Γ<sub>d</sub> = <i>g</i>/<i>c<sub>p</sub></i></span><span class="v" id="r-gd">–</span></div>
+        <div class="stat int"><span class="k">空気塊の温度 − 周囲の温度</span><span class="v" id="r-dT">–</span></div>
+        <div class="stat"><span class="k">振動の周期 2π/<i>N</i></span><span class="v" id="r-per">–</span></div>
+      </div>
+      <p class="q" id="r-dir" style="margin-top:8px"></p>
+      <div class="canvas-wrap" style="margin-top:6px"><canvas id="plotZ"></canvas></div>
+    </section>
+
+    <section class="card">
+      <h2><span class="tag">マクロ</span>温度ではなく温位で比べる <span class="hint">θ = <i>T</i>(<i>p</i>₀/<i>p</i>)<sup><i>R</i><sub>d</sub>/<i>c<sub>p</sub></i></sup>、<i>p</i>₀ = 1000 hPa。乾燥空気では <i>s</i> = <i>c<sub>p</sub></i> ln θ + 定数</span></h2>
+      <div class="canvas-wrap"><canvas id="plotTh"></canvas></div>
+      <div class="canvas-wrap" style="margin-top:6px"><canvas id="plotP"></canvas></div>
+    </section>
+  </div>
+
+  <div class="col">
+    <section class="card ctrl">
+      <h2>操作パネル</h2>
+      <div class="btns">
+        <button id="btn-play" class="primary"></button>
+        <button id="btn-up">▲ 持ち上げて離す</button>
+        <button id="btn-down">▼ 押し下げて離す</button>
+        <button id="btn-reset">元の高さに戻す</button>
+      </div>
+      <div class="row"><label for="speed">時間の進み</label><input type="range" id="speed" min="1" max="3" step="0.05" value="2"><output id="speed-val"></output></div>
+      <div class="group-title">周囲の大気</div>
+      <div class="row"><label for="ge">気温減率 Γ<sub>env</sub>（K/km）</label><input type="range" id="ge" min="-4" max="14" step="0.5" value="6.5"><output id="ge-val"></output></div>
+      <div class="row"><label for="Ts">地表の気温 <i>T</i><sub>s</sub>（K）</label><input type="range" id="Ts" min="270" max="310" step="1" value="288"><output id="Ts-val"></output></div>
+      <div class="group-title">空気塊</div>
+      <div class="row"><label for="z0">はじめの高さ（km）</label><input type="range" id="z0" min="0.5" max="6" step="0.5" value="2"><output id="z0-val"></output></div>
+      <div class="row"><label for="dz">動かす距離（km）</label><input type="range" id="dz" min="0.1" max="1.5" step="0.1" value="0.5"><output id="dz-val"></output></div>
+    </section>
+
+    <section class="card notes">
+      <h2>ねらい</h2>
+      <p>空気の塊を少し持ち上げると、周りの圧力が下がるので <b>断熱膨張</b> して冷える（03 の断熱膨張と同じ）。冷え方は乾燥断熱減率 <span class="math">Γ<sub>d</sub> = g/c<sub>p</sub> ≈ 9.8 K/km</span>。周囲の気温がそれより<b>ゆっくり</b>下がっていれば、持ち上げた空気塊は周囲より冷たく重いので戻される（安定）。周囲が<b>速く</b>下がっていれば、空気塊は周囲より暖かく軽いので昇り続ける（不安定 → 対流）。</p>
+      <p>空気塊は断熱的に動くので、温位 θ（つまりエントロピー）を保つ。<b>上ほど温位が高い（エントロピーが大きい）大気は安定</b>、上ほど低ければ不安定。温度ではなくエントロピーで比べると、どちらへ動くかが分かる。</p>
+      <h3>やってみよう</h3>
+      <ol>
+        <li>Γ<sub>env</sub> = 6.5 K/km（平均的な対流圏）で「持ち上げて離す」。空気塊は上下に振動する。周期は？</li>
+        <li>Γ<sub>env</sub> を 9.8 K/km より大きくする。持ち上げた空気塊はどうなる？ 温位の図では、上ほど θ が低くなっている。</li>
+        <li>Γ<sub>env</sub> を負にする（上空ほど暖かい：逆転層）。振動は速くなる？ 冬の朝に煙や霧が地表付近にたまるのはなぜ？</li>
+        <li>Γ<sub>env</sub> = Γ<sub>d</sub> ちょうど（θ が一様）にすると？</li>
+        <li>下の圧力の図で、等温大気（11 の沈降平衡と同じ指数関数）と乾燥断熱の大気を比べる。地表の圧力が同じでも、上空の圧力は違う。</li>
+      </ol>
+      <div class="q"><b>問い</b>　1000 hPa、300 K の空気塊を 800 hPa まで断熱的に持ち上げると何 K になる？ そのときの温位は？（<span class="math">R<sub>d</sub>/c<sub>p</sub> = 0.286</span>）</div>
+      <div class="q"><b>問い</b>　地上で 300 K の空気塊を 1 km 持ち上げる。周囲の減率が 6.0 K/km なら、空気塊は周囲より暖かい？冷たい？ どちらへ浮力が働く？</div>
+      <div class="q"><b>問い</b>　周囲の大気が「乾燥断熱減率で下がっている」のは、どのような状態だろう？ 対流がよく混ぜた大気で、温位（エントロピー）がどうなっているかを考えよう。</div>
+      <details><summary>式のまとめ（乾燥空気）</summary>
+        <p>単位質量あたりの第一法則と静水圧平衡 <span class="math">dp/dz = −ρg</span> から、周囲と同じ圧力を保ちながら断熱的に動く空気塊は <span class="math">c<sub>p</sub> dT = v dp</span>、つまり <span class="math">dT/dz = −g/c<sub>p</sub> = −Γ<sub>d</sub></span>（周囲との密度差が小さい近似）。</p>
+        <p>空気塊を周囲と同じ温度の高さ <i>z</i>₀ から ξ だけ動かすと、温度差は <span class="math">(Γ<sub>env</sub> − Γ<sub>d</sub>)ξ</span>、浮力による加速度は <span class="math">g(T<sub>parcel</sub> − T<sub>env</sub>)/T<sub>env</sub></span>。まとめると <span class="math">d²ξ/dt² = −N²ξ</span>、<span class="math">N² = (g/T)(Γ<sub>d</sub> − Γ<sub>env</sub>)</span>。<i>N</i>² &gt; 0 なら周期 <span class="math">2π/N</span> の振動（数分〜十数分）、<i>N</i>² &lt; 0 なら指数関数的に離れていく。このページでは摩擦や周囲との混合を無視しています。</p>
+        <p>温位の高さ変化は <span class="math">(1/θ)dθ/dz = (Γ<sub>d</sub> − Γ<sub>env</sub>)/T</span> なので、<i>N</i>² と同じ符号。乾燥空気のエントロピーは <span class="math">s = c<sub>p</sub> ln θ + 定数</span>。</p>
+        <p>周囲の圧力は、静水圧平衡と状態方程式から求めています。等温なら <span class="math">p = p<sub>s</sub> e<sup>−gz/R<sub>d</sub>T</sup></span>（分子の沈降平衡と同じボルツマン因子）、一定の減率 Γ なら <span class="math">p = p<sub>s</sub>(T/T<sub>s</sub>)<sup>g/R<sub>d</sub>Γ</sup></span>。</p>
+      </details>
+    </section>
+  </div>
+</main>
+
+<script type="module">
+import { GAMMA_D, G, lapseProfile, potentialTemp, bruntN2 } from '../assets/js/climate.js';
+import { XYPlot, TimePlot, SERIES } from '../assets/js/plot.js';
+import { $, fmt, fmtSigned, bindRange, Loop, bindPlayPause, setupCommon } from '../assets/js/ui.js';
+
+setupCommon();
+const PS = 1000, ZTOP = 12;
+let ge = 6.5, Ts = 288, z0 = 2, dz = 0.5, rate = 100;
+let zp = 2, w = 0, Tp0 = 0, zstart = 2, t = 0;   // 空気塊の高さ（km）・速さ（m/s）・出発点の温度・出発の高さ・経過時間（s）
+
+const env = (z) => lapseProfile(z, Ts, PS, ge);
+const parcelT = (z) => Tp0 - GAMMA_D * (z - zstart);   // 乾燥断熱
+const plotT = new XYPlot($('plotT'), { height: 300, xmin: 200, xmax: 320, ymin: 0, ymax: ZTOP, xlabel: 'T （K）', ylabel: '高さ z （km）', xd: 1, yd: 2 });
+const plotTh = new XYPlot($('plotTh'), { height: 260, xmin: 260, xmax: 360, ymin: 0, ymax: ZTOP, xlabel: 'θ （K）', ylabel: '高さ z （km）', xd: 1, yd: 2 });
+const plotP = new XYPlot($('plotP'), { height: 240, xmin: 0, xmax: 1000, ymin: 0, ymax: ZTOP, xlabel: 'p （hPa）', ylabel: '高さ z （km）', xd: 0, yd: 2 });
+const plotZ = new TimePlot($('plotZ'), { height: 160, ylabel: '空気塊の高さ（km）', window: 3600, xlabel: '時間 t （s）',
+  series: [{ key: 'z', label: '空気塊の高さ', color: SERIES[1] }, { key: 'z0', label: 'はじめの高さ', color: '#77756f', dash: [6, 4] }] });
+
+const curve = (fn, a, b, n = 60) => Array.from({ length: n + 1 }, (_, k) => { const z = a + ((b - a) * k) / n; return [fn(z), z]; });
+
+/** 空気塊を高さ z からそっと離す（出発の高さでは周囲と同じ温度） */
+function release(dzSign) {
+  zstart = z0; Tp0 = env(z0).T;
+  zp = Math.min(ZTOP, Math.max(0, z0 + dzSign * dz)); w = 0; t = 0;
+  plotZ.reset();
+}
+function resetParcel() { zstart = z0; Tp0 = env(z0).T; zp = z0; w = 0; t = 0; plotZ.reset(); }
+
+function step(dt) {
+  // d²z/dt² = g (T_parcel − T_env)/T_env（z は m）。摩擦・混合は無視。地表と 12 km で止める
+  const sub = 20, h = dt / sub;
+  for (let k = 0; k < sub; k++) {
+    const Te = env(zp).T, a = (G * (parcelT(zp) - Te)) / Te;
+    w += a * h; zp += (w * h) / 1000;
+    if (zp <= 0) { zp = 0; w = 0; } else if (zp >= ZTOP) { zp = ZTOP; w = 0; }
+  }
+  t += dt;
+}
+
+function draw() {
+  const Tmin = Math.min(env(ZTOP).T, parcelT(ZTOP)) - 10, Tmax = Math.max(Ts, env(0).T, parcelT(0)) + 10;
+  Object.assign(plotT.opt, { xmin: Math.floor(Tmin / 10) * 10, xmax: Math.ceil(Tmax / 10) * 10 });
+  plotT.paths = [
+    { label: '周囲の気温', color: SERIES[0], pts: curve((z) => env(z).T, 0, ZTOP), width: 2.5 },
+    { label: '空気塊がたどる乾燥断熱線', color: SERIES[1], pts: curve(parcelT, 0, ZTOP), dash: [6, 4], width: 1.8 },
+  ];
+  plotT.marker = [parcelT(zp), zp];
+  plotT.draw();
+  const thEnv = (z) => { const e = env(z); return potentialTemp(e.T, e.p); };
+  const thP = potentialTemp(Tp0, env(zstart).p);
+  const ths = curve(thEnv, 0, ZTOP).map((p) => p[0]).concat([thP]);
+  Object.assign(plotTh.opt, { xmin: Math.floor((Math.min(...ths) - 5) / 10) * 10, xmax: Math.ceil((Math.max(...ths) + 5) / 10) * 10 });
+  plotTh.paths = [
+    { label: '周囲の温位', color: SERIES[0], pts: curve(thEnv, 0, ZTOP), width: 2.5 },
+    { label: '空気塊の温位（動いても一定）', color: SERIES[1], pts: [[thP, 0], [thP, ZTOP]], dash: [6, 4], width: 1.8 },
+  ];
+  plotTh.marker = [thP, zp];
+  plotTh.draw();
+  plotP.paths = [
+    { label: 'いまの周囲の大気', color: SERIES[0], pts: curve((z) => env(z).p, 0, ZTOP), width: 2.5 },
+    { label: `等温 ${Ts} K`, color: '#77756f', pts: curve((z) => lapseProfile(z, Ts, PS, 0).p, 0, ZTOP), dash: [6, 4], width: 1.6 },
+    { label: '乾燥断熱（θ 一様）', color: SERIES[2], pts: curve((z) => lapseProfile(z, Ts, PS, GAMMA_D).p, 0, ZTOP), dash: [2, 3], width: 1.6 },
+  ];
+  plotP.draw();
+}
+
+function readouts() {
+  const N2 = bruntN2(env(zstart).T, ge), dT = parcelT(zp) - env(zp).T;
+  $('r-ge').textContent = `${fmt(ge, 1)} K/km`; $('r-gd').textContent = `${fmt(GAMMA_D, 2)} K/km`;
+  $('r-dT').textContent = `${fmtSigned(dT, 2)} K`;
+  $('r-per').textContent = N2 > 0 ? `${fmt(2 * Math.PI / Math.sqrt(N2) / 60, 1)} 分` : '振動しない';
+  const el = $('r-dir'), moved = Math.abs(zp - zstart) > 0.02;
+  if (Math.abs(ge - GAMMA_D) < 0.25) el.innerHTML = '<b>中立</b>：周囲の気温減率が乾燥断熱減率とほぼ同じ（温位が一様）。動かしても浮力がほとんど働かない。';
+  else if (ge < GAMMA_D) el.innerHTML = '<b>安定</b>：Γ<sub>env</sub> &lt; Γ<sub>d</sub>（上ほど温位が高い）。' + (moved ? (dT < 0 ? '空気塊は周囲より冷たく重いので、下向きの浮力で戻される。' : '空気塊は周囲より暖かく軽いので、上向きの浮力で戻される。') : '持ち上げても押し下げても、元の高さへ戻す向きの浮力が働く。');
+  else el.innerHTML = '<b>不安定</b>：Γ<sub>env</sub> &gt; Γ<sub>d</sub>（上ほど温位が低い）。' + (moved ? (dT > 0 ? '空気塊は周囲より暖かく軽いので、さらに昇っていく（対流）。' : '空気塊は周囲より冷たく重いので、さらに沈んでいく。') : '少し動かすと、そのまま離れていく。');
+}
+
+bindRange('ge', (v) => { ge = v; resetParcel(); }, (v) => v.toFixed(1), false);
+bindRange('Ts', (v) => { Ts = v; resetParcel(); }, (v) => v.toFixed(0), false);
+bindRange('z0', (v) => { z0 = v; resetParcel(); }, (v) => v.toFixed(1), false);
+bindRange('dz', (v) => { dz = v; }, (v) => v.toFixed(1), false);
+bindRange('speed', (v) => { rate = Math.pow(10, v); }, (v) => `×${Math.round(Math.pow(10, v))}`);
+$('btn-up').addEventListener('click', () => release(1));
+$('btn-down').addEventListener('click', () => release(-1));
+$('btn-reset').addEventListener('click', resetParcel);
+resetParcel();
+
+let frame = 0;
+const loop = new Loop((paused) => {
+  if (!paused) {
+    const dt = rate / 60;   // 1フレーム（約 1/60 秒）で進める時間（s）
+    step(dt); frame++;
+    plotZ.push(t, { z: zp, z0: zstart });
+  }
+  if (frame % 2 === 0 || paused) { draw(); plotZ.draw(); readouts(); }
+});
+bindPlayPause('btn-play', loop);
+</script>
+</body>
+</html>

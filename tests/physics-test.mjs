@@ -5,6 +5,7 @@ import { HeatCapacityRun } from '../assets/js/experiments.js';
 import { lnChoose, binomHalf } from '../assets/js/entropy.js';
 import { CycleRunner } from '../assets/js/cycles.js';
 import { sampleEnd, chainVar } from '../assets/js/chain.js';
+import * as CL from '../assets/js/climate.js';
 import { xEqBath, xEqIsolated, twoRegionF, boltzmannLayers, lnMultinomial, meltT } from '../assets/js/levels.js';
 
 let fails = 0;
@@ -360,6 +361,30 @@ const f = (v, d = 3) => Number(v).toFixed(d);
   for (let k = 0; k < M; k++) { const [x] = sampleEnd(40, 1, rand); s2 += x * x / M; s4 += x ** 4 / M; }
   check('理想鎖: ⟨x²⟩ ≈ Ns b²/2', Math.abs(s2 / chainVar(40, 1) - 1) < 0.03, `⟨x²⟩=${f(s2, 2)} 理論=${f(chainVar(40, 1), 2)}`);
   check('理想鎖: ほぼガウス分布（⟨x⁴⟩ ≈ 3⟨x²⟩²）', Math.abs(s4 / (3 * s2 * s2) - 1) < 0.06, `比=${f(s4 / (3 * s2 * s2))}`);
+}
+
+// 17) 応用ページのマクロなモデル（教科書の数値例と照合）
+{
+  const r = CL.grayFluxes((400 / CL.SIGMA) ** 0.25, [(300 / CL.SIGMA) ** 0.25, (200 / CL.SIGMA) ** 0.25], [0.5, 0.5], 275);
+  check('灰色2層: 途中の問い8.1・8.2（U₁=350, U₂=275, D₁=100, 加熱 −50, −25, 地表 +75）',
+    [r.up[1] - 350, r.up[2] - 275, r.down[1] - 100, r.heat[0] + 50, r.heat[1] + 25, r.surfaceHeat - 75].every((v) => Math.abs(v) < 1e-9));
+  const one = CL.oneLayer(CL.absorbedSolar(1361, 0.3), 0.8);
+  const g1 = CL.grayFluxes(one.Ts, [one.Ta], [0.2], CL.absorbedSolar(1361, 0.3));
+  check('1層モデル: 定常状態で地表・大気・大気上端の収支が 0', Math.abs(g1.surfaceHeat) < 1e-9 && Math.abs(g1.heat[0]) < 1e-9 && Math.abs(one.olr - CL.absorbedSolar(1361, 0.3)) < 1e-9, `T_e=${f(one.Te, 1)} T_s=${f(one.Ts, 1)}`);
+  check('復元係数 B_s(ε=0.8, 290 K) = 3.32', Math.abs(CL.restoringB(0.8, 290) - 3.32) < 0.005);
+  check('乾燥断熱減率 g/c_p = 9.77 K/km', Math.abs(CL.GAMMA_D - 9.77) < 0.005);
+  check('クラウジウス＝クラペイロン: 300 K で 6.03 %/K、303/300 K で 1.196 倍', Math.abs(CL.LV / (CL.RV * 300 ** 2) - 0.0603) < 5e-5 && Math.abs(CL.satVapor(303) / CL.satVapor(300) - 1.196) < 5e-4);
+  check('露点は飽和水蒸気圧の逆関数', Math.abs(CL.dewPoint(CL.satVapor(290)) - 290) < 1e-9);
+  const T = [300, 280]; CL.convectiveAdjust(T, [1, 1], [0, 1], CL.GAMMA_D);
+  check('例題9: 対流調整（平均 290 K を保ち、差 9.77 K）', Math.abs(T[0] - 294.885) < 1e-3 && Math.abs(T[1] - 285.115) < 1e-3);
+  const T2 = [300, 290, 270, 250, 240], C = [3, 1, 1, 1, 1], z = [0, 1, 2, 3, 4], E0 = T2.reduce((a, v, i) => a + C[i] * v, 0);
+  CL.convectiveAdjust(T2, C, z, 6.5);
+  const ok = T2.every((v, i) => i === 0 || T2[i - 1] - v <= 6.5 + 1e-9);
+  check('対流調整: エネルギー保存・不安定がなくなる', ok && Math.abs(T2.reduce((a, v, i) => a + C[i] * v, 0) - E0) < 1e-9, T2.map((v) => f(v, 1)).join(','));
+  const N2 = CL.bruntN2(288, 6.5);
+  check('浮力振動数: Γ_env < Γ_d で N² > 0、周期 ≈ 10 分', N2 > 0 && Math.abs(2 * Math.PI / Math.sqrt(N2) / 60 - 9.8) < 1.5, `周期=${f(2 * Math.PI / Math.sqrt(N2) / 60, 1)} 分`);
+  const a = CL.lapseProfile(5, 288.15, 1000, CL.GAMMA_D), th = CL.potentialTemp(a.T, a.p);
+  check('乾燥断熱の大気では温位が一定', Math.abs(th - 288.15) < 0.05, `θ(5 km)=${f(th, 2)}`);
 }
 
 console.log(fails ? `\n${fails} 件失敗` : '\nすべて成功');

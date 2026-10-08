@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>15 放射収支と温室効果 | 熱力学シミュレーション</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+<header class="site-header"><div class="inner">
+  <h1>15 放射収支と温室効果</h1><span class="sub">応用：第一法則を「時間あたりの収支」にする ― 1層大気モデル・温度応答・CO₂ とフィードバック</span>
+  <nav>
+    <a href="../index.html">目次</a>
+    <a href="01-operations.html">01 壁と操作</a>
+    <a href="02-equilibrium.html">02 平衡への緩和</a>
+    <a href="03-processes.html">03 準静的と不可逆</a>
+    <a href="04-isothermal.html">04 等温過程の収支</a>
+    <a href="05-extensive.html">05 示量と示強</a>
+    <a href="06-heat-capacity.html">06 熱容量</a>
+    <a href="07-entropy.html">07 エントロピー</a>
+    <a href="08-heat-engines.html">08 熱機関</a>
+    <a href="09-osmosis.html">09 浸透圧</a>
+    <a href="10-max-work.html">10 可逆と不可逆</a>
+    <a href="11-sedimentation.html">11 沈降平衡</a>
+    <a href="12-partitions.html">12 仕切りと平衡条件</a>
+    <a href="13-chain.html">13 鎖の弾性</a>
+    <a href="14-stability.html">14 大気の安定性</a>
+    <a href="15-greenhouse.html" aria-current="page">15 放射収支と温室効果</a>
+    <a href="16-phase.html">16 相平衡と水蒸気</a>
+    <a href="17-rce.html">17 放射対流平衡</a>
+    <a href="../en/sims/15-greenhouse.html" lang="en" hreflang="en">English</a>
+    <button id="btn-proj" title="文字を大きくする">投影モード</button>
+  </nav>
+</div></header>
+
+<main class="layout">
+  <div class="col">
+    <section class="card">
+      <h2><span class="tag">マクロ</span>1層大気モデルの放射（全球平均、W m⁻²） <span class="hint">矢印の太さは量に比例。大気は太陽光を通し、地表からの赤外放射を割合 ε だけ吸収する</span></h2>
+      <div class="canvas-wrap"><canvas id="diag"></canvas></div>
+      <div class="readouts wrap">
+        <div class="stat"><span class="k">吸収する太陽放射 Φ<sub>abs</sub> = (1−α)<i>S</i>₀/4</span><span class="v" id="r-abs">–</span></div>
+        <div class="stat"><span class="k">有効放射温度 <i>T</i><sub>e</sub></span><span class="v" id="r-Te">–</span></div>
+        <div class="stat int"><span class="k">地表の温度 <i>T</i><sub>s</sub>（いま）</span><span class="v" id="r-Ts">–</span></div>
+        <div class="stat"><span class="k">定常状態の <i>T</i><sub>s</sub> = <i>T</i><sub>e</sub>(1 − ε/2)<sup>−1/4</sup></span><span class="v" id="r-Tseq">–</span></div>
+        <div class="stat"><span class="k">大気上端の収支 Φ<sub>abs</sub> − Φ<sub>out</sub></span><span class="v" id="r-imb">–</span></div>
+      </div>
+      <p class="q" id="r-dir" style="margin-top:8px"></p>
+      <div class="canvas-wrap"><canvas id="plotT"></canvas></div>
+    </section>
+
+    <section class="card">
+      <h2><span class="tag">マクロ</span>CO₂ の放射強制力とフィードバック <span class="hint">線形応答 <i>C<sub>A</sub></i> dΔ<i>T</i>/d<i>t</i> = ΔΦ − (<i>B</i> − <i>f</i>)Δ<i>T</i></span></h2>
+      <div class="canvas-wrap"><canvas id="plotR"></canvas></div>
+      <div class="readouts wrap">
+        <div class="stat"><span class="k">強制力 ΔΦ = 5.35 ln(<i>C</i>/<i>C</i>₀)</span><span class="v" id="r-F">–</span></div>
+        <div class="stat"><span class="k">復元係数 <i>B</i><sub>s</sub> = 4(1−ε/2)σ<i>T</i><sub>s</sub>³</span><span class="v" id="r-B">–</span></div>
+        <div class="stat int"><span class="k">最終的な昇温 ΔΦ/(<i>B</i> − <i>f</i>)</span><span class="v" id="r-dT">–</span></div>
+        <div class="stat"><span class="k">時定数 <i>C<sub>A</sub></i>/(<i>B</i> − <i>f</i>)</span><span class="v" id="r-tau">–</span></div>
+        <div class="stat"><span class="k">比較：黒体なら ΔΦ/4σ<i>T</i><sub>e</sub>³</span><span class="v" id="r-bb">–</span></div>
+      </div>
+    </section>
+  </div>
+
+  <div class="col">
+    <section class="card ctrl">
+      <h2>操作パネル</h2>
+      <div class="btns">
+        <button id="btn-play" class="primary"></button>
+        <button id="btn-reset">定常状態から始める</button>
+      </div>
+      <div class="row"><label for="speed">時間の進み（年/秒）</label><input type="range" id="speed" min="-1.5" max="0.7" step="0.05" value="-0.5"><output id="speed-val"></output></div>
+      <div class="group-title">放射の条件（途中で変えてよい）</div>
+      <div class="row"><label for="S0">太陽定数 <i>S</i>₀（W m⁻²）</label><input type="range" id="S0" min="1200" max="1500" step="5" value="1361"><output id="S0-val"></output></div>
+      <div class="row"><label for="alb">アルベド α</label><input type="range" id="alb" min="0.1" max="0.6" step="0.01" value="0.3"><output id="alb-val"></output></div>
+      <div class="row"><label for="eps">赤外の吸収率 ε</label><input type="range" id="eps" min="0" max="1" step="0.01" value="0.8"><output id="eps-val"></output></div>
+      <div class="row"><label for="h">海の混合層の深さ（m）</label><input type="range" id="h" min="5" max="200" step="5" value="10"><output id="h-val"></output></div>
+      <p class="hint" style="margin:0">有効熱容量 <i>C<sub>A</sub></i> = 4.2×10⁶ J m⁻³ K⁻¹ × 深さ（水の熱容量）。</p>
+      <div class="group-title">CO₂ とフィードバック（下のグラフ）</div>
+      <div class="row"><label for="co2">CO₂ 濃度の比 <i>C</i>/<i>C</i>₀</label><input type="range" id="co2" min="1" max="4" step="0.1" value="2"><output id="co2-val"></output></div>
+      <div class="row"><label for="fb">フィードバック <i>f</i>（W m⁻² K⁻¹）</label><input type="range" id="fb" min="0" max="3" step="0.1" value="0"><output id="fb-val"></output></div>
+    </section>
+
+    <section class="card notes">
+      <h2>ねらい</h2>
+      <p>地球全体を一つの系とみると、第一法則は「熱容量 × 温度の変化の速さ ＝ 入ってくるエネルギー − 出ていくエネルギー」<span class="math">C<sub>A</sub> dT/dt = Φ<sub>in</sub> − Φ<sub>out</sub></span>。温度の変化の向きは、この収支の符号で決まる。入るのは吸収した太陽放射、出るのは宇宙への赤外放射（温度の4乗に比例：ステファン＝ボルツマン則）。</p>
+      <p>大気が地表の赤外放射を吸収すると（ε）、宇宙へ出る放射が減り、地表はより高い温度で新しい収支を満たす（温室効果）。収支が合ったところが定常状態。これは平衡ではなく、太陽から入って宇宙へ出るエネルギーの流れが続いている状態。</p>
+      <h3>やってみよう</h3>
+      <ol>
+        <li>ε = 0 にする。地表温度は <i>T</i><sub>e</sub> ≈ 255 K に近づく。ε = 0.8 に戻すと？ ε = 1 では？</li>
+        <li>途中で ε を上げる。大気上端の収支が正（入る方が多い）になり、地表が暖まって収支が 0 に戻る。その間の温度変化の速さは何で決まる？</li>
+        <li>混合層の深さ（熱容量）を変える。最終的な温度は変わる？ 到達するまでの時間は？</li>
+        <li>下のグラフ：CO₂ 倍増（<i>C</i>/<i>C</i>₀ = 2）で ΔΦ ≈ 3.7 W m⁻²。フィードバック <i>f</i> を大きくすると、最終的な昇温と時定数はどうなる？ <i>f</i> が <i>B</i> を超えるとどうなる？</li>
+      </ol>
+      <div class="q"><b>問い</b>　冷たい大気から暖かい地表へ下向きの放射が届いている。「冷たい方から暖かい方へ熱が流れているので第二法則に反する」と言えるだろうか？ 地表と大気の間の<b>正味</b>の放射のやりとりの向きを、図の数字で確かめよう。</div>
+      <div class="q"><b>問い</b>　宇宙へ出る放射が同じ（定常状態）でも、地表温度は ε によって違う。なぜだろう？ 地表・大気・地球全体のどこを境界にしても、収支が合っていることを確かめよう。</div>
+      <div class="q"><b>問い</b>　正のフィードバック（<i>f</i> &gt; 0）があっても、<i>f</i> &lt; <i>B</i> なら温度は無限には上がらない。少し余分に暖まったとき、正味の収支はどちらへ戻す向きになる？</div>
+      <details><summary>式のまとめ</summary>
+        <p>吸収する太陽放射 <span class="math">Φ<sub>abs</sub> = (1−α)S₀/4</span>（1/4 は地球の断面積と表面積の比）。有効放射温度 <span class="math">σT<sub>e</sub>⁴ = Φ<sub>abs</sub></span>。</p>
+        <p>1層モデル：大気の収支 <span class="math">εσT<sub>s</sub>⁴ = 2εσT<sub>a</sub>⁴</span>、大気上端の収支 <span class="math">Φ<sub>abs</sub> = (1−ε)σT<sub>s</sub>⁴ + εσT<sub>a</sub>⁴</span> から <span class="math">T<sub>s</sub> = T<sub>e</sub>(1 − ε/2)<sup>−1/4</sup></span>。</p>
+        <p>時間変化：大気はすばやく放射平衡になる（<span class="math">T<sub>a</sub>⁴ = T<sub>s</sub>⁴/2</span>）として、地表の温度を <span class="math">C<sub>A</sub> dT<sub>s</sub>/dt = Φ<sub>abs</sub> − (1 − ε/2)σT<sub>s</sub>⁴</span> で進めています。定常状態のまわりで一次近似すると、復元係数 <span class="math">B<sub>s</sub> = 4(1 − ε/2)σT<sub>s</sub>³</span>、時定数 <span class="math">τ = C<sub>A</sub>/B</span>。</p>
+        <p>CO₂ の強制力 <span class="math">ΔΦ = 5.35 ln(C/C₀)</span> W m⁻² は、吸収スペクトルを含む放射計算から得た近似式で、熱力学の法則から導いたものではない。フィードバック <i>f</i>（水蒸気など）の値も放射計算などから別に与える。この教材の Φ は面積あたりのエネルギーの流れ（自由エネルギー <i>F</i> と区別するため Φ と書く）。</p>
+      </details>
+    </section>
+  </div>
+</main>
+
+<script type="module">
+import { SIGMA, absorbedSolar, effectiveTemp, oneLayer, restoringB, co2Forcing, linearResponse } from '../assets/js/climate.js';
+import { XYPlot, TimePlot, SERIES } from '../assets/js/plot.js';
+import { $, fmt, fmtSigned, bindRange, Loop, bindPlayPause, setupCommon } from '../assets/js/ui.js';
+
+setupCommon();
+const YEAR = 365.25 * 86400, CW = 4.2e6;
+let S0 = 1361, alb = 0.3, eps = 0.8, h = 10, co2 = 2, fb = 0, yrPerSec = 0.3;
+let Ts = 0, t = 0;
+
+const phiAbs = () => absorbedSolar(S0, alb);
+const CA = () => CW * h;
+const plotT = new TimePlot($('plotT'), { height: 190, ylabel: '温度（K）', window: 10, xlabel: '時間 t （年）',
+  series: [{ key: 'Ts', label: '地表 T_s', color: '#d6453d' }, { key: 'eq', label: '定常状態の T_s', color: '#77756f', dash: [6, 4] }, { key: 'Te', label: 'T_e', color: SERIES[0], dash: [2, 3] }] });
+const plotR = new XYPlot($('plotR'), { height: 230, xmin: 0, xmax: 5, ymin: 0, ymax: 3, xlabel: '時間 （年）', ylabel: 'ΔT_s （K）', xd: 2, yd: 2 });
+
+function reset() { Ts = oneLayer(phiAbs(), eps).Ts; t = 0; plotT.reset(); }
+
+/** 地表温度を dt 秒進める（大気はすばやく放射平衡：T_a⁴ = T_s⁴/2） */
+function step(dt) {
+  const B = restoringB(eps, Ts) + 1e-9, n = Math.max(1, Math.ceil(dt / (0.05 * CA() / B)));
+  for (let k = 0; k < n; k++) Ts += ((phiAbs() - (1 - eps / 2) * SIGMA * Ts ** 4) * (dt / n)) / CA();
+  t += dt;
+}
+
+// --- 放射の図 ---
+const cv = $('diag');
+let dpr = 1;
+function resize() {
+  dpr = window.devicePixelRatio || 1;
+  const w = cv.parentElement.clientWidth || 600, hh = Math.round(Math.min(340, Math.max(260, w * 0.45)));
+  cv.style.width = w + 'px'; cv.style.height = hh + 'px'; cv.width = Math.round(w * dpr); cv.height = Math.round(hh * dpr);
+}
+if (typeof ResizeObserver !== 'undefined') new ResizeObserver(() => { resize(); drawDiag(); }).observe(cv.parentElement);
+resize();
+
+function arrow(ctx, x, y0, y1, phi, color, label, side = 1, ly = null) {
+  const W = Math.max(2, (phi / 400) * 22) * dpr, dir = Math.sign(y1 - y0), head = 9 * dpr;
+  ctx.fillStyle = color; ctx.strokeStyle = color;
+  ctx.fillRect(x - W / 2, Math.min(y0, y1 - dir * head), W, Math.abs(y1 - dir * head - y0));
+  ctx.beginPath(); ctx.moveTo(x - W / 2 - 5 * dpr, y1 - dir * head); ctx.lineTo(x + W / 2 + 5 * dpr, y1 - dir * head); ctx.lineTo(x, y1); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#1f1f1f'; ctx.font = `${(cv.width / dpr < 560 ? 11 : 12) * dpr}px sans-serif`; ctx.textBaseline = 'middle';
+  ctx.textAlign = side > 0 ? 'left' : 'right';
+  const lines = label.split('\n');
+  const yc = ly ?? (y0 + y1) / 2;
+  lines.forEach((l, k) => ctx.fillText(l, x + side * (W / 2 + 8 * dpr), yc + (k - (lines.length - 1) / 2) * 15 * dpr));
+}
+
+function drawDiag() {
+  const ctx = cv.getContext('2d'), W = cv.width, H = cv.height;
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.fillStyle = '#f2f4fa'; ctx.fillRect(0, 0, W, H);                                   // 宇宙
+  const yA0 = H * 0.36, yA1 = H * 0.52, yS = H * 0.84;
+  ctx.fillStyle = 'rgba(218,227,243,0.95)'; ctx.fillRect(0, yA0, W, yA1 - yA0);          // 大気の層
+  ctx.fillStyle = '#d9cfb8'; ctx.fillRect(0, yS, W, H - yS);                               // 地表
+  const Ta = Ts * Math.pow(0.5, 0.25), up = SIGMA * Ts ** 4, atm = eps * SIGMA * Ta ** 4, abs = phiAbs();
+  const compact = W / dpr < 560;   // スマホ幅ではラベルを短く
+  ctx.fillStyle = '#1f1f1f'; ctx.font = `${(compact ? 11 : 13) * dpr}px sans-serif`; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+  ctx.fillText('宇宙', 8 * dpr, 6 * dpr);
+  ctx.fillText(`大気 T_a = ${fmt(Ta, 1)} K`, 8 * dpr, yA0 + 4 * dpr);
+  ctx.fillText(`地表 T_s = ${fmt(Ts, 1)} K`, 8 * dpr, yS + 6 * dpr);
+  const xs = (compact ? [0.42, 0.58, 0.74, 0.92] : [0.3, 0.5, 0.68, 0.9]).map((f) => f * W);
+  const L = compact
+    ? ['太陽', '地表', '通過', '大気', '大気']
+    : ['太陽', '地表 σT_s⁴', '通り抜け', '大気 εσT_a⁴', '大気 εσT_a⁴'];
+  arrow(ctx, xs[0], 4 * dpr, yS, abs, '#f0a32b', `${L[0]}\n${fmt(abs, 0)}`, -1, yA0 * 0.55);
+  arrow(ctx, xs[1], yS, yA1, up, '#d6453d', `${L[1]}\n${fmt(up, 0)}`, 1);
+  arrow(ctx, xs[1], yA0, 4 * dpr, (1 - eps) * up, '#e8877f', `${L[2]}\n${fmt((1 - eps) * up, 0)}`, 1);
+  arrow(ctx, xs[2], yA0, 4 * dpr, atm, '#8a5bd6', `${L[3]}\n${fmt(atm, 0)}`, 1);
+  arrow(ctx, xs[3], yA1, yS, atm, '#8a5bd6', `${L[4]}\n${fmt(atm, 0)}`, -1);
+}
+
+function update() {
+  const abs = phiAbs(), Te = effectiveTemp(abs), eq = oneLayer(abs, eps), Ta = Ts * Math.pow(0.5, 0.25);
+  const out = (1 - eps / 2) * SIGMA * Ts ** 4, imb = abs - out;
+  $('r-abs').textContent = fmt(abs, 1); $('r-Te').textContent = `${fmt(Te, 1)} K`;
+  $('r-Ts').textContent = `${fmt(Ts, 1)} K`; $('r-Tseq').textContent = `${fmt(eq.Ts, 1)} K`;
+  $('r-imb').textContent = `${fmtSigned(imb, 2)} W m⁻²`;
+  const net = SIGMA * Ts ** 4 * eps - eps * SIGMA * Ta ** 4;   // 地表 → 大気の正味（地表が吸収されるぶん − 大気から受け取るぶん）
+  $('r-dir').innerHTML = (Math.abs(imb) < 0.05 ? '<b>定常状態</b>：入る放射と出る放射がつり合い、温度は変わらない。'
+    : imb > 0 ? '<b>入る方が多い</b>：地球にエネルギーがたまり、地表の温度が上がっていく。'
+      : '<b>出る方が多い</b>：地球からエネルギーが減り、地表の温度が下がっていく。') +
+    ` 地表と大気の間の正味の放射は、暖かい地表から冷たい大気へ ${fmt(net, 0)} W m⁻²（下向きの放射より、地表が大気へ渡す放射の方が多い）。`;
+  plotT.push(t / YEAR, { Ts, eq: eq.Ts, Te });
+  // CO₂ とフィードバック
+  const dF = co2Forcing(co2), B = restoringB(eps, eq.Ts), k = B - fb, CAv = CA();
+  $('r-F').textContent = `${fmt(dF, 2)} W m⁻²`; $('r-B').textContent = `${fmt(B, 2)} W m⁻² K⁻¹`;
+  $('r-dT').textContent = k > 0 ? `${fmt(dF / k, 2)} K` : '定まらない（暴走）';
+  $('r-tau').textContent = k > 0 ? `${fmt(CAv / k / YEAR, 2)} 年` : '–';
+  $('r-bb').textContent = `${fmt(dF / (4 * SIGMA * effectiveTemp(abs) ** 3), 2)} K`;
+  const tmax = k > 0 ? Math.max(1, (5 * CAv) / Math.max(B, k) / YEAR) : 5;
+  Object.assign(plotR.opt, { xmax: tmax, ymax: k > 0 ? Math.max(1, (dF / k) * 1.3, (dF / B) * 1.3) : 5 });
+  plotR.refs = [{ label: 'f = 0（フィードバックなし）', color: '#77756f', dash: [6, 4], fn: (y) => linearResponse(y * YEAR, dF, B, 0, CAv) }];
+  if (k > 0) plotR.refs.push({ label: `f = ${fmt(fb, 1)}`, color: '#d6453d', fn: (y) => linearResponse(y * YEAR, dF, B, fb, CAv) });
+  plotR.draw();
+}
+
+bindRange('S0', (v) => { S0 = v; }, (v) => v.toFixed(0), false);
+bindRange('alb', (v) => { alb = v; }, (v) => v.toFixed(2), false);
+bindRange('eps', (v) => { eps = v; }, (v) => v.toFixed(2), false);
+bindRange('h', (v) => { h = v; }, (v) => v.toFixed(0), false);
+bindRange('co2', (v) => { co2 = v; }, (v) => v.toFixed(1), false);
+bindRange('fb', (v) => { fb = v; }, (v) => v.toFixed(1), false);
+bindRange('speed', (v) => { yrPerSec = Math.pow(10, v); }, (v) => (Math.pow(10, v) < 1 ? Math.pow(10, v).toFixed(2) : Math.pow(10, v).toFixed(1)));
+$('btn-reset').addEventListener('click', reset);
+reset();
+
+let frame = 0;
+const loop = new Loop((paused) => {
+  if (!paused) { step((yrPerSec * YEAR) / 60); frame++; }
+  if (frame % 2 === 0 || paused) { update(); plotT.draw(); drawDiag(); }
+});
+bindPlayPause('btn-play', loop);
+</script>
+</body>
+</html>
