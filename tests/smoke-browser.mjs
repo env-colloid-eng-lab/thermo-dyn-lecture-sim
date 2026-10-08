@@ -2,7 +2,8 @@
 //   node tests/smoke-browser.mjs          … 全ページの全操作でエラーが出ないか
 //   node tests/smoke-browser.mjs --shots  … あわせて tests/screenshots/ にスクショを保存
 //
-// Playwright がない場合:  npm i -D playwright && npx playwright install chromium
+// 初回のみ:  npm install && npx playwright install chromium
+// 既にある Chromium を使う場合:  CHROMIUM_PATH=/path/to/chrome node tests/smoke-browser.mjs
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -17,7 +18,7 @@ let chromium;
 try {
   ({ chromium } = await import('playwright'));
 } catch {
-  console.error('Playwright が見つかりません。npm i -D playwright && npx playwright install chromium を実行してください。');
+  console.error('Playwright が見つかりません。npm install && npx playwright install chromium を実行してください。');
   process.exit(2);
 }
 
@@ -33,7 +34,7 @@ await new Promise((r) => server.listen(0, '127.0.0.1', r));
 const base = `http://127.0.0.1:${server.address().port}/`;
 
 
-const browser = await chromium.launch();
+const browser = await chromium.launch(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {});
 let failed = 0;
 if (shots) fs.mkdirSync(path.join(root, 'tests/screenshots'), { recursive: true });
 
@@ -43,6 +44,8 @@ for (const pg of PAGES) {
     const errs = [];
     page.on('pageerror', (e) => errs.push(e.message));
     page.on('console', (m) => { if (m.type() === 'error') errs.push(m.text()); });
+    page.on('requestfinished', async (rq) => { const r = await rq.response(); if (r && r.status() >= 400) errs.push(`${r.status()} ${rq.url().replace(base, '')}`); });
+    page.on('requestfailed', (rq) => errs.push(`読み込み失敗 ${rq.url().replace(base, '')}`));
     await page.goto(base + pg);
     await page.waitForTimeout(600);
     if (width === 1400) {
