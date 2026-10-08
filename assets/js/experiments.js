@@ -29,7 +29,7 @@ export class HeatCapacityRun {
     this.t0 = gas.time; this.tStart = gas.time;
     this._acc = { w: 0, T: 0, V: 0 };
     this._last = gas.time;
-    this.before = null; this.after = null; this.result = null;
+    this.before = null; this.after = null; this.result = null; this.hitLimit = false;
     this._setContact(false);
   }
 
@@ -51,6 +51,8 @@ export class HeatCapacityRun {
   update() {
     const g = this.g;
     const dt = g.time - this._last; this._last = g.time;
+    // 定圧のはずがピストンが端に当たったら記録しておく（その後は定積になってしまう）
+    if (this.mode === 'P' && this.phase !== 'prep' && (g.X >= g.Xmax - 1e-9 || g.X <= g.Xmin + 1e-9)) this.hitLimit = true;
     if (this.phase === 'before' || this.phase === 'after') {
       this._acc.w += dt; this._acc.T += (g.kinetic() / g.N) * dt; this._acc.V += g.X * g.H * dt;
     }
@@ -73,7 +75,7 @@ export class HeatCapacityRun {
     const g = this.g, s = g.stats(), b = this.before, a = this.after;
     const dT = a.T - b.T, dV = a.V - b.V;
     this.result = {
-      mode: this.mode, N: g.N, Tb: this.Tb,
+      mode: this.mode, N: g.N, Tb: this.Tb, hitLimit: !!this.hitLimit,
       T0: b.T, T1: a.T, dT, dV,
       Q: s.Q, W: s.W,
       dU: g.N * dT,                        // 2次元理想気体: U = NkT

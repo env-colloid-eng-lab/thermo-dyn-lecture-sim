@@ -69,6 +69,7 @@ export function cycleTheory(type, dir, p) {
   }
   if (type === 'carnot') return { main: carnotCOP, regen: carnotCOP, carnot: carnotCOP };
   // 逆スターリング（再生器なし）: 高温側へ出す正味の熱 = N Th ln r − N(Th−Tc)
+  //   低温側から受け取る正味の熱 N(Tc ln r − (Th−Tc)) が負なら、ヒートポンプとしては働かない（COP < 1）
   return { main: (Th * L - (Th - Tc)) / ((Th - Tc) * L), regen: carnotCOP, carnot: carnotCOP };
 }
 

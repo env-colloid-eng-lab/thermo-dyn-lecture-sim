@@ -60,6 +60,7 @@
           <tbody></tbody>
         </table>
       </div>
+      <p class="hint" id="tbl-note" hidden>※ 測定中にピストンが可動範囲の端に達したため、途中から定圧ではなくなっています。</p>
       <p class="hint" id="tbl-empty">まだ測定していません。右の「測定する」を押してください。</p>
     </section>
 
@@ -82,7 +83,7 @@
       <div class="group-title">条件</div>
       <div class="seg" id="mode"><button data-value="V" aria-pressed="true">定積（ピストン固定）</button><button data-value="P">定圧（おもりを載せたピストン）</button></div>
       <div class="row"><label for="N">粒子数 <i>N</i></label><input type="range" id="N" min="100" max="400" step="50" value="300"><output id="N-val"></output></div>
-      <div class="row"><label for="Tb">熱源の温度</label><input type="range" id="Tb" min="0.4" max="3" step="0.1" value="2"><output id="Tb-val"></output></div>
+      <div class="row"><label for="Tb">熱源の温度</label><input type="range" id="Tb" min="0.5" max="3" step="0.1" value="2"><output id="Tb-val"></output></div>
       <p class="hint" style="margin:0">はじめの気体の温度は <i>T</i> = 1。熱源の温度を 1 より低くすると「冷やす」実験になります。条件を変えたら「はじめから」。</p>
 
       <div class="group-title">表示</div>
@@ -110,7 +111,7 @@
         <p><span class="math">U = NkT</span> なので、定積では <span class="math">Q = ΔU</span>、<span class="math">C<sub>V</sub> = Nk</span>（<i>C</i>/<i>N</i> = 1）。</p>
         <p>定圧では気体が外へ仕事 <span class="math">PΔV = NkΔT</span> をするので <span class="math">Q = ΔU + PΔV</span>、<span class="math">C<sub>P</sub> = 2Nk</span>（<i>C</i>/<i>N</i> = 2）。<span class="math">C<sub>P</sub> − C<sub>V</sub> = Nk</span>（マイヤーの関係）、<span class="math">γ = C<sub>P</sub>/C<sub>V</sub> = 2</span>。</p>
         <p>3次元の単原子理想気体なら <span class="math">C<sub>V</sub> = (3/2)Nk</span>、<span class="math">C<sub>P</sub> = (5/2)Nk</span>。違いは1粒子あたりの自由度の数（2次元は 2、3次元は 3）。</p>
-        <p>このシミュレーションでは温度を <span class="math">T = U/N</span> で決めているので、定積の <i>C</i>/<i>N</i> はちょうど 1 になります。定圧ではピストンのゆらぎ（気体とおもりの間のエネルギーのやりとり）のため数％ばらつきます。</p>
+        <p>このシミュレーションでは温度を <span class="math">T = U/N</span> で決めているので、定積の <i>C</i>/<i>N</i> はちょうど 1 になります。定圧ではピストンのゆらぎ（気体とおもりの間のエネルギーのやりとり）のため数％ばらつきます。定圧で冷やすと体積が小さくなり、粒子の大きさの効果（理想気体からのずれ）で <i>C</i>/<i>N</i> が 2 より少し小さく出ます。</p>
       </details>
     </section>
   </div>
@@ -124,13 +125,13 @@ import { TimePlot, XYPlot, SERIES } from '../assets/js/plot.js';
 import { $, fmt, fmtSigned, bindRange, bindCheck, segmented, Loop, bindPlayPause, setupCommon, bindSpeed } from '../assets/js/ui.js';
 
 setupCommon();
-const H = 60, X0 = 60, T0 = 1;
+const H = 60, X0 = 45, T0 = 1;   // 定圧で熱源の温度 3 まで温めてもピストンが端に届かない大きさ
 let gas, view, run = null, simRate = 0.1, frame = 0, mode = 'V', N = 300, Tb = 2;
 const results = [];
 
 const plotT = new TimePlot($('plotT'), { height: 170, ylabel: '温度 T', yZero: true, window: 1500,
   series: [{ key: 'T', label: '気体の温度 T', color: SERIES[0] }, { key: 'Tb', label: '接触中の熱源の温度', color: '#d6453d', dash: [6, 4] }] });
-const plotQ = new XYPlot($('plotQ'), { height: 260, xmin: -0.8, xmax: 2.2, ymin: -1.8, ymax: 4.6, xlabel: 'ΔT', ylabel: 'Q/N', xd: 2, yd: 2 });
+const plotQ = new XYPlot($('plotQ'), { height: 260, xmin: -0.8, xmax: 2.6, ymin: -1.8, ymax: 6.5, xlabel: 'ΔT', ylabel: 'Q/N', xd: 2, yd: 2 });
 plotQ.refs = [
   { label: '定積の理論 Q/N = ΔT', color: SERIES[0], dash: [6, 4], fn: (x) => x },
   { label: '定圧の理論 Q/N = 2ΔT', color: SERIES[1], dash: [6, 4], fn: (x) => 2 * x },
@@ -138,7 +139,7 @@ plotQ.refs = [
 
 function build() {
   run = null;
-  gas = new Gas({ H, X: X0, Xmin: 15, Xmax: 140, seed: (Math.random() * 1e9) | 0 });
+  gas = new Gas({ H, X: X0, Xmin: 12, Xmax: 170, seed: (Math.random() * 1e9) | 0 });
   gas.addParticles(N, T0, { x0: 0, x1: X0, y0: 0, y1: H });
   if (mode === 'P') Object.assign(gas.piston, { mode: 'force', Pext: gas.kinetic() / (gas.X * H), u: 0 });
   gas.Tbath = Tb;
@@ -153,7 +154,8 @@ function build() {
 
 function drawResults() {
   const tb = $('tbl').querySelector('tbody');
-  tb.innerHTML = results.map((r, k) => `<tr><td>${k + 1}</td><td style="text-align:left">${r.mode === 'V' ? '定積' : '定圧'}</td><td>${r.N}</td><td>${fmt(r.Tb, 1)}</td><td>${fmtSigned(r.Q, 1)}</td><td>${fmtSigned(r.dT, 3)}</td><td>${fmt(r.C, 1)}</td><td><b>${fmt(r.c, 2)}</b></td></tr>`).join('');
+  tb.innerHTML = results.map((r, k) => `<tr><td>${k + 1}</td><td style="text-align:left">${r.mode === 'V' ? '定積' : '定圧'}</td><td>${r.N}</td><td>${fmt(r.Tb, 1)}</td><td>${fmtSigned(r.Q, 1)}</td><td>${fmtSigned(r.dT, 3)}</td><td>${fmt(r.C, 1)}</td><td><b>${fmt(r.c, 2)}</b>${r.hitLimit ? ' ※' : ''}</td></tr>`).join('');
+  $('tbl-note').hidden = !results.some((r) => r.hitLimit);
   $('tbl-empty').hidden = results.length > 0;
   const pts = (m) => results.filter((r) => r.mode === m).map((r) => [r.dT, r.Q / r.N]);
   plotQ.paths = [];

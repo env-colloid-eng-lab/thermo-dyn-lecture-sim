@@ -56,11 +56,13 @@
         <div class="stat"><span class="k" id="k-carnot">カルノーの上限</span><span class="v" id="r-carnot"></span></div>
         <div class="stat"><span class="k">サイクル数</span><span class="v" id="r-n">0</span></div>
       </div>
+      <p class="q" id="r-warn" hidden></p>
     </section>
 
     <section class="card">
-      <h2><span class="tag">マクロ</span>P–V 図 <span class="hint">塗った面積 ＝ 1サイクルの正味の仕事</span></h2>
+      <h2><span class="tag">マクロ</span>P–V 図 <span class="hint">圧力は状態方程式 NkT/V。ゆっくり回すと、塗った面積 ≈ 1サイクルの正味の仕事</span></h2>
       <div class="canvas-wrap"><canvas id="pv"></canvas></div>
+      <p class="hint" id="pv-area" style="margin:4px 0 0"></p>
     </section>
 
     <section class="card">
@@ -109,7 +111,7 @@
         <li>ピストンの速さを「ゆっくり」「速い」に変える。速いと効率はどうなる？（03 の不可逆過程を思い出そう）</li>
         <li><i>T</i><sub>c</sub> を下げる／<i>T</i><sub>h</sub> を上げると効率は？</li>
         <li>「ヒートポンプ」にする。気体は外から仕事をされ、低温側から熱を受け取って、高温側へより多くの熱を出す。成績係数 COP は 1 より大きい。</li>
-        <li>「スターリング」：等温過程の間を定積過程でつなぐ。再生器（定積で出し入れする熱をためておく蓄熱材）がないと効率は下がる。</li>
+        <li>「スターリング」：等温過程の間を定積過程でつなぐ。再生器（定積で出し入れする熱をためておく蓄熱材）がないと効率は下がる。ヒートポンプの向きでは、再生器がないと低温側から熱をくみ上げることすらできない場合がある（表の <i>Q</i> を見よう）。</li>
       </ol>
       <div class="q"><b>問い</b>　どの条件でも、効率は「カルノーの上限」を超えない。もし超える熱機関があったら、第二法則（クラウジウスの原理・トムソンの原理）と矛盾することを説明してみよう。</div>
       <div class="q"><b>問い</b>　ヒートポンプで高温側に出した熱は、した仕事より多い。エネルギー保存と矛盾しないのはなぜ？ 電気ヒーター（COP = 1）と比べてみよう。</div>
@@ -118,6 +120,8 @@
         <p>等温過程（温度 <i>T</i>, 体積 <i>V</i>₁ → <i>V</i>₂）で気体が受け取る熱は <span class="math">Q = NkT ln(V₂/V₁)</span>。断熱過程は <span class="math">TV = 一定</span>。</p>
         <p><b>カルノー</b>：<span class="math">Q<sub>h</sub> = NkT<sub>h</sub> ln r</span>、<span class="math">−Q<sub>c</sub> = NkT<sub>c</sub> ln r</span>（r は等温膨張の体積比。このページでは r = 2）。効率 <span class="math">η = 1 − T<sub>c</sub>/T<sub>h</sub></span>、ヒートポンプの成績係数 <span class="math">COP = T<sub>h</sub>/(T<sub>h</sub> − T<sub>c</sub>)</span>。</p>
         <p><b>スターリング</b>：定積過程で <span class="math">Nk(T<sub>h</sub> − T<sub>c</sub>)</span> の熱を出し入れする。再生器がなければこれも熱源とやりとりするので <span class="math">η = (T<sub>h</sub> − T<sub>c</sub>) ln r / (T<sub>h</sub> ln r + T<sub>h</sub> − T<sub>c</sub>)</span>。理想的な再生器があれば定積の熱はサイクルの中で行き来するだけになり、効率はカルノーと同じになる。</p>
+        <p>再生器なしの逆スターリング（ヒートポンプの向き）で低温側から正味に受け取る熱は <span class="math">Nk(T<sub>c</sub> ln r − (T<sub>h</sub> − T<sub>c</sub>))</span>。<span class="math">T<sub>c</sub> ln r &lt; T<sub>h</sub> − T<sub>c</sub></span> だと負になり、外からした仕事が両方の熱源へ熱として捨てられるだけで、ヒートポンプとしては働かない（このとき表示する COP は 1 より小さい）。</p>
+        <p>P–V 図の圧力は状態方程式 <span class="math">NkT/V</span> から描いています。ピストンを速く動かすと、動くピストンの近くの気体は平衡からずれ、ピストンが実際に受ける圧力は <span class="math">NkT/V</span> と違ってきます。そのため塗った面積と表の正味の仕事 −<i>W</i>（衝突ごとに数えた値）は、ゆっくり動かしたときにだけよく一致します。</p>
         <p>シミュレーションではピストンの速さが有限で、熱源との温度差もあるので、測定値は理論値より小さくなります。粒子数が少ないので、1サイクルごとの値は大きくゆらぎます。</p>
       </details>
     </section>
@@ -177,6 +181,8 @@ function build() {
   $('r-carnot').textContent = fmt(run.theory.carnot, 3);
   $('r-main').textContent = '–'; $('r-regen').textContent = '–'; $('r-n').textContent = '0';
   for (const id of ['f-Qh', 'f-Qc', 'f-W']) $(id).textContent = '–';
+  $('pv-area').textContent = '';
+  showWarn(null);
   for (const id of ['f-Qh-t', 'f-Qc-t', 'f-W-t']) $(id).textContent = '';
   $('flow-hint').textContent = '1サイクル回ると表示されます';
   $('f-Th').textContent = fmt(Th, 1); $('f-Tc').textContent = fmt(Tc, 1);
@@ -198,6 +204,28 @@ function drawTable(c) {
     sQ += s.Q; sW += s.W; sU += s.dU;
     return `<tr><td>${s.label}</td><td>${bath(s.bathT)}</td><td>${fmtSigned(s.Q, 1)}</td><td>${fmtSigned(s.W, 1)}</td><td>${fmtSigned(s.dU, 1)}</td></tr>`;
   }).join('') + `<tr class="sum"><td>1サイクルの合計</td><td></td><td>${fmtSigned(sQ, 1)}</td><td>${fmtSigned(sW, 1)}</td><td>${fmtSigned(sU, 1)}</td></tr>`;
+}
+
+/** 閉じた曲線が囲む面積（時計回りを正）＝ ∮P dV */
+function loopArea(pts) {
+  let a = 0;
+  for (let k = 0; k < pts.length; k++) {
+    const [x0, y0] = pts[k], [x1, y1] = pts[(k + 1) % pts.length];
+    a += (x1 - x0) * (y0 + y1) / 2;
+  }
+  return a;
+}
+
+/** 再生器なしの逆スターリングは、条件によって低温側から熱をくみ上げられない */
+function showWarn(T) {
+  const el = $('r-warn');
+  const theoryBad = type === 'stirling' && dir === 'pump' && Tc * Math.log(R) < Th - Tc;
+  const measBad = dir === 'pump' && T && T.n > 0 && T.Qc < 0;
+  el.hidden = !(theoryBad || measBad);
+  if (el.hidden) return;
+  el.innerHTML = '<b>注意</b>　再生器なしのこの運転では、低温側から正味に熱をくみ上げていません（低温熱源も気体から熱を受け取っている）。' +
+    '外からした仕事が両方の熱源へ熱として捨てられているだけなので、ヒートポンプとしては働いていません（COP &lt; 1）。' +
+    (type === 'stirling' ? '「再生器ありなら」の値と比べてみよう。' : '');
 }
 
 function setArrow(id, active, q) {
@@ -243,6 +271,9 @@ const loop = new Loop((paused) => {
       $('f-Qc-t').textContent = T.Qc >= 0 ? '気体へ渡した熱' : '気体から受け取った熱';
       $('f-W-t').textContent = -T.W >= 0 ? '外へした仕事 −W' : '外からされた仕事 W';
       $('flow-hint').textContent = `終わった ${T.n} サイクルの合計（気体から見た符号：Q は受け取った熱）`;
+      $('pv-area').textContent = `直前のサイクル：塗った面積 = ${fmtSigned(loopArea(prev), 1)}、表の正味の仕事 −W = ${fmtSigned(-c.W, 1)}` +
+        (pspeed > 0.1 ? '（速く動かしているので一致しない）' : '');
+      showWarn(T);
     }
     const s = run.step;
     $('r-step').textContent = run.label;
