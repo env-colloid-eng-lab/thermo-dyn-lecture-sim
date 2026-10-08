@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>07 Entropy and the Second Law | Thermodynamics Simulations</title>
+<link rel="icon" href="../../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body>
+<header class="site-header"><div class="inner">
+  <h1>07 Entropy and the Second Law</h1><span class="sub">Spontaneous changes do not undo themselves: free expansion, mixing, heat flow</span>
+  <nav>
+    <a href="../index.html">Contents</a>
+    <a href="01-operations.html">01 Walls &amp; operations</a>
+    <a href="02-equilibrium.html">02 Relaxation to equilibrium</a>
+    <a href="03-processes.html">03 Quasi-static vs. irreversible</a>
+    <a href="04-isothermal.html">04 Isothermal energy budget</a>
+    <a href="05-extensive.html">05 Extensive &amp; intensive</a>
+    <a href="06-heat-capacity.html">06 Heat capacity</a>
+    <a href="07-entropy.html" aria-current="page">07 Entropy</a>
+    <a href="08-heat-engines.html">08 Heat engines</a>
+    <a href="09-osmosis.html">09 Osmotic pressure</a>
+    <a href="../../sims/07-entropy.html" lang="ja" hreflang="ja">日本語</a>
+    <button id="btn-proj" title="Enlarge text">Projector mode</button>
+  </nav>
+</div></header>
+
+<main class="layout">
+  <div class="col">
+    <section class="card">
+      <h2><span class="tag">Micro</span>Gas in an adiabatic container <span class="hint" id="mode-hint"></span></h2>
+      <div class="canvas-wrap"><canvas id="sim"></canvas></div>
+      <div class="legend">
+        <span><span class="sw adi"></span>Adiabatic wall</span>
+        <span><span class="sw dia"></span>Diathermal wall</span>
+        <span id="lg-species"><span class="dot p1"></span>Gas A <span class="dot p2"></span>Gas B</span>
+        <span id="lg-speed" hidden>slow<span class="grad"></span>fast</span>
+      </div>
+      <div class="readouts" id="ro-count">
+        <div class="stat ext"><span class="k">Number of particles <i>N</i></span><span class="v" id="r-N"></span></div>
+        <div class="stat"><span class="k">Number in left half <i>n</i></span><span class="v" id="r-nL"></span></div>
+        <div class="stat"><span class="k">ln <i>W</i> (current count)</span><span class="v" id="r-S"></span></div>
+        <div class="stat"><span class="k">Theoretical Δ<i>S</i></span><span class="v" id="r-Sth"></span></div>
+        <div class="stat"><span class="k">Probability all return to the left</span><span class="v" id="r-prob"></span></div>
+      </div>
+      <div class="readouts" id="ro-heat" hidden>
+        <div class="stat int"><span class="k">Left temperature <i>T</i>₁</span><span class="v" id="r-T1"></span></div>
+        <div class="stat int"><span class="k">Right temperature <i>T</i>₂</span><span class="v" id="r-T2"></span></div>
+        <div class="stat"><span class="k">Heat into left <i>Q</i>₁</span><span class="v" id="r-Q1"></span></div>
+        <div class="stat"><span class="k">Heat into right <i>Q</i>₂</span><span class="v" id="r-Q2"></span></div>
+        <div class="stat"><span class="k">Δ<i>S</i> (total)</span><span class="v" id="r-dS"></span></div>
+        <div class="stat"><span class="k">Theoretical Δ<i>S</i> (after equilibrium)</span><span class="v" id="r-dSth"></span></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2><span class="tag">Macro</span>Entropy over time</h2>
+      <div class="canvas-wrap"><canvas id="plotS"></canvas></div>
+      <div id="wrap-binom" style="margin-top:6px">
+        <h2 style="margin-top:8px">Fraction of microstates for each number <i>n</i> in the left half <span class="hint">black dot = current state</span></h2>
+        <div class="canvas-wrap"><canvas id="plotB"></canvas></div>
+      </div>
+      <div id="wrap-temp" hidden>
+        <div class="canvas-wrap"><canvas id="plotT"></canvas></div>
+      </div>
+    </section>
+  </div>
+
+  <div class="col">
+    <section class="card ctrl">
+      <h2>Controls</h2>
+      <div class="btns">
+        <button id="btn-play" class="primary"></button>
+        <button id="btn-reset">Reset</button>
+      </div>
+      <div class="row"><label for="speed">Playback speed</label><input type="range" id="speed" min="-0.7" max="1.6" step="0.05" value="0"><output id="speed-val"></output></div>
+
+      <div class="group-title">Experiment</div>
+      <div class="seg" id="mode"><button data-value="exp" aria-pressed="true">Free expansion</button><button data-value="mix">Mixing</button><button data-value="heat">Heat flow</button></div>
+      <div class="row" id="row-N"><label for="N">Number of particles <i>N</i></label><input type="range" id="N" min="0" max="7" step="1" value="5"><output id="N-val"></output></div>
+      <div class="btns">
+        <button id="btn-open">Remove the partition</button>
+        <button id="btn-rev" title="Reverse the direction of every particle's velocity">Reverse velocities (run time backward)</button>
+      </div>
+      <div id="opt-mix">
+        <label class="check"><input type="checkbox" id="c-same">Do not distinguish A and B (treat as the same gas)</label>
+      </div>
+
+      <div class="group-title">Display</div>
+      <div>
+        <label class="check"><input type="checkbox" id="c-speed">Color = speed</label>
+        <label class="check"><input type="checkbox" id="c-trace">Track one particle</label>
+      </div>
+    </section>
+
+    <section class="card notes">
+      <h2>Goal</h2>
+      <p>Changes that happen spontaneously in an adiabatic container (free expansion, mixing, heat flow) never happen spontaneously in reverse. The state variable that expresses this "one-way" character is <b>entropy</b> <i>S</i>. For an isolated system, <span class="math">ΔS ≥ 0</span> (the <b>second law of thermodynamics</b>).</p>
+      <h3>Try it</h3>
+      <ol>
+        <li>In "Free expansion", remove the partition. The particles spread to the right and do not come back to the left. ln <i>W</i> settles near the theoretical Δ<i>S</i> = <i>N</i> ln 2.</li>
+        <li>Repeat with <i>N</i> = 4 or 10. You may catch a moment when all particles are back on the left. What about large <i>N</i>? (Look at the "Probability" readout.)</li>
+        <li>Remove the partition and immediately press "Reverse velocities": the particles head back to the left. What if you wait a while before reversing? (Also read "Why doesn't reversing the velocities bring it back?" below.)</li>
+        <li>"Mixing": A and B mix and do not separate again. With "Do not distinguish" checked, "mixing" two samples of the same gas gives Δ<i>S</i> ≈ 0.</li>
+        <li>"Heat flow": bring two gases at different temperatures into contact through a diathermal wall. Heat flows from the hot side to the cold side, and the total <i>S</i> increases.</li>
+      </ol>
+      <div class="q"><b>Question</b> Collisions between particles and reflections at the walls both obey laws of mechanics that hold equally well with time reversed. Why, then, do we never see a change "undo itself" spontaneously? (Use the number of microstates to think about how special a state is in which every particle's velocity is exactly reversed.)</div>
+      <div class="q"><b>Question</b> In "Heat flow", the heat <i>Q</i>₂ received by the cold side and the heat −<i>Q</i>₁ lost by the hot side have almost the same magnitude. Why, then, is the total entropy change <i>Q</i>₂/<i>T</i>₂ + <i>Q</i>₁/<i>T</i>₁ positive?</div>
+      <details><summary>Counting entropy (Boltzmann's formula)</summary>
+        <p>Divide the container into left and right halves. If the number of ways to assign particles that corresponds to the macrostate "<i>n</i> particles on the left" is <span class="math">W = C(N, n) = N!/(n!(N−n)!)</span>, then <span class="math">S = k ln W</span>.</p>
+        <p>At first all particles are on the left (<i>W</i> = 1, <i>S</i> = 0). The number of microstates is largest at <i>n</i> ≈ <i>N</i>/2, where <span class="math">ln C(N, N/2) ≈ N ln 2</span>. This agrees with the entropy change of free expansion obtained from thermodynamics, <span class="math">ΔS = Nk ln(V₂/V₁) = Nk ln 2</span> (the agreement improves as <i>N</i> grows).</p>
+        <p>The probability that all particles return to the left is <span class="math">(1/2)<sup>N</sup></span>. For <i>N</i> = 200 it is about 10<sup>−60</sup>: it would not happen even if you waited for the age of the universe.</p>
+      </details>
+      <details><summary>Why doesn't reversing the velocities bring it back?</summary>
+        <p>With ideal (error-free) elastic-collision mechanics, if you reverse every particle's velocity <b>exactly</b>, the particles retrace their paths and always return to the start, no matter how long you waited. Mechanics itself holds with time reversed, so waiting by itself does not destroy reversibility.</p>
+        <p>In this simulation, reversing after a wait fails because of the error from computing in small time steps and from numerical rounding. These tiny errors grow with every collision (chaos) until the motion is completely off track. In a real gas, too, no one can reverse every particle's velocity perfectly, and any slight mismatch is quickly amplified. "Going back to the start" is, in terms of the number of microstates, a very special and practically impossible state.</p>
+      </details>
+      <details><summary>Entropy of heat flow (2D ideal gas)</summary>
+        <p>At constant volume <span class="math">dS = dQ/T</span> and <span class="math">C<sub>V</sub> = Nk</span>, so <span class="math">S = Nk ln T + const.</span> The display shows the sum over the left gas, the right gas and the partition (heat capacity <i>C</i><sub>w</sub>): <span class="math">S = N₁ ln T₁ + N₂ ln T₂ + C<sub>w</sub> ln T<sub>w</sub></span>. Because the number of particles is finite, the temperatures fluctuate, and so <i>S</i> fluctuates slightly too.</p>
+      </details>
+    </section>
+  </div>
+</main>
+
+<script type="module">
+import { Gas, ADIABATIC, DIATHERMAL } from '../../assets/js/engine.js';
+import { lnChoose, binomHalf } from '../../assets/js/entropy.js';
+import { SimView } from '../../assets/js/render.js';
+import { TimePlot, XYPlot, SERIES } from '../../assets/js/plot.js';
+import { $, fmt, fmtSigned, bindRange, bindCheck, segmented, Loop, bindPlayPause, setupCommon, bindSpeed } from '../../assets/js/ui.js';
+
+setupCommon();
+const H = 60, X = 100, NS = [4, 10, 20, 50, 100, 200, 300, 400];
+const TH = 1.6, TC = 0.4;
+let gas, view, simRate = 0.1, frame = 0, mode = 'exp', N = 200, same = false, opened = false;
+let sm = null;   // heat flow: temperatures slightly smoothed for display
+
+const plotS = new TimePlot($('plotS'), { height: 220, ylabel: 'S (units of k)', yZero: true, window: 600, series: [] });
+const plotB = new XYPlot($('plotB'), { height: 200, xmin: 0, xmax: 200, ymin: 0, ymax: null, xlabel: 'n (particles in left half)', ylabel: 'fraction', xd: 0, yd: 4 });
+const plotT = new TimePlot($('plotT'), { height: 180, ylabel: 'Temperature T', yZero: true, window: 600,
+  series: [{ key: 'T1', label: 'Left T₁ (hot side)', color: '#d6453d' }, { key: 'T2', label: 'Right T₂ (cold side)', color: SERIES[0] }] });
+
+function setSeries() {
+  if (mode === 'heat') plotS.opt.series = [
+    { key: 'S', label: 'Total ΔS', color: SERIES[3] },
+    { key: 'S1', label: 'Left ΔS₁', color: '#d6453d', dash: [6, 4] },
+    { key: 'S2', label: 'Right ΔS₂', color: SERIES[0], dash: [6, 4] },
+    { key: 'th', label: 'Theory (after equilibrium)', color: '#77756f', dash: [2, 3] }];
+  else plotS.opt.series = [
+    { key: 'S', label: 'ln W (Boltzmann entropy)', color: SERIES[3] },
+    { key: 'th', label: mode === 'exp' ? 'Thermodynamic ΔS = N ln 2' : (same ? 'Same gas: ΔS = 0' : 'Mixing ΔS = N ln 2'), color: '#77756f', dash: [6, 4] }];
+}
+
+function build() {
+  opened = false; sm = null;
+  gas = new Gas({ H, X, Xmin: X, Xmax: X, seed: (Math.random() * 1e9) | 0 });
+  gas.setVPartition(X / 2, ADIABATIC);
+  if (mode === 'exp') gas.addParticles(N, 1, { x0: 0, x1: X / 2, y0: 0, y1: H }, 0);
+  else if (mode === 'mix') {
+    gas.addParticles(N / 2, 1, { x0: 0, x1: X / 2, y0: 0, y1: H }, 0);
+    gas.addParticles(N / 2, 1, { x0: X / 2, x1: X, y0: 0, y1: H }, 1);
+  } else {
+    gas.addParticles(N / 2, TH, { x0: 0, x1: X / 2, y0: 0, y1: H }, 0);
+    gas.addParticles(N / 2, TC, { x0: X / 2, x1: X, y0: 0, y1: H }, 0);
+    gas.vpart.Tw = (TH + TC) / 2;
+  }
+  gas.resetLedger();
+  if (view) view.g = gas; else view = new SimView($('sim'), gas, { pistonRod: false, Tref: 1, drawScale: 2.8 });
+  if (mode === 'heat') $('c-speed').checked = true;   // heat flow is viewed with color = speed
+  view.opt.colorMode = $('c-speed').checked ? 'speed' : 'species';
+  $('lg-speed').hidden = !$('c-speed').checked;
+  gas.tracerOn = $('c-trace').checked;
+  const heat = mode === 'heat';
+  $('btn-open').textContent = heat ? 'Make it diathermal (bring into contact)' : 'Remove the partition';
+  $('btn-open').disabled = false;
+  $('btn-rev').hidden = heat;
+  $('opt-mix').hidden = mode !== 'mix';
+  $('ro-count').hidden = heat; $('ro-heat').hidden = !heat;
+  $('wrap-binom').hidden = heat; $('wrap-temp').hidden = !heat;
+  $('lg-species').hidden = mode !== 'mix';
+  $('mode-hint').textContent = mode === 'exp' ? '— gas in the left half, vacuum in the right half'
+    : mode === 'mix' ? '— gas A on the left, gas B on the right (same temperature, same pressure)'
+    : `— left is hot (T = ${TH}), right is cold (T = ${TC}); separated by an adiabatic wall for now`;
+  setSeries();
+  plotS.reset(); plotT.reset();
+  plotB.opt.xmax = mode === 'mix' ? N / 2 : N;
+}
+
+// number of particles in the left half (per species)
+function countLeft() {
+  let a = 0, b = 0;
+  for (let i = 0; i < gas.N; i++) if (gas.x[i] < X / 2) { if (gas.species[i] === 0) a++; else b++; }
+  return [a, b];
+}
+
+/** ln W and its theoretical maximum (the value after equilibrium) */
+function lnW() {
+  const [a, b] = countLeft();
+  if (mode === 'exp') return { S: lnChoose(N, a), th: N * Math.LN2, n: a };
+  if (same) {
+    // not distinguished: n = a+b on the left; initially n = N/2 (N/2 on each side)
+    const n = a + b;
+    return { S: lnChoose(N, n) - lnChoose(N, N / 2), th: 0, n, a, b };
+  }
+  // A spreads to the right, B to the left: a particles of A and b particles of B on the left
+  return { S: lnChoose(N / 2, a) + lnChoose(N / 2, b), th: N * Math.LN2, n: a + b, a, b };
+}
+
+function heatS() {
+  const r1 = gas.regionStats(0), r2 = gas.regionStats(gas.vpart ? 1 : 0);
+  const k = 0.05;
+  if (!sm) sm = { T1: r1.T, T2: r2.T, Tw: gas.vpart.Tw };
+  sm.T1 += k * (r1.T - sm.T1); sm.T2 += k * (r2.T - sm.T2); sm.Tw += k * (gas.vpart.Tw - sm.Tw);
+  const n = N / 2, Cw = gas.vpart.Cw;
+  const S1 = n * Math.log(sm.T1 / TH), S2 = n * Math.log(sm.T2 / TC), Sw = Cw * Math.log(sm.Tw / ((TH + TC) / 2));
+  const Tf = (n * TH + n * TC + Cw * (TH + TC) / 2) / (2 * n + Cw);
+  const th = n * Math.log(Tf / TH) + n * Math.log(Tf / TC) + Cw * Math.log(Tf / ((TH + TC) / 2));
+  return { S1, S2, S: S1 + S2 + Sw, th, r1, r2 };
+}
+
+segmented('mode', (v) => { mode = v; build(); }, false);
+bindRange('N', (v) => { N = NS[v]; build(); }, (v) => String(NS[v]), true);
+bindSpeed('speed', (v) => { simRate = v; });
+bindCheck('c-speed', (on) => { if (view) view.opt.colorMode = on ? 'speed' : 'species'; $('lg-speed').hidden = !on; });
+bindCheck('c-trace', (on) => { if (gas) { gas.tracerOn = on; gas.tracer = []; } });
+bindCheck('c-same', (on) => { same = on; setSeries(); plotS.reset(); });
+$('btn-reset').addEventListener('click', build);
+$('btn-open').addEventListener('click', () => {
+  if (opened) return;
+  opened = true;
+  if (mode === 'heat') gas.setVPartition(X / 2, DIATHERMAL); else gas.setVPartition(null);
+  $('btn-open').disabled = true;
+});
+$('btn-rev').addEventListener('click', () => {
+  for (let i = 0; i < gas.N; i++) { gas.vx[i] = -gas.vx[i]; gas.vy[i] = -gas.vy[i]; }
+});
+
+const loop = new Loop((paused) => {
+  if (!paused) {
+    gas.advance(simRate);
+    frame++;
+    $('r-N').textContent = gas.N;
+    if (mode === 'heat') {
+      const h = heatS();
+      $('r-T1').textContent = fmt(h.r1.T, 3); $('r-T2').textContent = fmt(h.r2.T, 3);
+      $('r-Q1').textContent = fmtSigned(h.r1.Q, 1); $('r-Q2').textContent = fmtSigned(h.r2.Q, 1);
+      $('r-dS').textContent = fmtSigned(h.S, 2); $('r-dSth').textContent = fmtSigned(h.th, 2);
+      plotS.push(gas.time, { S: h.S, S1: h.S1, S2: h.S2, th: h.th });
+      plotT.push(gas.time, { T1: sm.T1, T2: sm.T2 });
+      if (frame % 2 === 0) { plotS.draw(); plotT.draw(); }
+    } else {
+      const w = lnW();
+      $('r-nL').textContent = mode === 'mix' ? `A ${w.a} / B ${w.b}` : String(w.n);
+      $('r-S').textContent = fmt(w.S, 1);
+      $('r-Sth').textContent = fmt(w.th, 1);
+      const p = Math.pow(0.5, N);   // for mixing: probability of returning to "all A on the left, all B on the right"
+      $('r-prob').textContent = p > 1e-4 ? p.toFixed(4) : `10^${Math.log10(p).toFixed(0)}`;
+      plotS.push(gas.time, { S: w.S, th: w.th });
+      if (frame % 2 === 0) {
+        plotS.draw();
+        const M = mode === 'mix' ? N / 2 : N, x = mode === 'mix' ? w.a : w.n;
+        plotB.refs = [{ label: mode === 'mix' ? `C(${M}, n)/2^${M} (gas A)` : `C(${M}, n)/2^${M}`, color: SERIES[0], fn: (k) => binomHalf(M, k) }];
+        plotB.opt.ymax = binomHalf(M, M / 2) * 1.25;
+        plotB.marker = [x, binomHalf(M, x)];
+        plotB.draw();
+      }
+    }
+  }
+  view.draw();
+});
+bindPlayPause('btn-play', loop);
+</script>
+</body>
+</html>
