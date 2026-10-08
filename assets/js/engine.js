@@ -22,7 +22,7 @@
 
 export const ADIABATIC = 'adiabatic';   // 断熱壁: 鏡面反射（エネルギーを通さない）
 export const DIATHERMAL = 'diathermal'; // 透熱壁: 熱源/相手と熱的に接触していればエネルギーを通す
-export const SEMIPERMEABLE = 'semipermeable'; // 半透膜（仕切り壁のみ）: 種類 pass の粒子（溶媒）は素通り、それ以外は鏡面反射
+export const SEMIPERMEABLE = 'semipermeable'; // 半透膜（仕切り壁のみ）: 種類 pass の粒子（溶媒）は素通り、それ以外は鏡面反射（pass < 0 ならすべて通す）
 
 // 再現性のある乱数
 function mulberry32(seed) {
@@ -78,6 +78,8 @@ export class Gas {
     this.stirrer = { on: false, present: false, omega: 0.08, theta: 0, cx: 30, cy: 30, L: 20 };
 
     // 仕切り壁: null または {x, type, Tw, Cw} / {y, type, Tw, Cw}
+    //   縦の仕切りは movable = true にすると質量 M、速度 u で動ける（12 の可動壁）。
+    //   粒子との衝突で運動量をやりとりし、壁の運動エネルギー ½Mu² と内部エネルギー Cw·Tw を含めて全エネルギーが厳密に保存する。
     this.vpart = null;
     this.hpart = null;
 
@@ -173,6 +175,7 @@ export class Gas {
       Wpiston: 0,   // ピストンが気体にした仕事
       Wstir: 0,     // 撹拌翼が気体にした仕事
       Wfield: 0,    // 段差 dE を外から変えたときの仕事（位置エネルギーの変化）
+      Wpart: 0,     // 可動の仕切りが気体にした仕事（両側の合計）
       Q: 0,         // 熱源から気体が受け取った熱
       Qreg: new Float64Array(4),     // 部分系ごとの熱（熱源＋透熱仕切りから）
       Wreg: new Float64Array(4),     // 部分系ごとの仕事
@@ -209,7 +212,8 @@ export class Gas {
   setVPartition(x, type = ADIABATIC) {
     if (x == null) { this.vpart = null; this._updateRegions(); return; }
     const old = this.vpart;
-    this.vpart = { x, type, Tw: old?.Tw ?? this._meanT(), Cw: 30, pass: old?.pass ?? 0 };
+    this.vpart = { x, type, Tw: old?.Tw ?? this._meanT(), Cw: 30, pass: old?.pass ?? 0,
+      movable: old?.movable ?? false, M: old?.M ?? 30, u: old?.u ?? 0 };
     for (let i = 0; i < this.N; i++) this.px[i] = this.x[i];
     this._updateRegions();
   }
@@ -332,23 +336,46 @@ export class Gas {
     if (side === 'left') this._imp.left += imp;
   }
 
-  /** 仕切り壁での反射。透熱なら壁の内部自由度（温度 Tw, 熱容量 Cw）とエネルギー交換 */
+  /**
+   * 仕切り壁での反射。透熱なら壁の内部自由度（温度 Tw, 熱容量 Cw）とエネルギー交換。
+   * 可動の縦の仕切り（movable）は質量 M・速度 u をもち、衝突で運動量をやりとりする。
+   *   粒子のエネルギー変化 dE のうち、壁の平均速度 ū と力積の積 ū·Δp を仕事、残りを熱として部分系ごとに記録する
+   *   （弾性衝突なら dE = ū·Δp なので熱は 0）。
+   */
   _partHit(i, part, nx, ny) {
     const vx0 = this.vx[i], vy0 = this.vy[i];
+    const e0 = 0.5 * (vx0 * vx0 + vy0 * vy0);
+    const mov = part.movable && nx !== 0;
+    const u0 = mov ? part.u : 0;
     let done = false;
     if (part.type === DIATHERMAL) {
-      const e0 = 0.5 * (vx0 * vx0 + vy0 * vy0);
+      // 壁と一緒に動く座標系で、壁の温度のマクスウェル分布に従って跳ね返す
       const [a, b] = this._thermalVelocity(nx, ny, part.Tw);
-      const dE = 0.5 * (a * a + b * b) - e0;
-      const Tw2 = part.Tw - dE / part.Cw;
+      const vx1 = a + u0, vy1 = b;
+      const dE = 0.5 * (vx1 * vx1 + vy1 * vy1) - e0;
+      let u1 = u0, dK = 0;
+      if (mov) { u1 = u0 - (vx1 - vx0) / part.M; dK = 0.5 * part.M * (u1 * u1 - u0 * u0); }
+      const Tw2 = part.Tw - (dE + dK) / part.Cw;
       if (Tw2 > 0.02) {
-        this.vx[i] = a; this.vy[i] = b; part.Tw = Tw2;
-        this.ledger.Qreg[this.region[i]] += dE;
+        this.vx[i] = vx1; this.vy[i] = vy1; part.Tw = Tw2;
+        if (mov) part.u = u1;
         this._logHeat(this.x[i], this.y[i], dE);
         done = true;
       }
     }
-    if (!done) { if (nx !== 0) this.vx[i] = -vx0; else this.vy[i] = -vy0; }
+    if (!done) {
+      if (mov) {
+        // 質量 1 の粒子と質量 M の壁の弾性衝突（法線方向）
+        const M = part.M;
+        this.vx[i] = ((1 - M) * vx0 + 2 * M * u0) / (1 + M);
+        part.u = ((M - 1) * u0 + 2 * vx0) / (1 + M);
+      } else if (nx !== 0) this.vx[i] = -vx0; else this.vy[i] = -vy0;
+    }
+    const dE = 0.5 * (this.vx[i] ** 2 + this.vy[i] ** 2) - e0;
+    const dW = mov ? 0.5 * (u0 + part.u) * (this.vx[i] - vx0) : 0;   // ū·Δp
+    this.ledger.Wpart += dW;
+    this.ledger.Wreg[this.region[i]] += dW;
+    this.ledger.Qreg[this.region[i]] += dE - dW;
     const imp = Math.abs((this.vx[i] - vx0) * nx + (this.vy[i] - vy0) * ny);
     this._imp.reg[this.region[i]] += imp;
     if (part === this.vpart) this._imp.vpart += imp;
@@ -371,6 +398,7 @@ export class Gas {
       }
       let vmax = Math.sqrt(v2) + (this.piston.mode === 'force' ? Math.abs(this.piston.u) : Math.abs(this.piston.speed));
       if (this.stirrer.present && this.stirrer.on) vmax += Math.abs(this.stirrer.omega) * this.stirrer.L / 2;
+      if (this.vpart && this.vpart.movable) vmax += Math.abs(this.vpart.u);
       const h = Math.min(this.dt, remain, (0.5 * this.r) / Math.max(vmax, 1e-9));
       this._substep(h);
       remain -= h;
@@ -408,6 +436,16 @@ export class Gas {
     const st = this.stirrer;
     if (st.present && st.on) st.theta += st.omega * dt;
 
+    // --- 可動の仕切り（12）：速度 u で動く。可動範囲の端では弾性的に跳ね返る（エネルギーを失わない） ---
+    const vpm = this.vpart && this.vpart.movable ? this.vpart : null;
+    const cOld = this.vpart ? this.vpart.x : 0;
+    if (vpm) {
+      const lo = 6 * r, hi = X - 6 * r;
+      vpm.x += vpm.u * dt;
+      if (vpm.x < lo) { vpm.x = 2 * lo - vpm.x; vpm.u = Math.abs(vpm.u); }
+      else if (vpm.x > hi) { vpm.x = 2 * hi - vpm.x; vpm.u = -Math.abs(vpm.u); }
+    }
+
     // --- 自由飛行 ---
     for (let i = 0; i < N; i++) {
       this.px[i] = this.x[i]; this.py[i] = this.y[i];
@@ -424,13 +462,13 @@ export class Gas {
       const c = vp.x;
       const semi = vp.type === SEMIPERMEABLE;
       for (let i = 0; i < N; i++) {
-        if (semi && this.species[i] === vp.pass) continue;   // 溶媒は半透膜を素通り
-        const left = this.px[i] < c;
+        if (semi && (vp.pass < 0 || this.species[i] === vp.pass)) continue;   // 溶媒は半透膜を素通り（pass < 0 ならすべての粒子が通る）
+        const left = this.px[i] < cOld;   // 動く前の壁のどちら側にいたか
         if (left && this.x[i] > c - r) {
-          if (this.vx[i] > 0) { this._partHit(i, vp, -1, 0); }
+          if (this.vx[i] > (vp.movable ? vp.u : 0)) { this._partHit(i, vp, -1, 0); }
           this.x[i] = Math.min(this.x[i], c - r) - Math.max(0, this.x[i] - (c - r));
         } else if (!left && this.x[i] < c + r) {
-          if (this.vx[i] < 0) { this._partHit(i, vp, 1, 0); }
+          if (this.vx[i] < (vp.movable ? vp.u : 0)) { this._partHit(i, vp, 1, 0); }
           this.x[i] = Math.max(this.x[i], c + r) + Math.max(0, (c + r) - this.x[i]);
         }
       }
@@ -632,8 +670,8 @@ export class Gas {
       Pkin: N ? K / V : 0,        // 状態方程式 P = NkT/V（2D: = U/V）
       Pwall: this.P.all,           // 壁全体が受ける力から測った圧力
       Ppiston: this.P.piston,      // ピストンが受ける力から測った圧力
-      W: L.Wpiston + L.Wstir + L.Wfield,
-      Wpiston: L.Wpiston, Wstir: L.Wstir, Wfield: L.Wfield,
+      W: L.Wpiston + L.Wstir + L.Wfield + L.Wpart,
+      Wpiston: L.Wpiston, Wstir: L.Wstir, Wfield: L.Wfield, Wpart: L.Wpart,
       Q: L.Q + (this._partitionHeatTotal()),
       Qbath: L.Q,
       dU: U - L.U0,
@@ -641,7 +679,7 @@ export class Gas {
   }
 
   _partitionHeatTotal() {
-    // 透熱仕切りから気体全体へ流れた正味のエネルギー（= 仕切り壁の内部エネルギー減少）
+    // 仕切りから気体全体へ熱として流れた正味のエネルギー（固定の透熱仕切りなら = 仕切り壁の内部エネルギー減少）
     let s = 0;
     for (let g = 0; g < 4; g++) s += this.ledger.Qreg[g];
     return s - this.ledger.Q;

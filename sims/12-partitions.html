@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>12 仕切りと平衡条件 | 熱力学シミュレーション</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+<header class="site-header"><div class="inner">
+  <h1>12 仕切りが決める平衡条件</h1><span class="sub">固定した透熱壁・動く壁・粒子を通す壁 ― そろうのはどの量？ エントロピー最大から考える</span>
+  <nav>
+    <a href="../index.html">目次</a>
+    <a href="01-operations.html">01 壁と操作</a>
+    <a href="02-equilibrium.html">02 平衡への緩和</a>
+    <a href="03-processes.html">03 準静的と不可逆</a>
+    <a href="04-isothermal.html">04 等温過程の収支</a>
+    <a href="05-extensive.html">05 示量と示強</a>
+    <a href="06-heat-capacity.html">06 熱容量</a>
+    <a href="07-entropy.html">07 エントロピー</a>
+    <a href="08-heat-engines.html">08 熱機関</a>
+    <a href="09-osmosis.html">09 浸透圧</a>
+    <a href="10-max-work.html">10 可逆と不可逆</a>
+    <a href="11-sedimentation.html">11 沈降平衡</a>
+    <a href="12-partitions.html" aria-current="page">12 仕切りと平衡条件</a>
+    <a href="../en/sims/12-partitions.html" lang="en" hreflang="en">English</a>
+    <button id="btn-proj" title="文字を大きくする">投影モード</button>
+  </nav>
+</div></header>
+
+<main class="layout">
+  <div class="col">
+    <section class="card">
+      <h2><span class="tag">ミクロ</span>孤立した二室 <span class="hint" id="mode-hint"></span></h2>
+      <div class="canvas-wrap"><canvas id="sim"></canvas></div>
+      <div class="legend">
+        <span><span class="sw adi"></span>断熱壁</span>
+        <span><span class="sw dia"></span>透熱壁</span>
+        <span><span class="sw semi"></span>粒子を通す壁</span>
+        <span id="lg-species"><span class="dot p1"></span>はじめ左にいた粒子　<span class="dot p2"></span>はじめ右にいた粒子</span>
+        <span id="lg-speed" hidden>遅い<span class="grad"></span>速い</span>
+      </div>
+      <h2 style="margin-top:10px"><span class="tag">マクロ</span>左右の状態量 <span class="hint">温度・圧力・数密度は少しならした値。圧力は状態方程式 <i>NkT</i>/<i>V</i></span></h2>
+      <div class="table-wrap">
+        <table class="tbl">
+          <thead><tr><th></th><th>粒子数 <i>N</i></th><th>体積 <i>V</i></th><th>数密度 <i>n</i> = <i>N</i>/<i>V</i></th><th class="int">温度 <i>T</i></th><th>圧力 <i>P</i></th></tr></thead>
+          <tbody>
+            <tr><td>左（室1）</td><td id="N1"></td><td id="V1"></td><td id="n1"></td><td id="T1"></td><td id="P1"></td></tr>
+            <tr><td>右（室2）</td><td id="N2"></td><td id="V2"></td><td id="n2"></td><td id="T2"></td><td id="P2"></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2><span class="tag">マクロ</span>エントロピーが増える向き <span class="hint">孤立系なので、許された変化はすべて全体の <i>S</i> を増やす向きに進む</span></h2>
+      <p class="math" style="white-space:normal;font-size:1.02em;margin:0 0 6px">dS = (1/T₁ − 1/T₂) dU₁ + (P₁/T₁ − P₂/T₂) dV₁ − (μ₁/T₁ − μ₂/T₂) dN₁</p>
+      <div class="table-wrap">
+        <table class="tbl" id="tbl-coef">
+          <thead><tr><th>やりとりする量</th><th>係数（いま）</th><th>この仕切りでは</th><th>状態</th></tr></thead>
+          <tbody>
+            <tr><td>エネルギー d<i>U</i>₁：1/<i>T</i>₁ − 1/<i>T</i>₂</td><td id="c-U"></td><td id="a-U"></td><td id="s-U"></td></tr>
+            <tr><td>体積 d<i>V</i>₁：<i>P</i>₁/<i>T</i>₁ − <i>P</i>₂/<i>T</i>₂</td><td id="c-V"></td><td id="a-V"></td><td id="s-V"></td></tr>
+            <tr><td>粒子 d<i>N</i>₁：μ₁/<i>T</i>₁ − μ₂/<i>T</i>₂</td><td id="c-N"></td><td id="a-N"></td><td id="s-N"></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="hint" style="margin:4px 0 0">2次元理想気体では <span class="math">P/T = n</span>（<i>k</i> = 1）、<span class="math">μ/T = ln(n/T) + 定数</span>。許されたやりとりの係数だけが 0 に向かう。</p>
+      <div class="canvas-wrap" style="margin-top:8px"><canvas id="plotD"></canvas></div>
+      <div class="canvas-wrap" style="margin-top:6px"><canvas id="plotS"></canvas></div>
+    </section>
+  </div>
+
+  <div class="col">
+    <section class="card ctrl">
+      <h2>操作パネル</h2>
+      <div class="btns">
+        <button id="btn-play" class="primary"></button>
+        <button id="btn-reset">準備し直す（断熱壁で固定）</button>
+      </div>
+      <div class="row"><label for="speed">再生速度</label><input type="range" id="speed" min="-0.7" max="1.6" step="0.05" value="0.48"><output id="speed-val"></output></div>
+
+      <div class="group-title">仕切りを替える（操作）</div>
+      <div class="seg" id="part">
+        <button data-value="adi" aria-pressed="true">断熱・固定</button>
+        <button data-value="dia">透熱・固定</button>
+        <button data-value="mov">透熱・可動</button>
+        <button data-value="perm">粒子を通す</button>
+        <button data-value="movadi">断熱・可動（参考）</button>
+      </div>
+      <p class="hint" id="part-hint"></p>
+
+      <div class="group-title">はじめの状態（準備し直すと反映）</div>
+      <div class="row"><label for="T1in">左の温度 <i>T</i>₁</label><input type="range" id="T1in" min="0.3" max="3" step="0.1" value="2"><output id="T1in-val"></output></div>
+      <div class="row"><label for="T2in">右の温度 <i>T</i>₂</label><input type="range" id="T2in" min="0.3" max="3" step="0.1" value="0.6"><output id="T2in-val"></output></div>
+      <div class="row"><label for="N1in">左の粒子数 <i>N</i>₁</label><input type="range" id="N1in" min="40" max="300" step="10" value="200"><output id="N1in-val"></output></div>
+      <div class="row"><label for="N2in">右の粒子数 <i>N</i>₂</label><input type="range" id="N2in" min="40" max="300" step="10" value="100"><output id="N2in-val"></output></div>
+
+      <div class="group-title">表示</div>
+      <div>
+        <label class="check"><input type="checkbox" id="c-speed">色＝速さ</label>
+        <label class="check"><input type="checkbox" id="c-heat" checked>熱のやりとり</label>
+      </div>
+    </section>
+
+    <section class="card notes">
+      <h2>ねらい</h2>
+      <p>外側を断熱・固定にした孤立系を、仕切りで二室に分ける。仕切りが<b>何のやりとりを許すか</b>で、平衡でそろう量が決まる。どの場合も、許された変化は全体のエントロピーを増やす向きに進み、増える余地がなくなったところが平衡（第二法則）。</p>
+      <ul>
+        <li>透熱・固定（エネルギーだけ）→ <span class="math">T₁ = T₂</span></li>
+        <li>透熱・可動（エネルギーと体積）→ <span class="math">T₁ = T₂</span> かつ <span class="math">P₁ = P₂</span></li>
+        <li>粒子を通す（エネルギーと粒子）→ <span class="math">T₁ = T₂</span> かつ <span class="math">μ₁ = μ₂</span></li>
+      </ul>
+      <h3>やってみよう</h3>
+      <ol>
+        <li>「断熱・固定」のまま待つ。どの係数も 0 でないのに何も変わらない。仕切りがすべてのやりとりを禁じている（拘束）。</li>
+        <li>「透熱・固定」にする。温度の係数だけが 0 に向かい、<i>T</i>₁ = <i>T</i>₂ になる。圧力はそろう？（<i>N</i>₁ ≠ <i>N</i>₂ なので、固定壁が圧力の差を支えている）</li>
+        <li>「透熱・可動」にする。壁が動き、温度に加えて圧力もそろう。壁はどこで止まる？（<span class="math">V₁/V₂ = N₁/N₂</span>）</li>
+        <li>「粒子を通す」にする。粒子が行き来して、温度と数密度（化学ポテンシャル）がそろう。</li>
+        <li>どの場合も「全体の Δ<i>S</i>」は増えてから一定になる。</li>
+      </ol>
+      <div class="q"><b>問い</b>　透熱・固定の壁で平衡になったとき、<span class="math">P₁ = P₂</span> まで結論してよいだろうか？ 壁を動けるようにすると、式のどの項が新たに残るか。</div>
+      <div class="q"><b>問い</b>　左右で濃度が違っても、粒子を通さない壁なら濃度差は解消されない。「濃度差があれば必ず移動する」と言ってよいだろうか？ 平衡を述べるときは、何のやりとりを許した平衡かまで指定しよう。</div>
+      <div class="q"><b>問い</b>　（参考）断熱・可動の壁では、圧力はすぐにそろうが温度はなかなかそろわない。エネルギーを熱として通さない壁でも、壁が動くと左右でエネルギーが移るのはなぜ？</div>
+      <details><summary>係数の求め方（2次元理想気体）</summary>
+        <p>各室のエントロピーは <span class="math">S = Nk[ln(V/N) + ln T] + N·定数</span>。孤立系では <span class="math">dU₂ = −dU₁</span>、<span class="math">dV₂ = −dV₁</span>、<span class="math">dN₂ = −dN₁</span> なので、<span class="math">dS = dS₁ + dS₂</span> を書くと上の式になる（<span class="math">∂S/∂U = 1/T</span>、<span class="math">∂S/∂V = P/T</span>、<span class="math">∂S/∂N = −μ/T</span>）。</p>
+        <p>仕切りが禁じる変化は 0 とし、許す独立な変化の係数を 0 とおくと平衡条件が得られる。2次元理想気体では <span class="math">P/T = n</span>、<span class="math">μ/T = ln(n/T) + 定数</span> なので、温度がそろった後は、圧力の条件も粒子の条件も「数密度がそろう」になる。</p>
+        <p>図の全体の Δ<i>S</i> は、左右の気体と透熱壁（熱容量 <i>C</i><sub>w</sub>）の和 <span class="math">N₁ ln(V₁T₁/N₁) + N₂ ln(V₂T₂/N₂) + C<sub>w</sub> ln T<sub>w</sub></span> の、はじめからの変化。</p>
+      </details>
+      <details><summary>モデルについて</summary>
+        <p>可動の仕切りは質量 <i>M</i> の壁で、粒子との衝突で運動量をやりとりする。透熱なら、壁と一緒に動く座標系で壁の温度のマクスウェル分布に従って粒子を跳ね返す。気体・壁の内部エネルギー・壁の運動エネルギーの和は厳密に保存する。壁自身も熱運動するので、平衡でも少しゆれ続ける。</p>
+        <p>「粒子を通す」壁はすべての粒子を素通りさせる（色は、はじめどちらにいたかの目印）。同じ種類の気体なので、混ざっても混合のエントロピーは生じない（07 の「区別しない」と同じ）。</p>
+      </details>
+    </section>
+  </div>
+</main>
+
+<script type="module">
+import { Gas, ADIABATIC, DIATHERMAL, SEMIPERMEABLE } from '../assets/js/engine.js';
+import { idealGasS } from '../assets/js/entropy.js';
+import { SimView } from '../assets/js/render.js';
+import { TimePlot, SERIES } from '../assets/js/plot.js';
+import { $, fmt, fmtSigned, bindRange, bindCheck, segmented, Loop, bindPlayPause, setupCommon, bindSpeed } from '../assets/js/ui.js';
+
+setupCommon();
+const H = 60, X = 100, XP = 50;
+// 仕切りの種類：壁の性質と、許すやりとり（U：エネルギー、V：体積、N：粒子）
+const MODES = {
+  adi: { type: ADIABATIC, mov: false, allow: {} },
+  dia: { type: DIATHERMAL, mov: false, allow: { U: true } },
+  mov: { type: DIATHERMAL, mov: true, allow: { U: true, V: true } },
+  perm: { type: SEMIPERMEABLE, mov: false, allow: { U: true, N: true } },
+  movadi: { type: ADIABATIC, mov: true, allow: { V: true } },
+};
+const HINT = {
+  adi: '断熱・固定：エネルギーも体積も粒子もやりとりできない。',
+  dia: '透熱・固定：壁を通してエネルギー（熱）だけが移る。',
+  mov: '透熱・可動：熱が移り、壁が動いて体積もやりとりする。',
+  perm: '粒子を通す：粒子が行き来し、粒子と一緒にエネルギーも移る。',
+  movadi: '断熱・可動（参考）：熱は通さないが、壁が動いて体積をやりとりする。',
+};
+let gas, view, simRate = 0.1, frame = 0, mode = 'adi', S0 = 0, sm = null;
+
+const plotD = new TimePlot($('plotD'), { height: 180, ylabel: '左右の差（相対）', yZero: true, window: 1500,
+  series: [{ key: 'T', label: '温度 (T₁−T₂)/T̄', color: '#d6453d' }, { key: 'P', label: '圧力 (P₁−P₂)/P̄', color: SERIES[0] }, { key: 'n', label: '数密度 (n₁−n₂)/n̄', color: SERIES[2], dash: [6, 4] }] });
+const plotS = new TimePlot($('plotS'), { height: 170, ylabel: 'ΔS（k 単位）', yZero: true, window: 1500,
+  series: [{ key: 'S', label: '全体の ΔS（気体＋壁）', color: SERIES[3] }] });
+
+function sides() {
+  const a = gas.regionStats(0), b = gas.regionStats(gas.vpart ? 1 : 0);
+  return [a, b];
+}
+function totalS() {
+  const [a, b] = sides();
+  return idealGasS(a.N, a.V, a.T) + idealGasS(b.N, b.V, b.T) + gas.vpart.Cw * Math.log(gas.vpart.Tw);
+}
+
+function build() {
+  const T1 = +$('T1in').value, T2 = +$('T2in').value, N1 = +$('N1in').value, N2 = +$('N2in').value;
+  gas = new Gas({ H, X, Xmin: X, Xmax: X, seed: (Math.random() * 1e9) | 0 });
+  gas.setVPartition(XP, ADIABATIC);
+  gas.addParticles(N1, T1, { x0: 0, x1: XP, y0: 0, y1: H }, 0);
+  gas.addParticles(N2, T2, { x0: XP, x1: X, y0: 0, y1: H }, 1);
+  Object.assign(gas.vpart, { Tw: (N1 * T1 + N2 * T2) / (N1 + N2), Cw: 20, M: 30, u: 0, movable: false });
+  gas.resetLedger();
+  S0 = totalS(); sm = null;
+  if (view) view.g = gas; else view = new SimView($('sim'), gas, { pistonRod: false, Tref: 1, drawScale: 2.8 });
+  view.opt.colorMode = $('c-speed').checked ? 'speed' : 'species';
+  view.opt.showHeat = $('c-heat').checked;
+  partSeg?.select('adi', false); setMode('adi');
+  plotD.reset(); plotS.reset();
+}
+
+function setMode(v) {
+  mode = v;
+  const m = MODES[v];
+  if (!m.mov) gas.vpart.u = 0;            // 固定する（外から押さえる）
+  gas.vpart.movable = m.mov;
+  gas.setVPartition(gas.vpart.x, m.type);
+  if (v === 'perm') gas.vpart.pass = -1;   // すべての粒子を通す
+  $('part-hint').textContent = HINT[v];
+  $('mode-hint').textContent = '— ' + HINT[v].split('：')[0];
+  for (const k of ['U', 'V', 'N']) $('a-' + k).textContent = m.allow[k] ? '許す' : '禁止（拘束）';
+}
+
+const partSeg = segmented('part', setMode, false);
+for (const id of ['T1in', 'T2in']) bindRange(id, () => {}, (v) => v.toFixed(1));
+for (const id of ['N1in', 'N2in']) bindRange(id, () => {}, (v) => v.toFixed(0));
+bindSpeed('speed', (v) => { simRate = v; });
+bindCheck('c-speed', (on) => { if (view) view.opt.colorMode = on ? 'speed' : 'species'; $('lg-speed').hidden = !on; $('lg-species').hidden = on; });
+bindCheck('c-heat', (on) => { if (view) view.opt.showHeat = on; });
+$('btn-reset').addEventListener('click', build);
+build();
+
+/** 係数の状態：許されていて 0 に近い／0 へ向かう／拘束で 0 でなくてよい */
+function status(allowed, rel) {
+  if (!allowed) return '拘束されている';
+  return Math.abs(rel) < 0.1 ? '≈ 0（ゆらぎの範囲でそろった）' : '0 へ向かう';
+}
+
+const loop = new Loop((paused) => {
+  if (!paused) {
+    gas.advance(simRate);
+    frame++;
+    const [a, b] = sides();
+    const k = 0.03;
+    const cur = { T1: a.T, T2: b.T, n1: a.N / a.V, n2: b.N / b.V };
+    if (!sm) sm = { ...cur }; else for (const key in cur) sm[key] += k * (cur[key] - sm[key]);
+    const P1 = sm.n1 * sm.T1, P2 = sm.n2 * sm.T2;
+    $('N1').textContent = a.N; $('N2').textContent = b.N;
+    $('V1').textContent = fmt(a.V, 0); $('V2').textContent = fmt(b.V, 0);
+    $('n1').textContent = fmt(sm.n1, 4); $('n2').textContent = fmt(sm.n2, 4);
+    $('T1').textContent = fmt(sm.T1, 3); $('T2').textContent = fmt(sm.T2, 3);
+    $('P1').textContent = fmt(P1, 4); $('P2').textContent = fmt(P2, 4);
+    const cU = 1 / sm.T1 - 1 / sm.T2, cV = P1 / sm.T1 - P2 / sm.T2, cN = Math.log(sm.n1 / sm.T1) - Math.log(sm.n2 / sm.T2);
+    $('c-U').textContent = fmtSigned(cU, 3); $('c-V').textContent = fmtSigned(cV, 4); $('c-N').textContent = fmtSigned(cN, 3);
+    const al = MODES[mode].allow;
+    $('s-U').textContent = status(al.U, cU / ((1 / sm.T1 + 1 / sm.T2) / 2));
+    $('s-V').textContent = status(al.V, cV / ((sm.n1 + sm.n2) / 2));
+    $('s-N').textContent = status(al.N, cN);
+    const rel = (x, y) => (2 * (x - y)) / (x + y);
+    plotD.push(gas.time, { T: rel(sm.T1, sm.T2), P: rel(P1, P2), n: rel(sm.n1, sm.n2) });
+    plotS.push(gas.time, { S: totalS() - S0 });
+    if (frame % 2 === 0) { plotD.draw(); plotS.draw(); }
+  }
+  view.draw();
+});
+bindPlayPause('btn-play', loop);
+</script>
+</body>
+</html>

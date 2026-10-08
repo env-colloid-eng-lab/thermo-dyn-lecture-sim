@@ -299,5 +299,41 @@ const f = (v, d = 3) => Number(v).toFixed(d);
   }
 }
 
+// 15) 可動の仕切り（12）：全エネルギー保存、部分系ごとの ΔU = Q + W、透熱なら T と P がそろう
+{
+  const run = (type, seed) => {
+    const g = new Gas({ H: 60, X: 100, Xmin: 100, Xmax: 100, seed });
+    g.setVPartition(50, ADIABATIC);
+    g.addParticles(200, 2.0, { x0: 0, x1: 50, y0: 0, y1: 60 }, 0);
+    g.addParticles(100, 0.6, { x0: 50, x1: 100, y0: 0, y1: 60 }, 1);
+    Object.assign(g.vpart, { Tw: 1.3, Cw: 20, M: 30, movable: true });
+    g.setVPartition(50, type); g.resetLedger();
+    const E = () => g.kinetic() + g.vpart.Cw * g.vpart.Tw + 0.5 * g.vpart.M * g.vpart.u ** 2;
+    const E0 = E();
+    for (let k = 0; k < 2500; k++) g.advance(1);
+    let x = 0, T1 = 0, T2 = 0, P1 = 0, P2 = 0; const n = 2500;
+    for (let k = 0; k < n; k++) {
+      g.advance(1); const a = g.regionStats(0), b = g.regionStats(1);
+      x += g.vpart.x / n; T1 += a.T / n; T2 += b.T / n; P1 += a.U / a.V / n; P2 += b.U / b.V / n;
+    }
+    const a = g.regionStats(0), b = g.regionStats(1);
+    return { dE: E() - E0, x, T1, T2, P1, P2, led: Math.max(Math.abs(a.dU - a.Q - a.W), Math.abs(b.dU - b.Q - b.W)) };
+  };
+  const d = run(DIATHERMAL, 51), ad = run(ADIABATIC, 52);
+  check('可動の仕切り: 気体＋壁の全エネルギー保存', Math.abs(d.dE) < 1e-8 && Math.abs(ad.dE) < 1e-8, `透熱 ${d.dE.toExponential(1)} 断熱 ${ad.dE.toExponential(1)}`);
+  check('可動の仕切り: 部分系ごとに ΔU = Q + W (厳密)', d.led < 1e-8 && ad.led < 1e-8);
+  check('可動・透熱: T と P がそろう', Math.abs(d.T1 / d.T2 - 1) < 0.08 && Math.abs(d.P1 / d.P2 - 1) < 0.05, `T=${f(d.T1)},${f(d.T2)} P=${f(d.P1, 4)},${f(d.P2, 4)} x=${f(d.x, 1)}（理論 66.7）`);
+  check('可動・断熱: P がそろう', Math.abs(ad.P1 / ad.P2 - 1) < 0.05, `P=${f(ad.P1, 4)},${f(ad.P2, 4)} T=${f(ad.T1)},${f(ad.T2)}`);
+  // すべてを通す壁（pass < 0）：数密度と温度がそろう
+  const g = new Gas({ H: 60, X: 100, Xmin: 100, Xmax: 100, seed: 53 });
+  g.setVPartition(50, ADIABATIC);
+  g.addParticles(200, 2.0, { x0: 0, x1: 50, y0: 0, y1: 60 }, 0);
+  g.addParticles(100, 0.6, { x0: 50, x1: 100, y0: 0, y1: 60 }, 1);
+  g.setVPartition(50, SEMIPERMEABLE); g.vpart.pass = -1;
+  for (let k = 0; k < 1500; k++) g.advance(1);
+  let n1 = 0; for (let k = 0; k < 1000; k++) { g.advance(1); n1 += g.regionStats(0).N / 1000; }
+  check('すべてを通す壁: 左右の粒子数がそろう', Math.abs(n1 / 150 - 1) < 0.05, `左 ⟨N⟩=${f(n1, 1)}（理論 150）`);
+}
+
 console.log(fails ? `\n${fails} 件失敗` : '\nすべて成功');
 process.exit(fails ? 1 : 0);
