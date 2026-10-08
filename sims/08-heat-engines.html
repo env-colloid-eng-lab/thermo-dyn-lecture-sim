@@ -57,6 +57,7 @@
         <div class="stat" id="st-regen"><span class="k" id="k-regen">再生器ありなら（測定）</span><span class="v" id="r-regen">–</span></div>
         <div class="stat"><span class="k" id="k-carnot">カルノーの上限</span><span class="v" id="r-carnot"></span></div>
         <div class="stat"><span class="k">サイクル数</span><span class="v" id="r-n">0</span></div>
+        <div class="stat"><span class="k">熱源のエントロピー変化（1サイクル平均）</span><span class="v" id="r-sgen">–</span></div>
       </div>
       <p class="q" id="r-warn" hidden></p>
     </section>
@@ -68,10 +69,16 @@
     </section>
 
     <section class="card">
+      <h2><span class="tag">マクロ</span>T–S 図 <span class="hint"><i>S</i> = <i>Nk</i> ln(<i>TV</i>) + 定数（2次元）。塗った面積 ≈ 正味の熱 = 外へした仕事</span></h2>
+      <div class="canvas-wrap"><canvas id="ts"></canvas></div>
+      <p class="hint" id="ts-area" style="margin:4px 0 0"></p>
+    </section>
+
+    <section class="card">
       <h2>直前の1サイクルの収支 <span class="hint"><i>Q</i>：気体が受け取った熱、<i>W</i>：気体がされた仕事</span></h2>
       <div class="table-wrap">
         <table class="tbl" id="tbl">
-          <thead><tr><th>過程</th><th>熱源</th><th><i>Q</i></th><th><i>W</i></th><th>Δ<i>U</i></th></tr></thead>
+          <thead><tr><th>過程</th><th>熱源</th><th><i>Q</i></th><th><i>W</i></th><th>Δ<i>U</i></th><th>熱源の Δ<i>S</i> = −<i>Q</i>/<i>T</i></th></tr></thead>
           <tbody></tbody>
         </table>
       </div>
@@ -114,10 +121,17 @@
         <li><i>T</i><sub>c</sub> を下げる／<i>T</i><sub>h</sub> を上げると効率は？</li>
         <li>「ヒートポンプ」にする。気体は外から仕事をされ、低温側から熱を受け取って、高温側へより多くの熱を出す。成績係数 COP は 1 より大きい。</li>
         <li>「スターリング」：等温過程の間を定積過程でつなぐ。再生器（定積で出し入れする熱をためておく蓄熱材）がないと効率は下がる。ヒートポンプの向きでは、再生器がないと低温側から熱をくみ上げることすらできない場合がある（表の <i>Q</i> を見よう）。</li>
+        <li>T–S 図を見る。カルノーサイクルは長方形（等温は水平、断熱は垂直）。高温側で受け取る熱は <span class="math">T<sub>h</sub>ΔS</span>、低温側へ捨てる熱は <span class="math">T<sub>c</sub>ΔS</span>、囲む面積が外へした仕事。だから <span class="math">η = 1 − T<sub>c</sub>/T<sub>h</sub></span>。</li>
+        <li>表の「熱源の Δ<i>S</i>」の合計を見る。気体は1サイクルで元の状態に戻るので、全体のエントロピー変化は熱源の分だけ。ゆっくり回したカルノーでは ≈ 0、ピストンが速いときや再生器なしのスターリングでは正（不可逆）。</li>
       </ol>
+      <div class="q"><b>問い</b>　1サイクルでの熱源のエントロピー変化の合計 <span class="math">−Q<sub>h</sub>/T<sub>h</sub> − Q<sub>c</sub>/T<sub>c</sub></span> は負にならない（第二法則、クラウジウスの不等式）。このことと第一法則 <span class="math">−W = Q<sub>h</sub> + Q<sub>c</sub></span> から、効率が <span class="math">η ≤ 1 − T<sub>c</sub>/T<sub>h</sub></span> を超えられないことを導いてみよう。</div>
       <div class="q"><b>問い</b>　どの条件でも、効率は「カルノーの上限」を超えない。もし超える熱機関があったら、第二法則（クラウジウスの原理・トムソンの原理）と矛盾することを説明してみよう。</div>
       <div class="q"><b>問い</b>　ヒートポンプで高温側に出した熱は、した仕事より多い。エネルギー保存と矛盾しないのはなぜ？ 電気ヒーター（COP = 1）と比べてみよう。</div>
       <div class="q"><b>問い</b>　1サイクルごとの効率はかなりばらつく。何サイクルか合計すると理論値に近づくのはなぜ？</div>
+      <details><summary>T–S 図とエントロピーの収支</summary>
+        <p>2次元理想気体のエントロピーは <span class="math">S = Nk ln V + Nk ln T + 定数</span>。準静的な過程では気体が受け取る熱が <span class="math">δQ = T dS</span> なので、T–S 図の曲線の下の面積が熱、1サイクルで囲む面積が正味の熱（= 外へした仕事 −<i>W</i>）になる。図の <i>T</i> は粒子の運動エネルギーから求めた温度を少しならしたもの（粒子数が少ないので、それでもゆらぐ）。</p>
+        <p>熱源（温度一定）のエントロピー変化は、熱源が受け取った熱 −<i>Q</i> をその温度で割った <span class="math">−Q/T<sub>熱源</sub></span>。気体は1サイクルで元に戻る（Δ<i>S</i><sub>気体</sub> = 0）ので、全体のエントロピー変化は熱源の合計 <span class="math">−Q<sub>h</sub>/T<sub>h</sub> − Q<sub>c</sub>/T<sub>c</sub> ≥ 0</span>。等号は可逆なとき（ゆっくり回したカルノーサイクル）。気体と熱源の温度差があるまま熱が移ると正になる。粒子数が少ないので1サイクルごとの値は大きくゆらぎ（気体も厳密には元の状態に戻らない）、負になることもあるが、何サイクルも平均すると 0 以上になる。</p>
+      </details>
       <details><summary>理論値（2次元理想気体, γ = 2）</summary>
         <p>等温過程（温度 <i>T</i>, 体積 <i>V</i>₁ → <i>V</i>₂）で気体が受け取る熱は <span class="math">Q = NkT ln(V₂/V₁)</span>。断熱過程は <span class="math">TV = 一定</span>。</p>
         <p><b>カルノー</b>：<span class="math">Q<sub>h</sub> = NkT<sub>h</sub> ln r</span>、<span class="math">−Q<sub>c</sub> = NkT<sub>c</sub> ln r</span>（r は等温膨張の体積比。このページでは r = 2）。効率 <span class="math">η = 1 − T<sub>c</sub>/T<sub>h</sub></span>、ヒートポンプの成績係数 <span class="math">COP = T<sub>h</sub>/(T<sub>h</sub> − T<sub>c</sub>)</span>。</p>
@@ -141,7 +155,7 @@ setupCommon();
 const H = 60, N = 200, X1 = 30, R = 2, XMAX = 155;
 let gas, view, run, simRate = 0.1, frame = 0;
 let type = 'carnot', dir = 'engine', Th = 2, Tc = 1, pspeed = 0.06;
-let cur = [], prev = null;   // P–V 図の軌跡（いまのサイクル・直前のサイクル）
+let cur = [], prev = null, curTS = [], prevTS = null, Tsm = null;   // P–V 図の軌跡（いまのサイクル・直前のサイクル）
 let thSlider, tcSlider;
 
 const pv = new XYPlot($('pv'), { height: 320, xmin: 0, xmax: XMAX * H, ymin: 0, ymax: 1, xlabel: 'V（面積）', ylabel: 'P', xd: 0, yd: 4 });
@@ -164,6 +178,27 @@ function theoryPts() {
   return pts;
 }
 
+const ts = new XYPlot($('ts'), { height: 300, xmin: -1, xmax: 1, ymin: 0, ymax: 1, xlabel: 'S − S_A （k 単位）', ylabel: 'T', xd: 1, yd: 3 });
+/** 2次元理想気体のエントロピー（状態 A を 0 とする, k = 1）/ entropy of the 2D ideal gas (0 at state A) */
+const Sgas = (V, T) => N * Math.log((V * T) / (X1 * H * Th));
+
+/** 理論のサイクル（準静的）を T–S 図の点列にする / the quasi-static cycle as points on the T–S diagram */
+function theoryTS() {
+  const { states: S, kinds: K } = cycleDef(type, { Th, Tc, X1, r: R });
+  const pts = [];
+  for (let k = 0; k < 4; k++) {
+    const a = S[k], b = S[(k + 1) % 4], Va = a.X * H, Vb = b.X * H;
+    for (let j = 0; j <= 40; j++) {
+      let V = Va + ((Vb - Va) * j) / 40, T;
+      if (K[k] === 'iso') T = a.T;
+      else if (K[k] === 'adi') T = (a.T * Va) / V;           // T V = 一定 / const
+      else { V = Va; T = a.T + ((b.T - a.T) * j) / 40; }
+      pts.push([Sgas(V, T), T]);
+    }
+  }
+  return pts;
+}
+
 function build() {
   gas = new Gas({ H, X: X1, Xmin: 15, Xmax: XMAX, seed: (Math.random() * 1e9) | 0 });
   gas.addParticles(N, Th, { x0: 0, x1: X1, y0: 0, y1: H });
@@ -171,7 +206,15 @@ function build() {
   if (view) view.g = gas; else view = new SimView($('sim'), gas, { envPad: 5, Tref: 1.5, drawScale: 2.8 });
   view.opt.showHeat = $('c-heat').checked;
   view.opt.colorMode = $('c-speed').checked ? 'speed' : 'species';
-  cur = []; prev = null;
+  cur = []; prev = null; curTS = []; prevTS = null; Tsm = null;
+  const tp = theoryTS(), sx = tp.map((p) => p[0]);
+  const smin = Math.min(...sx), smax = Math.max(...sx), pad = 0.18 * (smax - smin);
+  Object.assign(ts.opt, { xmin: smin - pad, xmax: smax + pad, ymin: 0, ymax: Th * 1.3 });
+  ts.refs = [
+    { label: `高温熱源 T = ${fmt(Th, 1)}`, color: '#d6453d', dash: [3, 4], fn: () => Th },
+    { label: `低温熱源 T = ${fmt(Tc, 1)}`, color: SERIES[0], dash: [3, 4], fn: () => Tc },
+  ];
+  $('ts-area').textContent = ''; $('r-sgen').textContent = '–';
   const eng = dir === 'engine';
   $('mode-hint').textContent = `— ${type === 'carnot' ? 'カルノー' : 'スターリング'}サイクルを${eng ? '熱機関' : 'ヒートポンプ'}の向きに自動で回す`;
   $('k-main').textContent = eng ? '効率 η（測定）' : '成績係数 COP（測定）';
@@ -201,11 +244,13 @@ function drawTable(c) {
   $('tbl-empty').hidden = !!c;
   if (!c) { tb.innerHTML = ''; return; }
   const bath = (T) => (T == null ? '―' : T === Th ? `高温 ${fmt(Th, 1)}` : `低温 ${fmt(Tc, 1)}`);
-  let sQ = 0, sW = 0, sU = 0;
+  let sQ = 0, sW = 0, sU = 0, sS = 0;
   tb.innerHTML = c.steps.map((s) => {
     sQ += s.Q; sW += s.W; sU += s.dU;
-    return `<tr><td>${s.label}</td><td>${bath(s.bathT)}</td><td>${fmtSigned(s.Q, 1)}</td><td>${fmtSigned(s.W, 1)}</td><td>${fmtSigned(s.dU, 1)}</td></tr>`;
-  }).join('') + `<tr class="sum"><td>1サイクルの合計</td><td></td><td>${fmtSigned(sQ, 1)}</td><td>${fmtSigned(sW, 1)}</td><td>${fmtSigned(sU, 1)}</td></tr>`;
+    const dSb = s.bathT == null ? 0 : -s.Q / s.bathT;   // 熱源のエントロピー変化
+    sS += dSb;
+    return `<tr><td>${s.label}</td><td>${bath(s.bathT)}</td><td>${fmtSigned(s.Q, 1)}</td><td>${fmtSigned(s.W, 1)}</td><td>${fmtSigned(s.dU, 1)}</td><td>${s.bathT == null ? '―' : fmtSigned(dSb, 1)}</td></tr>`;
+  }).join('') + `<tr class="sum"><td>1サイクルの合計</td><td></td><td>${fmtSigned(sQ, 1)}</td><td>${fmtSigned(sW, 1)}</td><td>${fmtSigned(sU, 1)}</td><td>${fmtSigned(sS, 1)}</td></tr>`;
 }
 
 /** 閉じた曲線が囲む面積（時計回りを正）＝ ∮P dV */
@@ -256,11 +301,15 @@ const loop = new Loop((paused) => {
     run.update();
     frame++;
     const U = gas.kinetic(), V = gas.X * H;
-    if (run.k >= 0) cur.push([V, U / V]);
-    if (cur.length > 3000) cur.splice(0, cur.length - 3000);
+    // T–S 図の温度は少しならす（粒子数が少ないと N ln T のゆらぎが大きく見えるため）/ smooth T a little for the T–S plot
+    Tsm = Tsm == null ? U / N : Tsm + (1 - Math.exp(-simRate / 40)) * (U / N - Tsm);   // 時定数 40 / time constant 40
+    if (run.k >= 0) { cur.push([V, U / V]); curTS.push([Sgas(V, Tsm), Tsm]); }
+    if (cur.length > 3000) { cur.splice(0, cur.length - 3000); curTS.splice(0, curTS.length - 3000); }
     if (run.cycles.length > nBefore) {
       const c = run.cycles[run.cycles.length - 1];
       prev = cur; cur = [[V, U / V]];
+      prevTS = curTS; curTS = [[Sgas(V, Tsm), Tsm]];
+      const cQ = c.steps.reduce((a, s) => a + s.Q, 0);
       drawTable(c);
       const T = run.total, eng = dir === 'engine';
       $('r-main').textContent = fmt(eng ? -T.W / T.Qh : -T.Qh / T.W, 3);
@@ -276,6 +325,8 @@ const loop = new Loop((paused) => {
       $('pv-area').textContent = `直前のサイクル：塗った面積 = ${fmtSigned(loopArea(prev), 1)}、表の正味の仕事 −W = ${fmtSigned(-c.W, 1)}` +
         (pspeed > 0.1 ? '（速く動かしているので一致しない）' : '');
       showWarn(T);
+      $('r-sgen').textContent = fmtSigned((-T.Qh / Th - T.Qc / Tc) / T.n, 1);
+      $('ts-area').textContent = `直前のサイクル：塗った面積 = ${fmtSigned(loopArea(prevTS), 1)}、表の正味の熱 Q = ${fmtSigned(cQ, 1)}` + (pspeed > 0.1 ? '（速く動かしているので一致しない）' : '');
     }
     const s = run.step;
     $('r-step').textContent = run.label;
@@ -289,6 +340,11 @@ const loop = new Loop((paused) => {
       pv.paths.push({ label: 'いまのサイクル', color: SERIES[3], pts: cur, width: 2 });
       pv.marker = [V, U / V];
       pv.draw();
+      ts.paths = [{ label: '理論（準静的）', color: '#77756f', pts: theoryTS(), width: 1.5, dash: [6, 4] }];
+      if (prevTS) ts.paths.push({ label: '直前のサイクル', color: SERIES[1], pts: prevTS, width: 1.5, closed: true, fillColor: dir === 'engine' ? 'rgba(235,104,52,0.18)' : 'rgba(42,120,214,0.15)' });
+      ts.paths.push({ label: 'いまのサイクル', color: SERIES[3], pts: curTS, width: 2 });
+      ts.marker = [Sgas(V, Tsm), Tsm];
+      ts.draw();
     }
   }
   view.draw();
