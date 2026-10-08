@@ -43,6 +43,7 @@
         <div class="stat int"><span class="k">Temperature <i>T</i></span><span class="v" id="r-T"></span></div>
         <div class="stat int"><span class="k">Pressure <i>NkT</i>/<i>V</i></span><span class="v" id="r-P"></span></div>
         <div class="stat ext"><span class="k">Internal energy <i>U</i></span><span class="v" id="r-U"></span></div>
+        <div class="stat"><span class="k">Potential temperature θ = <i>T</i>(<i>P</i>₀/<i>P</i>)<sup>1/2</sup></span><span class="v" id="r-th"></span></div>
         <div class="stat"><span class="k">Piston speed</span><span class="v" id="r-u"></span></div>
       </div>
       <div class="ledger">
@@ -113,6 +114,7 @@
         <li>With "Adiabatic" and "Quasi-static", do <b>one round trip</b> (you may raise the playback speed). When the piston comes back, has <i>T</i> returned to its original value? What is <i>W</i> for the round trip?</li>
         <li>Do one round trip with "Adiabatic" and "Very fast". What now? How do orange and blue separate on the P–V diagram?</li>
         <li>Compress with "Isothermal" and "Quasi-static". <i>W</i> &gt; 0, yet Δ<i>U</i> ≈ 0. Where did the energy go? (→ 04)</li>
+        <li>Look at the "Potential temperature θ" readout. In a quasi-static adiabatic round trip θ stays constant; in a very fast round trip θ rises. Isothermal compression lowers θ. What does θ represent? (See "Potential temperature and entropy" below.)</li>
         <li>Free expansion: set it up and remove the partition. What are <i>W</i>, <i>Q</i>, Δ<i>U</i>, and <i>T</i>? Can you draw the intermediate states on the P–V diagram?</li>
       </ol>
       <div class="q"><b>Question</b> Even when surrounded by adiabatic walls, a fast round trip makes the gas's <i>U</i> increase (an <b>irreversible adiabatic process</b>). Conversely, is there an operation that keeps everything adiabatic and only lowers <i>U</i> to bring the gas back?</div>
@@ -124,6 +126,11 @@
           <li>Isothermal quasi-static: <span class="math">W = NkT ln(V₀/V₁)</span>, <span class="math">ΔU = 0</span>, <span class="math">Q = −W</span></li>
         </ul>
         <p>The particles in this simulation have a finite size (hard disks), so under strong compression the pressure is a few percent higher than for an ideal gas.</p>
+      </details>
+      <details><summary>Potential temperature and entropy (toward atmospheric temperature)</summary>
+        <p>The temperature a gas at pressure <i>P</i> and temperature <i>T</i> would have after a quasi-static adiabatic change to a reference pressure <i>P</i>₀ is the <b>potential temperature</b> θ. For a 2D ideal gas <span class="math">c<sub>P</sub> = 2k</span> (per particle), so <span class="math">θ = T(P₀/P)<sup>k/c<sub>P</sub></sup> = T(P₀/P)<sup>1/2</sup></span>. For 3D dry air the exponent is <span class="math">R/c<sub>p</sub> ≈ 0.286</span>.</p>
+        <p>The entropy can be written <span class="math">S = Nc<sub>P</sub> ln θ + const</span> (for the gas on this page <span class="math">ΔS = 2Nk ln(θ/θ₀)</span>). In a quasi-static adiabatic change both <i>S</i> and θ stay constant. In a fast round trip (an irreversible adiabatic process) <i>S</i> increases, so θ rises. In isothermal compression heat leaves, so <i>S</i> decreases and θ falls.</p>
+        <p>In the atmosphere a rising air parcel expands and cools, but keeps its θ. Comparing potential temperatures instead of temperatures shows which air is "really warmer" (has larger entropy), and tells whether convection occurs.</p>
       </details>
     </section>
   </div>
@@ -319,6 +326,8 @@ const loop = new Loop((paused) => {
     $('r-P').textContent = fmt(s.U / V, 4);
     $('r-U').textContent = fmt(s.U, 1);
     $('r-u').textContent = fmt(Math.abs(gas.piston.u), 2);
+    // potential temperature: the temperature after a quasi-static adiabatic change to the reference pressure P₀ (the initial pressure); in 2D k/c_P = 1/2
+    $('r-th').textContent = fmt(s.T * Math.sqrt(refState.P0 / (s.U / V)), 3);
     updateLedger('l-', s);
     plotT.push(gas.time, { T: s.T });
     if (frame % 2 === 0) { updatePV(); plotT.draw(); }
