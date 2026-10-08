@@ -169,9 +169,13 @@ function build() {
   $('state-hint').textContent = '— いまの仕切りは何も通さない壁';
 }
 
+/** いまの気体にある溶質の数（スライダーの値ではなく、実際の粒子から数える） */
+function soluteCount() { let n = 0; for (let i = 0; i < gas.N; i++) if (gas.species[i] === 1) n++; return n; }
+
 function stateLabel() {
   if (gas.vpart.type !== SEMIPERMEABLE) return '仕切り';
-  return gas.piston.mode === 'force' ? `逆浸透 P=${fmt(gas.piston.Pext, 3)}` : '浸透（固定）';
+  // 押す圧力が溶液側の圧力より大きいか小さいかで流れの向きが変わるので、ここでは条件だけを書く
+  return gas.piston.mode === 'force' ? `外圧 P=${fmt(gas.piston.Pext, 3)}` : '浸透（固定）';
 }
 
 function drawRows() {
@@ -180,7 +184,7 @@ function drawRows() {
   $('tbl-empty').hidden = rows.length > 0;
   const ok = rows.filter((r) => r.n > 0);
   plotV.paths = ok.map((r, k) => ({ label: k === 0 ? '測定：圧力差 P右 − P左' : '', color: SERIES[1], pts: [[r.th, r.Pi]], ends: true }))
-    .concat(ok.map((r, k) => ({ label: k === 0 ? '測定：膜が受ける圧力' : '', color: SERIES[0], pts: [[r.th, r.Pm]], ends: true })));
+    .concat(ok.filter((r) => Number.isFinite(r.Pm)).map((r, k) => ({ label: k === 0 ? '測定：膜が受ける圧力' : '', color: SERIES[0], pts: [[r.th, r.Pm]], ends: true })));
   plotV.draw();
 }
 
@@ -200,7 +204,8 @@ $('btn-push').addEventListener('click', () => { Object.assign(gas.piston, { mode
 $('btn-fix').addEventListener('click', () => { gas.piston.mode = 'position'; gas.piston.u = 0; gas.piston.target = gas.X; });
 $('btn-rec').addEventListener('click', () => {
   if (!sm) return;
-  rows.push({ state: stateLabel(), n: ns, T: sm.TR, V: sm.V, th: (ns * sm.TR) / sm.V, Pi: gas.P.piston - gas.P.left, Pm: gas.P.vpart });
+  const n = soluteCount();
+  rows.push({ state: stateLabel(), n, T: sm.TR, V: sm.V, th: (n * sm.TR) / sm.V, Pi: gas.P.piston - gas.P.left, Pm: gas.vpart.type === SEMIPERMEABLE ? gas.P.vpart : NaN });
   drawRows();
 });
 $('btn-clear').addEventListener('click', () => { rows.length = 0; drawRows(); });
@@ -220,11 +225,12 @@ const loop = new Loop((paused) => {
     if (!sm) sm = { nL, V, TR };
     sm.nL += k * 4 * (nL - sm.nL); sm.V += k * (V - sm.V); sm.TR += k * (TR - sm.TR);
     const PL = gas.P.left, PR = gas.P.piston, Pi = PR - PL;
-    $('r-nL').textContent = nL; $('r-nR').textContent = NW - nL; $('r-ns').textContent = ns;
+    const n = soluteCount(), semi = gas.vpart.type === SEMIPERMEABLE;
+    $('r-nL').textContent = nL; $('r-nR').textContent = NW - nL; $('r-ns').textContent = n;
     $('r-V').textContent = fmt(V, 0);
     $('r-PL').textContent = fmt(PL, 4); $('r-PR').textContent = fmt(PR, 4);
-    $('r-Pi').textContent = fmt(Pi, 4); $('r-Pm').textContent = fmt(gas.P.vpart, 4);
-    $('r-th').textContent = fmt((ns * sm.TR) / sm.V, 4);
+    $('r-Pi').textContent = fmt(Pi, 4); $('r-Pm').textContent = semi ? fmt(gas.P.vpart, 4) : '–';   // 半透膜になるまでは膜の圧力ではない
+    $('r-th').textContent = fmt((n * sm.TR) / sm.V, 4);
     plotN.push(gas.time, { L: sm.nL, R: NW - sm.nL });
     plotP.push(gas.time, { PL, PR, Pi });
     if (frame % 2 === 0) { plotN.draw(); plotP.draw(); }

@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>01 Walls and operations | Thermodynamics Simulations</title>
+<link rel="icon" href="../../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body>
+<header class="site-header"><div class="inner">
+  <h1>01 Walls and operations</h1><span class="sub">Adiabatic and diathermal walls / Operation 1 (piston), Operation 2 (stirring), Operation 3 (heat reservoir)</span>
+  <nav>
+    <a href="../index.html">Contents</a>
+    <a href="01-operations.html" aria-current="page">01 Walls and operations</a>
+    <a href="02-equilibrium.html">02 Relaxation to equilibrium</a>
+    <a href="03-processes.html">03 Quasi-static vs. irreversible</a>
+    <a href="04-isothermal.html">04 Isothermal energy balance</a>
+    <a href="05-extensive.html">05 Extensive and intensive</a>
+    <a href="06-heat-capacity.html">06 Heat capacity</a>
+    <a href="07-entropy.html">07 Entropy</a>
+    <a href="08-heat-engines.html">08 Heat engines</a>
+    <a href="09-osmosis.html">09 Osmotic pressure</a>
+    <a href="../../sims/01-operations.html" lang="ja" hreflang="ja">日本語</a>
+    <button id="btn-proj" title="Enlarge text">Projector mode</button>
+  </nav>
+</div></header>
+
+<main class="layout">
+  <div class="col">
+    <section class="card">
+      <h2><span class="tag">Micro</span>Particles in the container <span class="hint" id="state-hint"></span></h2>
+      <div class="canvas-wrap"><canvas id="sim"></canvas></div>
+      <div class="legend">
+        <span><span class="sw adi"></span>Adiabatic wall</span>
+        <span><span class="sw dia"></span>Diathermal wall</span>
+        <span><span class="sw fluid"></span>Fluid</span>
+        <span id="lg-speed" hidden>Slow<span class="grad"></span>Fast</span>
+        <span><span class="dot hot"></span>Collision that received heat</span>
+        <span><span class="dot cold"></span>Collision that gave up heat</span>
+      </div>
+      <h2 style="margin-top:10px"><span class="tag">Macro</span>State variables (instantaneous values)</h2>
+      <div class="readouts">
+        <div class="stat ext"><span class="k">Number of particles <i>N</i></span><span class="v" id="r-N"></span></div>
+        <div class="stat ext"><span class="k">Volume (area) <i>V</i></span><span class="v" id="r-V"></span></div>
+        <div class="stat ext"><span class="k">Internal energy <i>U</i></span><span class="v" id="r-U"></span></div>
+        <div class="stat int"><span class="k">Temperature <i>T</i> = <i>U</i>/<i>N</i></span><span class="v" id="r-T"></span></div>
+        <div class="stat int"><span class="k">Pressure <i>P</i> (force on the walls)</span><span class="v" id="r-P"></span></div>
+        <div class="stat int"><span class="k"><i>NkT</i>/<i>V</i> (equation of state)</span><span class="v" id="r-Pk"></span></div>
+        <div class="stat"><span class="k">Mean speed ⟨<i>v</i>⟩</span><span class="v" id="r-v"></span></div>
+      </div>
+      <div class="ledger" aria-live="off">
+        <span class="term"><b>ΔU</b><span id="l-dU"></span></span><span class="op">=</span>
+        <span class="term"><b>Q</b><span id="l-Q"></span></span><span class="op">+</span>
+        <span class="term"><b>W</b><span id="l-W"></span></span>
+        <span class="op" style="font-size:1em">(<i>W</i> breakdown: piston <span id="l-Wp"></span>, stirring <span id="l-Ws"></span>)</span>
+        <span class="note">Totals since you last pressed "Reset counters". <i>W</i>: work done on the gas, <i>Q</i>: heat received by the gas. Every energy change in every single particle collision is added up.</span>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Time evolution</h2>
+      <div class="canvas-wrap"><canvas id="plotT"></canvas></div>
+      <div class="canvas-wrap" style="margin-top:6px"><canvas id="plotP"></canvas></div>
+    </section>
+    <section class="card">
+      <h2><span class="tag">Micro↔Macro</span>Speed distribution of the particles</h2>
+      <div class="canvas-wrap"><canvas id="hist"></canvas></div>
+      <p class="hint">Temperature <i>T</i> is the mean kinetic energy per particle (in 2D, <span class="math">U = NkT</span>). If the shape of the distribution matches the Maxwell distribution at the same <i>T</i>, the gas is in an "equilibrium state". The gray dashed line is the initial (<i>T</i>=1) distribution.<br>Kinetic energy is proportional to the square of the speed, so <b>even if the temperature doubles, the speed only grows by a factor of √2 ≈ 1.4</b> (⟨<i>v</i>⟩ = √(π<i>T</i>/2)). If the difference is hard to see, compare using the colors, the arrows, and this distribution.</p>
+    </section>
+  </div>
+
+  <div class="col">
+    <section class="card ctrl">
+      <h2>Controls</h2>
+      <div class="btns">
+        <button id="btn-play" class="primary"></button>
+        <button id="btn-reset">Reset</button>
+        <button id="btn-ledger" title="Set W, Q, ΔU to 0 and start measuring again from here">Reset counters (W=Q=0)</button>
+      </div>
+      <div class="row"><label for="speed">Playback speed</label><input type="range" id="speed" min="-0.7" max="1.6" step="0.05" value="0.00"><output id="speed-val"></output></div>
+
+      <div class="group-title">Wall types (which walls pass heat)</div>
+      <div class="row"><label>Left wall</label><div class="seg" id="w-left"><button data-value="adiabatic" aria-pressed="true">Adiabatic</button><button data-value="diathermal">Diathermal</button></div><span></span></div>
+      <div class="row"><label>Top wall</label><div class="seg" id="w-top"><button data-value="adiabatic" aria-pressed="true">Adiabatic</button><button data-value="diathermal">Diathermal</button></div><span></span></div>
+      <div class="row"><label>Bottom wall</label><div class="seg" id="w-bottom"><button data-value="adiabatic" aria-pressed="true">Adiabatic</button><button data-value="diathermal">Diathermal</button></div><span></span></div>
+      <p class="hint">The piston (right wall) is always adiabatic.</p>
+
+      <div class="group-title">Operation 3: thermal operation</div>
+      <div class="seg" id="bathmode"><button data-value="none" aria-pressed="true">None</button><button data-value="contact">Contact a reservoir (left)</button><button data-value="env">Place in surroundings at constant temperature</button></div>
+      <div class="row"><label for="Tb">Reservoir temperature <i>T</i></label><input type="range" id="Tb" min="0.2" max="4" step="0.05" value="2"><output id="Tb-val"></output></div>
+      <p class="hint" id="bath-hint"></p>
+
+      <div class="group-title">Operation 1: move the piston (mechanical operation)</div>
+      <div class="row"><label for="pos">Piston position</label><input type="range" id="pos" min="45" max="110" step="1" value="90"><output id="pos-val"></output></div>
+      <div class="row"><label for="pspeed">Piston speed</label><input type="range" id="pspeed" min="-2.3" max="0.5" step="0.05" value="-1"><output id="pspeed-val"></output></div>
+      <p class="hint">A typical particle speed is √(2<i>T</i>) ≈ 1.4 (<i>T</i>=1). Moving the piston much more slowly than this approaches a "quasi-static" process.</p>
+
+      <div class="group-title">Operation 2: stirring (a mechanical operation that keeps the volume fixed)</div>
+      <div class="btns"><button id="btn-stir" aria-pressed="false">Turn the stirrer</button></div>
+      <div class="row"><label for="omega">Rotation speed</label><input type="range" id="omega" min="0.02" max="0.2" step="0.01" value="0.08"><output id="omega-val"></output></div>
+
+      <div class="group-title">Display</div>
+      <div>
+        <label class="check"><input type="checkbox" id="c-speed" checked>Color = speed</label>
+        <label class="check"><input type="checkbox" id="c-arrow">Velocity arrows</label>
+        <label class="check"><input type="checkbox" id="c-trace">Track one particle</label>
+        <label class="check"><input type="checkbox" id="c-heat" checked>Heat exchange</label>
+      </div>
+    </section>
+
+    <section class="card notes">
+      <h2>Goal</h2>
+      <p>Check how the <b>walls</b> and <b>Operations 1-3</b> from the "setup" in the lecture correspond to particle motion (micro) and the state variables <i>T, P, V, U</i> (macro).</p>
+      <h3>Try it</h3>
+      <ol>
+        <li>With all walls adiabatic, move the piston to the left (compression). Particles that hit the piston <b>bounce back faster</b>. What happens to <i>T</i> and <i>U</i>? And <i>W</i>?</li>
+        <li>Move the piston to the right (expansion). Now the particles bounce back slower. The gas "did" work on the outside (<i>W</i> &lt; 0).</li>
+        <li>Turn the stirrer. <i>U</i> increases even though the volume does not change (Operation 2 is also a mechanical operation). Does turning it the other way bring things back?</li>
+        <li>Choose "Contact a reservoir". What is different when the left wall is <b>adiabatic</b> and when it is <b>diathermal</b>?</li>
+        <li>Choose "Place in surroundings", make all walls diathermal, and wait. <i>T</i> settles to the temperature of the surroundings (transition to an equilibrium state).</li>
+      </ol>
+      <div class="q"><b>Question</b> Seen microscopically, both work <i>W</i> and heat <i>Q</i> are "energy exchanged in collisions between particles and walls". So what is the difference between them? (Hint: <i>W</i> comes from a wall that a person moves, <i>Q</i> from a wall in contact with a heat reservoir. Which one can a person control?)</div>
+      <details><summary>About the model</summary>
+        <p>A two-dimensional hard-disk gas (dimensionless units with mass <i>m</i>=1 and <i>k</i><sub>B</sub>=1). Particles collide elastically with each other. Adiabatic walls reflect like a mirror; a particle that hits a diathermal wall in contact with a reservoir bounces back with a velocity drawn from the Maxwell distribution at the reservoir temperature. Being two-dimensional and monatomic, the gas has 2 degrees of freedom, so <span class="math">U = NkT</span> and <span class="math">PV = NkT</span> (<i>V</i> is area, <i>P</i> is force per unit length).</p>
+        <p>For visibility, particles are drawn larger than their actual collision radius.</p>
+      </details>
+    </section>
+  </div>
+</main>
+
+<script type="module">
+import { Gas, ADIABATIC, DIATHERMAL, mb2d } from '../../assets/js/engine.js';
+import { SimView } from '../../assets/js/render.js';
+import { TimePlot, HistPlot, SERIES } from '../../assets/js/plot.js';
+import { $, fmt, fmtSigned, bindRange, bindCheck, segmented, Loop, bindPlayPause, setupCommon, updateLedger, bindSpeed } from '../../assets/js/ui.js';
+
+setupCommon();
+let gas, view, simRate = 0.1, frame = 0;
+const T0 = 1.0;
+
+function build() {
+  gas = new Gas({ H: 60, X: 90, Xmin: 45, Xmax: 110, seed: (Math.random() * 1e9) | 0 });
+  Object.assign(gas.stirrer, { present: true, on: false, cx: 28, cy: 30, L: 24, omega: +$('omega').value });
+  gas.addParticles(180, T0, { x0: 0, x1: 90, y0: 0, y1: 60 });
+  gas.pTau = 20;
+  gas.piston.target = 90;
+  if (view) { view.g = gas; } else {
+    view = new SimView($('sim'), gas, { bathPad: 13, envPad: 5, Tref: T0, drawScale: 2.8 });
+  }
+  applyWalls(); applyBath();
+  $('pos').value = 90; $('pos-val').textContent = '90';
+  $('btn-stir').setAttribute('aria-pressed', 'false');
+  plotT?.reset(); plotP?.reset();
+}
+
+const plotT = new TimePlot($('plotT'), { height: 170, ylabel: 'Temperature T', yZero: true,
+  series: [{ key: 'T', label: 'Gas temperature T', color: SERIES[0] }, { key: 'Tb', label: 'Reservoir temperature', color: SERIES[1], dash: [6, 4] }] });
+const plotP = new TimePlot($('plotP'), { height: 170, ylabel: 'Pressure P', yZero: true,
+  series: [{ key: 'P', label: 'P (force on the walls)', color: SERIES[0] }, { key: 'Pk', label: 'NkT/V', color: SERIES[2], dash: [6, 4] }] });
+const hist = new HistPlot($('hist'), { height: 180, vmax: 5 });
+
+// ---- Walls ----
+const wallSegs = {};
+function applyWalls() {
+  for (const side of ['left', 'top', 'bottom']) if (wallSegs[side]) gas.walls[side] = wallSegs[side].value;
+  updateHints();
+}
+for (const side of ['left', 'top', 'bottom']) wallSegs[side] = segmented('w-' + side, () => applyWalls(), false);
+
+// ---- Heat reservoir ----
+let bathMode = 'none';
+function applyBath() {
+  gas.bath = { left: bathMode !== 'none', top: bathMode === 'env', bottom: bathMode === 'env' };
+  updateHints();
+}
+segmented('bathmode', (v) => { bathMode = v; applyBath(); }, false);
+bindRange('Tb', (v) => { if (gas) gas.Tbath = v; }, (v) => v.toFixed(2), false);
+
+function updateHints() {
+  if (!gas) return;
+  const sides = { left: 'left', top: 'top', bottom: 'bottom' };
+  const contact = Object.keys(sides).filter((s) => gas.bath[s]);
+  let msg = '';
+  if (!contact.length) msg = 'Not in contact with a heat reservoir.';
+  else {
+    const open = contact.filter((s) => gas.walls[s] === DIATHERMAL);
+    const closed = contact.filter((s) => gas.walls[s] === ADIABATIC);
+    if (!open.length) msg = `In contact with a reservoir, but the wall in contact (${closed.map((s) => sides[s]).join(', ')}) is adiabatic, so no heat passes.`;
+    else msg = `Energy can be exchanged with the reservoir through the diathermal wall (${open.map((s) => sides[s]).join(', ')}).` + (closed.length ? ` (${closed.map((s) => sides[s]).join(', ')}: adiabatic)` : '');
+  }
+  $('bath-hint').textContent = msg;
+  const anyDia = Object.values(gas.walls).some((w) => w === DIATHERMAL);
+  $('state-hint').textContent = !anyDia && true ? '— all walls adiabatic: no heat exchange' : '';
+}
+
+// ---- Piston and stirrer ----
+bindRange('pos', (v) => { if (gas) gas.piston.target = v; }, (v) => v.toFixed(0), false);
+bindRange('pspeed', (v) => { if (gas) gas.piston.speed = Math.pow(10, v); }, (v) => Math.pow(10, v).toPrecision(2), true);
+bindRange('omega', (v) => { if (gas) gas.stirrer.omega = v; }, (v) => v.toFixed(2), true);
+$('btn-stir').addEventListener('click', (e) => {
+  gas.stirrer.on = !gas.stirrer.on;
+  e.currentTarget.setAttribute('aria-pressed', String(gas.stirrer.on));
+});
+
+// ---- Display ----
+bindCheck('c-speed', (on) => { view && (view.opt.colorMode = on ? 'speed' : 'species'); $('lg-speed').hidden = !on; });
+bindCheck('c-arrow', (on) => { view && (view.opt.arrows = on); });
+bindCheck('c-trace', (on) => { if (gas) { gas.tracerOn = on; gas.tracer = []; } });
+bindCheck('c-heat', (on) => { view && (view.opt.showHeat = on); });
+bindSpeed('speed', (v) => { simRate = v; });
+
+$('btn-reset').addEventListener('click', () => {
+  build();
+  gas.Tbath = +$('Tb').value;
+  gas.piston.speed = Math.pow(10, +$('pspeed').value);
+  view.opt.arrows = $('c-arrow').checked; gas.tracerOn = $('c-trace').checked;
+});
+$('btn-ledger').addEventListener('click', () => gas.resetLedger());
+
+build();
+gas.Tbath = +$('Tb').value;
+gas.piston.speed = Math.pow(10, +$('pspeed').value);
+view.opt.colorMode = $('c-speed').checked ? 'speed' : 'species';
+view.opt.arrows = $('c-arrow').checked;
+gas.tracerOn = $('c-trace').checked;
+
+const loop = new Loop((paused) => {
+  if (!paused) {
+    gas.advance(simRate);
+    gas.measure();
+    frame++;
+    const s = gas.stats();
+    const bathOn = Object.keys(gas.bath).some((k) => gas.bath[k] && gas.walls[k] === DIATHERMAL);
+    plotT.push(gas.time, { T: s.T, Tb: bathOn ? gas.Tbath : NaN });
+    plotP.push(gas.time, { P: s.Pwall, Pk: s.Pkin });
+    $('r-N').textContent = s.N;
+    $('r-V').textContent = fmt(s.V, 0);
+    $('r-U').textContent = fmt(s.U, 1);
+    $('r-T').textContent = fmt(s.T, 3);
+    $('r-P').textContent = fmt(s.Pwall, 4);
+    $('r-Pk').textContent = fmt(s.Pkin, 4);
+    if (frame % 6 === 0) { const sp = gas.speeds(); $('r-v').textContent = fmt(sp.reduce((a, b) => a + b, 0) / Math.max(1, sp.length), 2); }
+    updateLedger('l-', s);
+    $('l-Wp').textContent = fmtSigned(s.Wpiston, 1);
+    $('l-Ws').textContent = fmtSigned(s.Wstir, 1);
+    if (frame % 2 === 0) { plotT.draw(); plotP.draw(); }
+    if (frame % 6 === 0) {
+      const T = s.T;
+      hist.set(gas.speeds(), (v) => mb2d(v, T), Math.max(6, 3.6 * Math.sqrt(T)), { fn: (v) => mb2d(v, T0), label: 'Initial (T=1) distribution' });
+      hist.draw();
+    }
+    $('pos-val').textContent = gas.X.toFixed(0);
+  }
+  view.draw();
+});
+bindPlayPause('btn-play', loop);
+</script>
+</body>
+</html>

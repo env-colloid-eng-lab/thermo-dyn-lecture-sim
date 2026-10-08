@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>02 Relaxation to equilibrium | Thermodynamics Simulations</title>
+<link rel="icon" href="../../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body>
+<header class="site-header"><div class="inner">
+  <h1>02 Relaxation to equilibrium</h1><span class="sub">Put them in contact through a diathermal wall and leave them alone... (composite system and subsystems)</span>
+  <nav>
+    <a href="../index.html">Contents</a>
+    <a href="01-operations.html">01 Walls and operations</a>
+    <a href="02-equilibrium.html" aria-current="page">02 Relaxation to equilibrium</a>
+    <a href="03-processes.html">03 Quasi-static vs. irreversible</a>
+    <a href="04-isothermal.html">04 Isothermal energy balance</a>
+    <a href="05-extensive.html">05 Extensive and intensive</a>
+    <a href="06-heat-capacity.html">06 Heat capacity</a>
+    <a href="07-entropy.html">07 Entropy</a>
+    <a href="08-heat-engines.html">08 Heat engines</a>
+    <a href="09-osmosis.html">09 Osmotic pressure</a>
+    <a href="../../sims/02-equilibrium.html" lang="ja" hreflang="ja">日本語</a>
+    <button id="btn-proj" title="Enlarge text">Projector mode</button>
+  </nav>
+</div></header>
+
+<main class="layout">
+  <div class="col">
+    <section class="card">
+      <h2><span class="tag">Micro</span>A composite system made of two subsystems <span class="hint">All outer walls are adiabatic (isolated system)</span></h2>
+      <div class="canvas-wrap"><canvas id="sim"></canvas></div>
+      <div class="legend">
+        <span><span class="sw adi"></span>Adiabatic wall</span>
+        <span><span class="sw dia"></span>Diathermal wall</span>
+        <span id="lg-species"><span class="dot p1"></span>Fluid 1 <span class="dot p2"></span>Fluid 2</span>
+        <span id="lg-speed" hidden>Slow<span class="grad"></span>Fast</span>
+        <span><span class="dot hot"></span>Collision that received energy from the wall</span>
+        <span><span class="dot cold"></span>Collision that gave energy to the wall</span>
+      </div>
+      <h2 style="margin-top:10px"><span class="tag">Macro</span>State variables of each subsystem <span class="hint" id="grp-hint"></span></h2>
+      <div class="table-wrap">
+      <table class="tbl" id="tbl">
+        <thead><tr><th></th><th>Number of particles <i>N</i></th><th class="int">Temperature <i>T</i></th><th class="ext">Internal energy <i>U</i></th><th>Δ<i>U</i> (= heat received <i>Q</i>)</th></tr></thead>
+        <tbody>
+          <tr><td id="n1">Subsystem 1 (left)</td><td id="N1"></td><td id="T1"></td><td id="U1"></td><td id="Q1"></td></tr>
+          <tr><td id="n2">Subsystem 2 (right)</td><td id="N2"></td><td id="T2"></td><td id="U2"></td><td id="Q2"></td></tr>
+          <tr class="sum"><td>Total (composite system)</td><td id="Ns"></td><td></td><td id="Us"></td><td id="Qs"></td></tr>
+        </tbody>
+      </table>
+      </div>
+      <p class="hint">The outer walls are adiabatic, so <i>U</i> of the whole composite system is constant (Δ<i>U</i>₁ + Δ<i>U</i>₂ ≈ 0; any deviation is energy temporarily stored in the diathermal wall itself).</p>
+    </section>
+
+    <section class="card">
+      <h2>Time evolution</h2>
+      <div class="canvas-wrap"><canvas id="plotT"></canvas></div>
+      <div class="canvas-wrap" style="margin-top:6px"><canvas id="plotU"></canvas></div>
+    </section>
+    <section class="card">
+      <h2><span class="tag">Micro↔Macro</span>Speed distribution of each fluid</h2>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:8px">
+        <div class="canvas-wrap"><canvas id="h1"></canvas></div>
+        <div class="canvas-wrap"><canvas id="h2"></canvas></div>
+      </div>
+    </section>
+  </div>
+
+  <div class="col">
+    <section class="card ctrl">
+      <h2>Controls</h2>
+      <div class="btns">
+        <button id="btn-play" class="primary"></button>
+        <button id="btn-reset">Set up again (separate with an adiabatic wall)</button>
+      </div>
+      <div class="row"><label for="speed">Playback speed</label><input type="range" id="speed" min="-0.7" max="1.6" step="0.05" value="0.30"><output id="speed-val"></output></div>
+
+      <div class="group-title">Initial state (applied when you set up again)</div>
+      <div class="row"><label for="T1in">Left temperature <i>T</i>₁</label><input type="range" id="T1in" min="0.3" max="4" step="0.1" value="2.5"><output id="T1in-val"></output></div>
+      <div class="row"><label for="T2in">Right temperature <i>T</i>₂</label><input type="range" id="T2in" min="0.3" max="4" step="0.1" value="0.5"><output id="T2in-val"></output></div>
+      <div class="row"><label for="N1in">Left particle number <i>N</i>₁</label><input type="range" id="N1in" min="40" max="300" step="10" value="160"><output id="N1in-val"></output></div>
+      <div class="row"><label for="N2in">Right particle number <i>N</i>₂</label><input type="range" id="N2in" min="40" max="300" step="10" value="160"><output id="N2in-val"></output></div>
+
+      <div class="group-title">Change the partition (an operation)</div>
+      <div class="seg" id="part"><button data-value="adiabatic" aria-pressed="true">Adiabatic wall</button><button data-value="diathermal">Diathermal wall</button><button data-value="none">Remove</button></div>
+      <p class="hint" id="part-hint"></p>
+
+      <div class="group-title">Display</div>
+      <div>
+        <label class="check"><input type="checkbox" id="c-speed">Color = speed</label>
+        <label class="check"><input type="checkbox" id="c-arrow">Velocity arrows</label>
+        <label class="check"><input type="checkbox" id="c-heat" checked>Heat exchange</label>
+      </div>
+    </section>
+
+    <section class="card notes">
+      <h2>Goal</h2>
+      <p>If two fluids at different temperatures are put in contact through a <b>diathermal wall</b> and left alone, they eventually settle into a state with no macroscopic change (an <b>equilibrium state</b>). We look at the lecture's "coffee and room" example microscopically.</p>
+      <h3>Try it</h3>
+      <ol>
+        <li>Wait with the adiabatic wall in place. Do <i>T</i>₁ and <i>T</i>₂ change?</li>
+        <li>Switch to "Diathermal wall". Which way does the energy move? How does the particle speed change at the wall? ("Color = speed" makes this easy to see.)</li>
+        <li>Wait long enough. What happens to <i>T</i>₁ and <i>T</i>₂? Do <i>U</i>₁ and <i>U</i>₂ become equal? (Try it with <i>N</i>₁ ≠ <i>N</i>₂.)</li>
+        <li>Even after reaching equilibrium, the particles keep moving. What are the small fluctuations in the graphs?</li>
+        <li>Finally, "Remove" the partition. The two fluids mix. Can you wait until they return to the original state?</li>
+      </ol>
+      <div class="q"><b>Question</b> In equilibrium <i>T</i>₁ = <i>T</i>₂, but not necessarily <i>U</i>₁ = <i>U</i>₂. Which kind of variable becomes equal in equilibrium: "intensive variables" or "extensive variables"? (→ check this in 05)</div>
+      <div class="q"><b>Question</b> What happens to the fluctuations if you reduce the number of particles to 40? Why does thermodynamics deal with "macroscopic matter"?</div>
+      <details><summary>About the model</summary>
+        <p>The diathermal wall is modeled as "a wall with a small heat capacity". When a particle hits the wall, it bounces back with a velocity drawn from the Maxwell distribution at the wall temperature <i>T</i><sub>w</sub>, and the wall's energy changes by the same amount. Particles on both sides exchange energy with the same wall, so heat flows between the left and right fluids through the wall (the total energy of gas + wall is conserved exactly).</p>
+      </details>
+    </section>
+  </div>
+</main>
+
+<script type="module">
+import { Gas, ADIABATIC, DIATHERMAL, mb2d } from '../../assets/js/engine.js';
+import { SimView } from '../../assets/js/render.js';
+import { TimePlot, HistPlot, SERIES } from '../../assets/js/plot.js';
+import { $, fmt, fmtSigned, bindRange, bindCheck, segmented, Loop, bindPlayPause, setupCommon, bindSpeed } from '../../assets/js/ui.js';
+
+setupCommon();
+let gas, view, simRate = 0.1, frame = 0, partMode = 'adiabatic';
+let U0 = [0, 0];
+const plotT = new TimePlot($('plotT'), { height: 170, ylabel: 'Temperature T', yZero: true, window: 600,
+  series: [{ key: 'T1', label: 'Temperature of fluid 1, T₁', color: SERIES[0] }, { key: 'T2', label: 'Temperature of fluid 2, T₂', color: SERIES[1] }] });
+const plotU = new TimePlot($('plotU'), { height: 170, ylabel: 'Internal energy U', yZero: true, window: 600,
+  series: [{ key: 'U1', label: 'U₁', color: SERIES[0] }, { key: 'U2', label: 'U₂', color: SERIES[1] }, { key: 'Us', label: 'U₁+U₂', color: SERIES[3], dash: [6, 4] }] });
+const h1 = new HistPlot($('h1'), { height: 160, title: 'Fluid 1', label: 'Speed of fluid 1' });
+const h2 = new HistPlot($('h2'), { height: 160, title: 'Fluid 2', label: 'Speed of fluid 2', barColor: 'rgba(120,120,120,0.45)' });
+
+function build() {
+  gas = new Gas({ H: 60, X: 100, Xmin: 100, Xmax: 100, seed: (Math.random() * 1e9) | 0 });
+  gas.setVPartition(50, ADIABATIC);
+  gas.addParticles(+$('N1in').value, +$('T1in').value, { x0: 0, x1: 50, y0: 0, y1: 60 }, 0);
+  gas.addParticles(+$('N2in').value, +$('T2in').value, { x0: 50, x1: 100, y0: 0, y1: 60 }, 1);
+  gas.vpart.Tw = (+$('T1in').value + +$('T2in').value) / 2;
+  gas.vpart.Cw = 20;
+  gas.resetLedger();
+  U0 = groups().map((g) => g.U);
+  if (view) view.g = gas; else view = new SimView($('sim'), gas, { pistonRod: false, Tref: 1.2, drawScale: 2.8 });
+  view.opt.colorMode = $('c-speed').checked ? 'speed' : 'species';
+  view.opt.arrows = $('c-arrow').checked;
+  view.opt.showHeat = $('c-heat').checked;
+  partSeg?.select('adiabatic', false); partMode = 'adiabatic'; hint();
+  plotT.reset(); plotU.reset();
+}
+
+/** Totals per subsystem while the partition is in place; per fluid species once it is removed */
+function groups() {
+  const out = [{ N: 0, U: 0 }, { N: 0, U: 0 }];
+  for (let i = 0; i < gas.N; i++) {
+    const k = gas.vpart ? gas.region[i] : gas.species[i];
+    out[k].N++; out[k].U += 0.5 * (gas.vx[i] ** 2 + gas.vy[i] ** 2);
+  }
+  for (const o of out) o.T = o.N ? o.U / o.N : NaN;
+  return out;
+}
+
+function hint() {
+  const t = { adiabatic: 'Adiabatic wall: no energy moves between left and right.', diathermal: 'Diathermal wall: energy (heat) can move through the wall.', none: 'No partition: the particles themselves move across and mix.' };
+  $('part-hint').textContent = t[partMode];
+  $('grp-hint').textContent = gas?.vpart ? '' : '(partition removed, so totals are per fluid species)';
+  $('n1').textContent = gas?.vpart ? 'Subsystem 1 (left)' : 'Fluid 1 (blue)';
+  $('n2').textContent = gas?.vpart ? 'Subsystem 2 (right)' : 'Fluid 2 (white)';
+}
+
+const partSeg = segmented('part', (v) => {
+  partMode = v;
+  if (v === 'none') gas.setVPartition(null);
+  else gas.setVPartition(50, v === 'adiabatic' ? ADIABATIC : DIATHERMAL);
+  hint();
+}, false);
+
+for (const id of ['T1in', 'T2in']) bindRange(id, () => {}, (v) => v.toFixed(1));
+for (const id of ['N1in', 'N2in']) bindRange(id, () => {}, (v) => v.toFixed(0));
+bindSpeed('speed', (v) => { simRate = v; });
+bindCheck('c-speed', (on) => { if (view) view.opt.colorMode = on ? 'speed' : 'species'; $('lg-speed').hidden = !on; $('lg-species').hidden = on; });
+bindCheck('c-arrow', (on) => { if (view) view.opt.arrows = on; });
+bindCheck('c-heat', (on) => { if (view) view.opt.showHeat = on; });
+$('btn-reset').addEventListener('click', build);
+build();
+
+const loop = new Loop((paused) => {
+  if (!paused) {
+    gas.advance(simRate);
+    frame++;
+    const g = groups();
+    const Us = g[0].U + g[1].U;
+    plotT.push(gas.time, { T1: g[0].T, T2: g[1].T });
+    plotU.push(gas.time, { U1: g[0].U, U2: g[1].U, Us });
+    $('N1').textContent = g[0].N; $('N2').textContent = g[1].N; $('Ns').textContent = g[0].N + g[1].N;
+    $('T1').textContent = fmt(g[0].T, 3); $('T2').textContent = fmt(g[1].T, 3);
+    $('U1').textContent = fmt(g[0].U, 1); $('U2').textContent = fmt(g[1].U, 1); $('Us').textContent = fmt(Us, 1);
+    $('Q1').textContent = fmtSigned(g[0].U - U0[0], 1); $('Q2').textContent = fmtSigned(g[1].U - U0[1], 1);
+    $('Qs').textContent = fmtSigned(Us - U0[0] - U0[1], 1);
+    if (frame % 2 === 0) { plotT.draw(); plotU.draw(); }
+    if (frame % 8 === 0) {
+      const vmax = 3.6 * Math.sqrt(Math.max(g[0].T, g[1].T, 0.5));
+      const pick = (k) => (i) => (gas.vpart ? gas.region[i] : gas.species[i]) === k;
+      h1.set(gas.speeds(pick(0)), (v) => mb2d(v, g[0].T), vmax); h1.draw();
+      h2.set(gas.speeds(pick(1)), (v) => mb2d(v, g[1].T), vmax); h2.draw();
+    }
+  }
+  view.draw();
+});
+bindPlayPause('btn-play', loop);
+</script>
+</body>
+</html>
