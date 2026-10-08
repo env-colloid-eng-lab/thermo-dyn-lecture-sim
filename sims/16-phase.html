@@ -112,7 +112,7 @@ import { $, fmt, fmtSigned, bindRange, segmented, Loop, bindPlayPause, setupComm
 setupCommon();
 // 確率モデル：容器の幅 1、高さ 1、水面の高さ YL。分子は一定の速さ v(T) でまっすぐ飛び、壁で跳ね返る
 const YL = 0.18, TREF = 293, NREF = 120, V0 = 0.35, MAXN = 600;
-let T = 293, lid = 'closed', mol = [], splash = [], time = 0, evap = 0, cond = 0, rates = { e: 0, c: 0 }, eSm = 0;
+let T = 293, lid = 'closed', mol = [], splash = [], time = 0, evap = 0, cond = 0, rates = { e: 0, c: 0 }, eSm = 0, last = { t: 0, e: 0, c: 0 };
 
 const speed = () => V0 * Math.sqrt(T / TREF);
 // 1分子が単位時間に水面に当たる割合（向きがでたらめな2次元の一定の速さ：⟨下向きの速さ⟩ = v/π）
@@ -132,7 +132,7 @@ function addMol(n, y0) {
     mol.push({ x: Math.random(), y: y0 ?? YL + (1 - YL) * Math.random(), a });
   }
 }
-function reset() { mol = []; splash = []; time = 0; evap = 0; cond = 0; eSm = 0; plotN.reset(); }
+function reset() { mol = []; splash = []; time = 0; evap = 0; cond = 0; eSm = 0; rates = { e: 0, c: 0 }; last = { t: 0, e: 0, c: 0 }; plotN.reset(); }
 
 function step(dt) {
   const v = speed();
@@ -240,7 +240,7 @@ $('btn-rem').addEventListener('click', () => { mol = mol.filter(() => Math.rando
 $('btn-reset').addEventListener('click', reset);
 reset();
 
-let frame = 0, last = { t: 0, e: 0, c: 0 };
+let frame = 0;
 const loop = new Loop((paused) => {
   if (!paused) {
     for (let k = 0; k < 4; k++) step(0.02);

@@ -102,7 +102,7 @@ import { $, fmt, fmtSigned, bindRange, Loop, bindPlayPause, setupCommon } from '
 setupCommon();
 const DT = 6 * 3600;   // one update = 6 hours
 let tau = 1.6, phi = 240, gc = 6.5, daysPerFrame = 2;
-let rce, rad;
+let rce, rad, last;
 
 const plotT = new XYPlot($('plotT'), { height: 340, xmin: 180, xmax: 340, ymin: 0, ymax: 26, xlabel: 'T (K)', ylabel: 'height z (km)', xd: 1, yd: 2 });
 const plotH = new XYPlot($('plotH'), { height: 280, xmin: -3, xmax: 3, ymin: 0, ymax: 26, xlabel: 'heating rate (K/day)', ylabel: 'height z (km)', xd: 2, yd: 2 });
@@ -110,7 +110,7 @@ const plotS = new TimePlot($('plotS'), { height: 170, ylabel: 'surface temperatu
   series: [{ key: 'c', label: 'with convection', color: '#d6453d' }, { key: 'r', label: 'radiation only', color: SERIES[0], dash: [6, 4] }] });
 
 function make(convect) { return new Column({ tauS: tau, phiAbs: phi, gammaCrit: gc, convect }); }
-function reset() { rce = make(true); rad = make(false); plotS.reset(); }
+function reset() { rce = make(true); rad = make(false); last = rce.fluxes(); plotS.reset(); }
 
 /** (T, z) points of the surface and layers */
 const profile = (c) => { const z = c.heights(); return [[c.Ts, 0], ...c.T.map((T, i) => [T, z[i + 1]])]; };
@@ -153,7 +153,7 @@ bindRange('speed', (v) => { daysPerFrame = Math.pow(10, v); }, (v) => Math.pow(1
 $('btn-reset').addEventListener('click', reset);
 reset();
 
-let frame = 0, last = rce.fluxes();
+let frame = 0;
 const loop = new Loop((paused) => {
   if (!paused) {
     const n = Math.max(1, Math.round((daysPerFrame * 86400) / DT));
