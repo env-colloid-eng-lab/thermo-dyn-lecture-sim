@@ -6,6 +6,7 @@
 //  ページでは毎フレーム gas.advance() の後に update() を呼ぶ。
 // =============================================================
 import { ADIABATIC, DIATHERMAL } from './engine.js';
+import { tr } from './i18n.js';
 
 const SIDES = ['left', 'top', 'bottom'];
 
@@ -34,7 +35,7 @@ export function cycleDef(type, p) {
   };
 }
 
-const KIND_LABEL = { iso: '等温', adi: '断熱', isoV: '定積' };
+const KIND_LABEL = { iso: tr('等温', 'isothermal'), adi: tr('断熱', 'adiabatic'), isoV: tr('定積', 'isochoric') };
 
 /** 向きを考えた過程の列 [{from, to, kind, bathT}] */
 export function cycleSteps(type, dir, p) {
@@ -52,8 +53,8 @@ export function cycleSteps(type, dir, p) {
   for (const s of steps) {
     // 等温は両端の温度の熱源、定積は行き先の温度の熱源、断熱は熱源なし
     s.bathT = s.kind === 'adi' ? null : s.to.T;
-    const dirWord = s.kind === 'isoV' ? (s.to.T > s.from.T ? '加熱' : '冷却') : (s.to.X > s.from.X ? '膨張' : '圧縮');
-    s.label = `${s.from.name}→${s.to.name} ${KIND_LABEL[s.kind]}${dirWord}`;
+    const dirWord = s.kind === 'isoV' ? (s.to.T > s.from.T ? tr('加熱', 'heating') : tr('冷却', 'cooling')) : (s.to.X > s.from.X ? tr('膨張', 'expansion') : tr('圧縮', 'compression'));
+    s.label = `${s.from.name}→${s.to.name} ${KIND_LABEL[s.kind]}${tr('', ' ')}${dirWord}`;
   }
   return steps;
 }
@@ -94,7 +95,7 @@ export class CycleRunner {
   }
 
   get step() { return this.k >= 0 ? this.steps[this.k] : null; }
-  get label() { return this.k < 0 ? '準備中（状態 A に落ち着かせる）' : this.step.label; }
+  get label() { return this.k < 0 ? tr('準備中（状態 A に落ち着かせる）', 'Preparing (settling into state A)') : this.step.label; }
 
   _setBath(T) {
     for (const s of SIDES) { this.g.walls[s] = T == null ? ADIABATIC : DIATHERMAL; this.g.bath[s] = T != null; }

@@ -14,6 +14,7 @@ const shots = process.argv.includes('--shots');
 const PAGES = ['index.html', 'sims/01-operations.html', 'sims/02-equilibrium.html',
   'sims/03-processes.html', 'sims/04-isothermal.html', 'sims/05-extensive.html',
   'sims/06-heat-capacity.html', 'sims/07-entropy.html', 'sims/08-heat-engines.html', 'sims/09-osmosis.html'];
+PAGES.push(...PAGES.map((p) => 'en/' + p));   // 英語版も同じように確かめる
 
 let chromium;
 try {
@@ -68,10 +69,13 @@ for (const pg of PAGES) {
     }
     const bad = await page.evaluate(() => (document.body.innerText.match(/NaN|undefined|Infinity/g) || []).length);
     const hscroll = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
-    const ok = !errs.length && !bad && !hscroll;
+    // 英語版に日本語が残っていないか（言語切り替えの「日本語」リンクは除く）
+    const ja = pg.startsWith('en/') ? await page.evaluate(() =>
+      (document.body.innerText.replace(/日本語/g, '').match(/[\u3040-\u30ff\u4e00-\u9fff]+/g) || []).slice(0, 5)) : [];
+    const ok = !errs.length && !bad && !hscroll && !ja.length;
     if (!ok) failed++;
     console.log(`${ok ? 'PASS' : 'FAIL'}  ${pg} @${width}px` +
-      (errs.length ? `  エラー: ${errs.join(' | ')}` : '') + (bad ? `  NaN等の表示: ${bad}` : '') + (hscroll ? '  横スクロールあり' : ''));
+      (errs.length ? `  エラー: ${errs.join(' | ')}` : '') + (bad ? `  NaN等の表示: ${bad}` : '') + (hscroll ? '  横スクロールあり' : '') + (ja.length ? `  日本語が残っている: ${ja.join(' ')}` : ''));
     if (shots) {
       const name = pg.replace(/[\/.]/g, '_') + `_${width}.png`;
       await page.screenshot({ path: path.join(root, 'tests/screenshots', name), fullPage: true });

@@ -4,6 +4,7 @@
 //    XYPlot   : P–V 図など（参照曲線＋軌跡＋面積の塗り）
 //    HistPlot : 速さの分布＋理論曲線
 // =============================================================
+import { tr } from './i18n.js';
 
 export const SERIES = ['#2a78d6', '#eb6834', '#1baf7a', '#4a3aa7'];
 const INK = '#1f1f1f', INK2 = '#5f5e5a', GRID = '#e6e5e0', AXIS = '#b9b8b2';
@@ -102,7 +103,7 @@ class Base {
 export class TimePlot extends Base {
   /** opt.series: [{key,label,color,dash}], opt.window: 表示する時間幅 */
   constructor(canvas, opt) {
-    super(canvas, Object.assign({ window: 400, xlabel: '時間 t', yZero: false, ymin: null, ymax: null }, opt));
+    super(canvas, Object.assign({ window: 400, xlabel: tr('時間 t', 'time t'), yZero: false, ymin: null, ymax: null }, opt));
     this.data = [];
   }
   reset() { this.data = []; this.draw(); }
@@ -261,7 +262,7 @@ export class XYPlot extends Base {
 
 export class HistPlot extends Base {
   constructor(canvas, opt) {
-    super(canvas, Object.assign({ bins: 24, vmax: 5, xlabel: '速さ v', ylabel: '割合（確率密度）', label: '粒子の速さ（ヒストグラム）', barColor: 'rgba(42,120,214,0.55)' }, opt));
+    super(canvas, Object.assign({ bins: 24, vmax: 5, xlabel: tr('速さ v', 'speed v'), ylabel: tr('割合（確率密度）', 'fraction (probability density)'), label: tr('粒子の速さ（ヒストグラム）', 'particle speeds (histogram)'), barColor: 'rgba(42,120,214,0.55)' }, opt));
     this.values = []; this.theory = null; this.color = SERIES[0];
   }
   set(values, theoryFn, vmax, ref) { this.values = values; this.theory = theoryFn; if (vmax) this.opt.vmax = vmax; this.ref = ref || null; }
@@ -296,7 +297,7 @@ export class HistPlot extends Base {
       ctx.stroke(); ctx.setLineDash([]);
     }
     this.legend(ctx, [{ label: this.opt.label, color: this.opt.barColor }]
-      .concat(this.theory ? [{ label: 'マクスウェル分布（いまの T）', color: SERIES[1] }] : [])
+      .concat(this.theory ? [{ label: tr('マクスウェル分布（いまの T）', 'Maxwell distribution (current T)'), color: SERIES[1] }] : [])
       .concat(this.ref ? [{ label: this.ref.label, color: '#77756f', dash: [6, 4] }] : []));
   }
 }
