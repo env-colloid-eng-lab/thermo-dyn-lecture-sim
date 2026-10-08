@@ -50,8 +50,8 @@ npm run serve                      # http://localhost:8000/ で表示を確認
 
 ## ファイル構成
 
-- `index.html` 目次 / `sims/01〜08-*.html` 各シミュレーション
-- `assets/js/engine.js` 分子動力学（`Gas` クラス：壁・熱源・ピストン・撹拌翼・仕切り・圧力測定・帳簿）
+- `index.html` 目次 / `sims/01〜09-*.html` 各シミュレーション
+- `assets/js/engine.js` 分子動力学（`Gas` クラス：壁・熱源・ピストン・撹拌翼・仕切り（断熱・透熱・半透膜）・圧力測定・帳簿）
   - ピストンは `piston.mode` が `'position'`（目標位置へ一定の速さ）か `'force'`（質量 `M`、外圧 `Pext` の定圧ピストン）
   - `gas.advance(t)` で時間 t だけ進める（速い粒子がいると自動で刻みを細かくする）
 - `assets/js/render.js` 描画（`SimView`）、`plot.js` グラフ（`TimePlot` / `XYPlot` / `HistPlot`）、`ui.js` UI 部品

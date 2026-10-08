@@ -1,6 +1,6 @@
 // エンジンの物理的なふるまいを数値的に確かめるテスト
 //   node tests/physics-test.mjs
-import { Gas, DIATHERMAL, ADIABATIC } from '../assets/js/engine.js';
+import { Gas, DIATHERMAL, ADIABATIC, SEMIPERMEABLE } from '../assets/js/engine.js';
 import { HeatCapacityRun } from '../assets/js/experiments.js';
 import { lnChoose, binomHalf } from '../assets/js/entropy.js';
 import { CycleRunner } from '../assets/js/cycles.js';
@@ -216,6 +216,31 @@ const f = (v, d = 3) => Number(v).toFixed(d);
   const se = cyc('stirling', 'engine', 23), Ts = se.total;
   const etaS = -Ts.W / Ts.Qh, etaR = -Ts.W / Ts.Qiso_h;
   check('スターリング: 再生器なしの η < 再生器ありの η', etaS < etaR && etaS > 0.15, `η=${f(etaS)}（理論 0.290） 再生器あり=${f(etaR)}（理論 0.500）`);
+}
+
+// 13) 半透膜と浸透圧: 溶媒は通り、溶質は通らない。Π = P右 − P左 ≈ nkT/V（ファントホッフ）
+{
+  const g = new Gas({ H: 60, X: 100, Xmin: 58, Xmax: 175, r: 0.15, seed: 31 });
+  g.setVPartition(50, ADIABATIC);
+  g.addParticles(160, 1, { x0: 0, x1: 50, y0: 0, y1: 60 }, 0);
+  g.addParticles(80, 1, { x0: 50, x1: 100, y0: 0, y1: 60 }, 0);
+  g.addParticles(80, 1, { x0: 50, x1: 100, y0: 0, y1: 60 }, 1);
+  g.walls = { left: DIATHERMAL, top: DIATHERMAL, bottom: DIATHERMAL };
+  g.bath = { left: true, top: true, bottom: true }; g.Tbath = 1;
+  g.setVPartition(50, SEMIPERMEABLE);
+  for (let k = 0; k < 600; k++) g.advance(1);
+  g.pTau = 1e9; g.resetPressure();
+  let TR = 0, nL = 0, n = 0, soluteLeft = 0;
+  for (let k = 0; k < 4000; k++) {
+    g.advance(1); g.measure(); TR += g.regionStats(1).T; n++;
+    if (k % 20 === 0) for (let i = 0; i < g.N; i++) { if (g.x[i] < 50) { if (g.species[i] === 0) nL++; else soluteLeft++; } }
+  }
+  TR /= n; nL /= 200;
+  const th = (80 * TR) / 3000, Pi = g.P.piston - g.P.left;
+  check('半透膜: 溶質は膜を通らない', soluteLeft === 0);
+  check('半透膜: 溶媒は左右で同じ密度になる', Math.abs(nL / 120 - 1) < 0.08, `左の溶媒 ⟨n⟩=${f(nL, 1)}（理論 120）`);
+  check('浸透圧: P右 − P左 ≈ nkT/V', Math.abs(Pi / th - 1) < 0.12, `Π=${f(Pi, 4)} nkT/V=${f(th, 4)}`);
+  check('浸透圧: 膜が溶質から受ける圧力 ≈ nkT/V', Math.abs(g.P.vpart / th - 1) < 0.12, `P膜=${f(g.P.vpart, 4)}`);
 }
 
 console.log(fails ? `\n${fails} 件失敗` : '\nすべて成功');

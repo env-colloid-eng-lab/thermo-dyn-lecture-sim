@@ -3,7 +3,7 @@
 //  図の約束は講義スライドに合わせる:
 //    斜線の帯 = 断熱壁 / 細い実線 = 透熱壁 / 薄い青 = 流体
 // =============================================================
-import { ADIABATIC, DIATHERMAL } from './engine.js';
+import { ADIABATIC, DIATHERMAL, SEMIPERMEABLE } from './engine.js';
 
 export const COLORS = {
   fluid: '#DAE3F3',
@@ -184,7 +184,13 @@ export class SimView {
 
     // --- 仕切り壁 ---
     const pw = 1.4;
-    if (g.vpart) this.wallRect(ctx, g.vpart.x - pw / 2, 0, pw, g.H, g.vpart.type, 'center-v');
+    if (g.vpart && g.vpart.type === SEMIPERMEABLE) {
+      // 半透膜：破線（溶媒は通り抜ける）
+      ctx.strokeStyle = COLORS.wall; ctx.lineWidth = 2.2 * dpr;
+      ctx.setLineDash([5 * dpr, 4 * dpr]);
+      ctx.beginPath(); ctx.moveTo(this.X(g.vpart.x), this.Y(0)); ctx.lineTo(this.X(g.vpart.x), this.Y(g.H)); ctx.stroke();
+      ctx.setLineDash([]);
+    } else if (g.vpart) this.wallRect(ctx, g.vpart.x - pw / 2, 0, pw, g.H, g.vpart.type, 'center-v');
     if (g.hpart) this.wallRect(ctx, 0, g.hpart.y - pw / 2, g.X, pw, g.hpart.type, 'center-h');
 
     // --- 熱のやりとりの可視化 ---

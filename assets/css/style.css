@@ -93,6 +93,7 @@ button:disabled { opacity: .45; cursor: default; }
 .legend .sw { display: inline-block; width: 26px; height: 10px; vertical-align: middle; margin-right: 4px; border: 1px solid #2F5597; }
 .sw.adi { background: repeating-linear-gradient(135deg, #fff 0 3px, #2F5597 3px 4.2px); }
 .sw.dia { background: #fff; height: 4px; }
+.sw.semi { background: repeating-linear-gradient(90deg, #2F5597 0 5px, transparent 5px 9px); height: 3px; border: none; }
 .sw.fluid { background: var(--fluid); border-color: #b8c6e0; }
 .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; vertical-align: middle; margin-right: 4px; }
 .dot.p1 { background: #4472C4; }

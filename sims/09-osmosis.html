@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>09 浸透圧 | 熱力学シミュレーション</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+<header class="site-header"><div class="inner">
+  <h1>09 浸透圧</h1><span class="sub">溶媒だけを通す膜 ― 溶媒は溶液側へ移り、圧力差 Π が生まれる</span>
+  <nav>
+    <a href="../index.html">目次</a>
+    <a href="01-operations.html">01 壁と操作</a>
+    <a href="02-equilibrium.html">02 平衡への緩和</a>
+    <a href="03-processes.html">03 準静的と不可逆</a>
+    <a href="04-isothermal.html">04 等温過程の収支</a>
+    <a href="05-extensive.html">05 示量と示強</a>
+    <a href="06-heat-capacity.html">06 熱容量</a>
+    <a href="07-entropy.html">07 エントロピー</a>
+    <a href="08-heat-engines.html">08 熱機関</a>
+    <a href="09-osmosis.html" aria-current="page">09 浸透圧</a>
+    <button id="btn-proj" title="文字を大きくする">投影モード</button>
+  </nav>
+</div></header>
+
+<main class="layout">
+  <div class="col">
+    <section class="card">
+      <h2><span class="tag">ミクロ</span>左：純粋な溶媒　右：溶液（溶媒＋溶質） <span class="hint" id="state-hint"></span></h2>
+      <div class="canvas-wrap"><canvas id="sim"></canvas></div>
+      <div class="legend">
+        <span><span class="sw dia"></span>透熱壁（温度一定の環境）</span>
+        <span><span class="sw semi"></span>半透膜（溶媒だけ通す）</span>
+        <span><span class="dot p1"></span>溶媒（水）</span>
+        <span><span class="dot p2"></span>溶質</span>
+      </div>
+      <div class="readouts">
+        <div class="stat ext"><span class="k">左の溶媒の数</span><span class="v" id="r-nL"></span></div>
+        <div class="stat ext"><span class="k">右の溶媒の数</span><span class="v" id="r-nR"></span></div>
+        <div class="stat ext"><span class="k">溶質の数 <i>n</i></span><span class="v" id="r-ns"></span></div>
+        <div class="stat ext"><span class="k">溶液の体積 <i>V</i></span><span class="v" id="r-V"></span></div>
+        <div class="stat int"><span class="k">左の圧力 <i>P</i><sub>左</sub></span><span class="v" id="r-PL"></span></div>
+        <div class="stat int"><span class="k">右の圧力 <i>P</i><sub>右</sub></span><span class="v" id="r-PR"></span></div>
+      </div>
+      <div class="readouts">
+        <div class="stat"><span class="k">浸透圧 Π = <i>P</i><sub>右</sub> − <i>P</i><sub>左</sub></span><span class="v" id="r-Pi"></span></div>
+        <div class="stat"><span class="k">膜が溶質から受ける圧力</span><span class="v" id="r-Pm"></span></div>
+        <div class="stat"><span class="k">ファントホッフ <i>nkT</i>/<i>V</i></span><span class="v" id="r-th"></span></div>
+      </div>
+      <p class="hint" style="margin:4px 0 0">圧力は壁が受けた力の時間平均（直近 200 程度）。粒子数が少ないので、半透膜にしたり押したりしたあとは、グラフが落ち着くまで待ってから「記録する」。</p>
+    </section>
+
+    <section class="card">
+      <h2>時間変化</h2>
+      <div class="canvas-wrap"><canvas id="plotN"></canvas></div>
+      <div class="canvas-wrap" style="margin-top:6px"><canvas id="plotP"></canvas></div>
+    </section>
+
+    <section class="card">
+      <h2><span class="tag">マクロ</span>ファントホッフの式を確かめる <span class="hint">「記録する」で今の値を追加</span></h2>
+      <div class="canvas-wrap"><canvas id="plotV"></canvas></div>
+      <div class="table-wrap" style="margin-top:8px">
+        <table class="tbl" id="tbl">
+          <thead><tr><th>#</th><th>状態</th><th><i>n</i></th><th><i>T</i></th><th><i>V</i></th><th><i>nkT</i>/<i>V</i></th><th>Π（圧力差）</th><th>Π（膜）</th><th>比</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <p class="hint" id="tbl-empty">まだ記録していません。</p>
+    </section>
+  </div>
+
+  <div class="col">
+    <section class="card ctrl">
+      <h2>操作パネル</h2>
+      <div class="btns">
+        <button id="btn-play" class="primary"></button>
+        <button id="btn-reset">はじめから</button>
+      </div>
+      <div class="row"><label for="speed">再生速度</label><input type="range" id="speed" min="-0.7" max="1.6" step="0.05" value="0.48"><output id="speed-val"></output></div>
+
+      <div class="group-title">はじめの状態（変えたら「はじめから」）</div>
+      <div class="row"><label for="ns">溶質の数 <i>n</i></label><input type="range" id="ns" min="0" max="120" step="10" value="80"><output id="ns-val"></output></div>
+      <div class="row"><label for="T">温度 <i>T</i></label><input type="range" id="T" min="0.5" max="2" step="0.1" value="1"><output id="T-val"></output></div>
+      <p class="hint" style="margin:0">はじめは左右の圧力が等しくなるように粒子を入れ、仕切りは何も通さない壁にしてあります。</p>
+
+      <div class="group-title">操作</div>
+      <div class="btns">
+        <button id="btn-semi">仕切りを半透膜にする</button>
+      </div>
+      <div class="row"><label for="Pext">ピストンを押す圧力</label><input type="range" id="Pext" min="0.04" max="0.14" step="0.005" value="0.09"><output id="Pext-val"></output></div>
+      <div class="btns">
+        <button id="btn-push">この圧力でピストンを押す</button>
+        <button id="btn-fix">ピストンを固定する</button>
+      </div>
+      <div class="btns"><button id="btn-rec">記録する</button><button id="btn-clear">表を消す</button></div>
+
+      <div class="group-title">表示</div>
+      <div>
+        <label class="check"><input type="checkbox" id="c-heat">熱のやりとり</label>
+        <label class="check"><input type="checkbox" id="c-trace">1粒子を追跡</label>
+      </div>
+    </section>
+
+    <section class="card notes">
+      <h2>ねらい</h2>
+      <p>溶媒（水）は通すが溶質は通さない膜を <b>半透膜</b> という。純粋な溶媒と溶液を半透膜で仕切ると、溶媒が溶液側へ移っていき（<b>浸透</b>）、溶液側の圧力が高くなったところで止まる。このときの圧力差が <b>浸透圧</b> Π。うすい溶液では <span class="math">Π = (n/V)kT</span>（<b>ファントホッフの式</b>）で、理想気体の状態方程式と同じ形になる。</p>
+      <h3>やってみよう</h3>
+      <ol>
+        <li>「仕切りを半透膜にする」。溶媒（青）の数は左右でどう変わる？ 左右の圧力は？</li>
+        <li>しばらく待って、Π（測定）と <i>nkT</i>/<i>V</i> を比べる。「記録する」。</li>
+        <li>溶質の数 <i>n</i> や温度 <i>T</i> を変えて「はじめから」→ 半透膜 → 記録、を繰り返す。グラフの点は直線に乗るか？</li>
+        <li>「この圧力でピストンを押す」。押す圧力が溶液側の圧力より大きいと、溶液から溶媒だけが左へこし出される（<b>逆浸透</b>）。溶液は濃くなり、Π は大きくなる。</li>
+        <li>押す圧力を小さくすると？ 溶媒が右へ入り、ピストンは押し返される。</li>
+      </ol>
+      <div class="q"><b>問い</b>　溶媒の粒子は膜を自由に行き来できる。それなのに、溶液側へ「正味に」移っていくのはなぜ？（07 の混合のエントロピーと結びつけてみよう）</div>
+      <div class="q"><b>問い</b>　植物の根が土から水を吸えるのはなぜ？ 畑に塩分がたまる（塩害）と作物が水を吸えなくなるのはなぜ？ 浸透圧で説明してみよう。</div>
+      <div class="q"><b>問い</b>　海水から真水をつくる「逆浸透膜」の装置では、海水側にどれくらいの圧力をかける必要がある？</div>
+      <details><summary>このモデルでの浸透圧</summary>
+        <p>溶媒の粒子は膜を素通りするので、平衡では左右の溶媒の密度（溶媒の「分圧」）が等しくなる。右の圧力はそれに溶質の分圧 <span class="math">nkT/V</span> が加わった分だけ高い。だから <span class="math">Π = P<sub>右</sub> − P<sub>左</sub> = nkT/V</span>。膜を押しているのは溶質だけなので、「膜が溶質から受ける圧力」も Π になる。</p>
+        <p>本物の溶液では溶媒は液体で、溶媒どうしの力も働くが、溶質がうすいときは同じ式 <span class="math">Π = cRT</span>（<i>c</i> はモル濃度）が成り立つ。溶媒の化学ポテンシャルが膜の両側で等しくなる、という条件から導かれる。</p>
+        <p>このページでは粒子を小さめにして、うすい溶液に近づけています。それでも粒子には大きさがあるので、濃くすると測った Π は <i>nkT</i>/<i>V</i> より少し大きくなる。この式は2次元でも3次元でも同じ形（粒子1個あたり <i>kT</i>）。</p>
+      </details>
+    </section>
+  </div>
+</main>
+
+<script type="module">
+import { Gas, ADIABATIC, DIATHERMAL, SEMIPERMEABLE } from '../assets/js/engine.js';
+import { SimView } from '../assets/js/render.js';
+import { TimePlot, XYPlot, SERIES } from '../assets/js/plot.js';
+import { $, fmt, bindRange, bindCheck, Loop, bindPlayPause, setupCommon, bindSpeed } from '../assets/js/ui.js';
+
+setupCommon();
+const H = 60, XM = 50, X0 = 100, NW = 240;   // NW：溶媒の粒子数（左右の合計）
+let gas, view, simRate = 0.1, frame = 0, ns = 80, T = 1, Pext = 0.09;
+let sm = null;          // 表示用にならした値
+const rows = [];
+
+const plotN = new TimePlot($('plotN'), { height: 170, ylabel: '溶媒の粒子数', yZero: false, window: 1500,
+  series: [{ key: 'L', label: '左（純粋な溶媒）', color: SERIES[0] }, { key: 'R', label: '右（溶液）', color: SERIES[1] }] });
+const plotP = new TimePlot($('plotP'), { height: 170, ylabel: '圧力 P', yZero: true, window: 1500,
+  series: [{ key: 'PL', label: 'P左', color: SERIES[0] }, { key: 'PR', label: 'P右', color: SERIES[1] }, { key: 'Pi', label: 'Π = P右 − P左', color: SERIES[3] }] });
+const plotV = new XYPlot($('plotV'), { height: 240, xmin: 0, xmax: 0.12, ymin: 0, ymax: 0.13, xlabel: 'nkT/V', ylabel: 'Π', xd: 3, yd: 3 });
+plotV.refs = [{ label: 'ファントホッフ Π = nkT/V', color: '#77756f', dash: [6, 4], fn: (x) => x }];
+
+function build() {
+  // 粒子を小さめ（r = 0.15）にして、理想的なうすい溶液に近づける
+  gas = new Gas({ H, X: X0, Xmin: XM + 8, Xmax: 175, r: 0.15, seed: (Math.random() * 1e9) | 0 });
+  gas.setVPartition(XM, ADIABATIC);   // はじめは何も通さない仕切り
+  // 左右の体積は等しいので、粒子の総数を等しくすれば圧力も等しい
+  const a = (NW + ns) / 2, b = (NW - ns) / 2;
+  gas.addParticles(a, T, { x0: 0, x1: XM, y0: 0, y1: H }, 0);
+  gas.addParticles(b, T, { x0: XM, x1: X0, y0: 0, y1: H }, 0);
+  if (ns > 0) gas.addParticles(ns, T, { x0: XM, x1: X0, y0: 0, y1: H }, 1);
+  gas.walls = { left: DIATHERMAL, top: DIATHERMAL, bottom: DIATHERMAL };
+  gas.bath = { left: true, top: true, bottom: true };
+  gas.Tbath = T;
+  gas.pTau = 200;
+  gas.piston.target = X0;
+  if (view) view.g = gas; else view = new SimView($('sim'), gas, { envPad: 5, Tref: 1, drawScale: 5.6 });
+  view.opt.showHeat = $('c-heat').checked;
+  gas.tracerOn = $('c-trace').checked;
+  sm = null;
+  plotN.reset(); plotP.reset();
+  $('btn-semi').disabled = false;
+  $('state-hint').textContent = '— いまの仕切りは何も通さない壁';
+}
+
+function stateLabel() {
+  if (gas.vpart.type !== SEMIPERMEABLE) return '仕切り';
+  return gas.piston.mode === 'force' ? `逆浸透 P=${fmt(gas.piston.Pext, 3)}` : '浸透（固定）';
+}
+
+function drawRows() {
+  const tb = $('tbl').querySelector('tbody');
+  tb.innerHTML = rows.map((r, k) => `<tr><td>${k + 1}</td><td style="text-align:left">${r.state}</td><td>${r.n}</td><td>${fmt(r.T, 2)}</td><td>${fmt(r.V, 0)}</td><td>${fmt(r.th, 4)}</td><td>${fmt(r.Pi, 4)}</td><td>${fmt(r.Pm, 4)}</td><td>${fmt(r.Pi / r.th, 2)}</td></tr>`).join('');
+  $('tbl-empty').hidden = rows.length > 0;
+  const ok = rows.filter((r) => r.n > 0);
+  plotV.paths = ok.map((r, k) => ({ label: k === 0 ? '測定：圧力差 P右 − P左' : '', color: SERIES[1], pts: [[r.th, r.Pi]], ends: true }))
+    .concat(ok.map((r, k) => ({ label: k === 0 ? '測定：膜が受ける圧力' : '', color: SERIES[0], pts: [[r.th, r.Pm]], ends: true })));
+  plotV.draw();
+}
+
+bindRange('ns', (v) => { ns = v; }, (v) => v.toFixed(0), false);
+bindRange('T', (v) => { T = v; }, (v) => v.toFixed(1), false);
+bindRange('Pext', (v) => { Pext = v; if (gas && gas.piston.mode === 'force') gas.piston.Pext = v; }, (v) => v.toFixed(3), false);
+bindSpeed('speed', (v) => { simRate = v; });
+bindCheck('c-heat', (on) => { if (view) view.opt.showHeat = on; });
+bindCheck('c-trace', (on) => { if (gas) { gas.tracerOn = on; gas.tracer = []; } });
+$('btn-reset').addEventListener('click', build);
+$('btn-semi').addEventListener('click', () => {
+  gas.setVPartition(XM, SEMIPERMEABLE);
+  $('btn-semi').disabled = true;
+  $('state-hint').textContent = '— 半透膜：溶媒（青）だけが通り抜ける';
+});
+$('btn-push').addEventListener('click', () => { Object.assign(gas.piston, { mode: 'force', Pext, u: 0 }); });
+$('btn-fix').addEventListener('click', () => { gas.piston.mode = 'position'; gas.piston.u = 0; gas.piston.target = gas.X; });
+$('btn-rec').addEventListener('click', () => {
+  if (!sm) return;
+  rows.push({ state: stateLabel(), n: ns, T: sm.TR, V: sm.V, th: (ns * sm.TR) / sm.V, Pi: gas.P.piston - gas.P.left, Pm: gas.P.vpart });
+  drawRows();
+});
+$('btn-clear').addEventListener('click', () => { rows.length = 0; drawRows(); });
+build();
+drawRows();
+
+const loop = new Loop((paused) => {
+  if (!paused) {
+    gas.advance(simRate);
+    gas.measure();
+    frame++;
+    let nL = 0;
+    for (let i = 0; i < gas.N; i++) if (gas.species[i] === 0 && gas.x[i] < XM) nL++;
+    const V = (gas.X - XM) * H, TR = gas.regionStats(1).T;
+    // 表示用に時間平均（圧力と同じくらいの時間）
+    const k = Math.min(1, simRate / gas.pTau);
+    if (!sm) sm = { nL, V, TR };
+    sm.nL += k * 4 * (nL - sm.nL); sm.V += k * (V - sm.V); sm.TR += k * (TR - sm.TR);
+    const PL = gas.P.left, PR = gas.P.piston, Pi = PR - PL;
+    $('r-nL').textContent = nL; $('r-nR').textContent = NW - nL; $('r-ns').textContent = ns;
+    $('r-V').textContent = fmt(V, 0);
+    $('r-PL').textContent = fmt(PL, 4); $('r-PR').textContent = fmt(PR, 4);
+    $('r-Pi').textContent = fmt(Pi, 4); $('r-Pm').textContent = fmt(gas.P.vpart, 4);
+    $('r-th').textContent = fmt((ns * sm.TR) / sm.V, 4);
+    plotN.push(gas.time, { L: sm.nL, R: NW - sm.nL });
+    plotP.push(gas.time, { PL, PR, Pi });
+    if (frame % 2 === 0) { plotN.draw(); plotP.draw(); }
+  }
+  view.draw();
+});
+bindPlayPause('btn-play', loop);
+</script>
+</body>
+</html>
