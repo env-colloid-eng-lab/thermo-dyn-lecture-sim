@@ -96,6 +96,7 @@ button:disabled { opacity: .45; cursor: default; }
 .sw.dia { background: #fff; height: 4px; }
 .sw.semi { background: repeating-linear-gradient(90deg, #2F5597 0 5px, transparent 5px 9px); height: 3px; border: none; }
 .sw.fluid { background: var(--fluid); border-color: #b8c6e0; }
+.sw.lvl { background: repeating-linear-gradient(90deg, #505050 0 2px, transparent 2px 6px); height: 2px; border: none; }
 .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; vertical-align: middle; margin-right: 4px; }
 .dot.p1 { background: #4472C4; }
 .dot.p2 { background: #f4f4f4; border: 1px solid #7f7f7f; }

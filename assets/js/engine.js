@@ -11,6 +11,13 @@
 //
 //  エネルギーの出入りはすべて「1回の衝突ごとの運動エネルギー変化」として
 //  帳簿(ledger)に記録するので、ΔU = W + Q は数値誤差の範囲で厳密に成り立つ。
+//
+//  高さによるエネルギーの段差（levels, 11 の二領域・沈降平衡）:
+//      容器を高さ方向に n 層に分け、下から k 番目 (k = 0..n-1) の層にいる粒子は
+//      位置エネルギー k·dE をもつ。U = 運動エネルギー + 位置エネルギー、T = 運動エネルギー/N。
+//      層の境目を越えるとき、鉛直方向の速さで段差を登れなければ跳ね返る（登れば遅くなる）。
+//      位置エネルギーは層の番号だけで決まるので、運動＋位置エネルギーは厳密に保存する。
+//      段差 dE を外から変える操作は、そのとき各層にいる粒子の位置エネルギーの変化を仕事として記録する。
 // =============================================================
 
 export const ADIABATIC = 'adiabatic';   // 断熱壁: 鏡面反射（エネルギーを通さない）
@@ -73,6 +80,9 @@ export class Gas {
     // 仕切り壁: null または {x, type, Tw, Cw} / {y, type, Tw, Cw}
     this.vpart = null;
     this.hpart = null;
+
+    // 高さによるエネルギーの段差: null または {n, dE}（仕切り壁とは一緒に使わない）
+    this.levels = null;
 
     this.time = 0;
     this.resetLedger();
@@ -162,10 +172,11 @@ export class Gas {
     this.ledger = {
       Wpiston: 0,   // ピストンが気体にした仕事
       Wstir: 0,     // 撹拌翼が気体にした仕事
+      Wfield: 0,    // 段差 dE を外から変えたときの仕事（位置エネルギーの変化）
       Q: 0,         // 熱源から気体が受け取った熱
       Qreg: new Float64Array(4),     // 部分系ごとの熱（熱源＋透熱仕切りから）
       Wreg: new Float64Array(4),     // 部分系ごとの仕事
-      U0: this.kinetic(),
+      U0: this.kinetic() + this.potential(),
       U0reg: this.regionEnergies(),
       t0: this.time,
     };
@@ -175,6 +186,15 @@ export class Gas {
     let ke = 0;
     for (let i = 0; i < this.N; i++) ke += 0.5 * (this.vx[i] ** 2 + this.vy[i] ** 2);
     return ke;
+  }
+
+  /** 高さによる位置エネルギーの合計（段差がなければ 0） */
+  potential() {
+    const L = this.levels;
+    if (!L) return 0;
+    let n = 0;
+    for (let i = 0; i < this.N; i++) n += this.layerOf(this.y[i]);
+    return n * L.dE;
   }
 
   regionEnergies() {
@@ -229,6 +249,50 @@ export class Gas {
     if (this.vpart) a.push(1);
     if (this.hpart) { a.push(2); if (this.vpart) a.push(3); }
     return a;
+  }
+
+  // ------------------------------------------------------------
+  //  高さによるエネルギーの段差
+  // ------------------------------------------------------------
+  /** n 層（n < 2 なら段差なし）、1段あたりのエネルギー dE。途中で変えた分は仕事として記録 */
+  setLevels(n, dE) {
+    const U0 = this.potential();
+    this.levels = n >= 2 ? { n, dE } : null;
+    const dW = this.potential() - U0;
+    this.ledger.Wfield += dW;
+  }
+
+  /** 高さ y（上端 0、下端 H）の層の番号。下から 0, 1, ..., n-1 */
+  layerOf(y) {
+    const L = this.levels;
+    if (!L) return 0;
+    const k = Math.floor(((this.H - y) / this.H) * L.n);
+    return k < 0 ? 0 : k >= L.n ? L.n - 1 : k;
+  }
+
+  /** 層ごとの粒子数 */
+  layerCounts() {
+    const n = this.levels ? this.levels.n : 1, c = new Array(n).fill(0);
+    for (let i = 0; i < this.N; i++) c[this.layerOf(this.y[i])]++;
+    return c;
+  }
+
+  /** 1刻みのあいだに層の境目を越えた粒子：登れなければ跳ね返り、越えたら鉛直の速さを変える */
+  _crossLevels() {
+    const L = this.levels, H = this.H, h = H / L.n;
+    for (let i = 0; i < this.N; i++) {
+      const k0 = this.layerOf(this.py[i]), k1 = this.layerOf(this.y[i]);
+      if (k0 === k1) continue;
+      const dPE = (k1 - k0) * L.dE;                  // 越えたときの位置エネルギーの増加
+      const vy = this.vy[i], e = 0.5 * vy * vy - dPE;
+      if (e >= 0) {
+        this.vy[i] = Math.sign(vy) * Math.sqrt(2 * e);
+      } else {
+        const yb = H - Math.max(k0, k1) * h;          // 境目の高さ
+        this.vy[i] = -vy;
+        this.y[i] = 2 * yb - this.y[i];
+      }
+    }
   }
 
   // ------------------------------------------------------------
@@ -350,6 +414,9 @@ export class Gas {
       this.x[i] += this.vx[i] * dt;
       this.y[i] += this.vy[i] * dt;
     }
+
+    // --- 高さによるエネルギーの段差 ---
+    if (this.levels) this._crossLevels();
 
     // --- 仕切り壁 ---
     const vp = this.vpart, hp = this.hpart;
@@ -554,18 +621,19 @@ export class Gas {
 
   /** 全体のマクロ量 */
   stats() {
-    const U = this.kinetic();
+    const K = this.kinetic(), Upot = this.potential();
+    const U = K + Upot;           // 段差がなければ U = 運動エネルギー
     const V = this.X * this.H;
     const N = this.N;
-    const T = N ? U / N : 0;
+    const T = N ? K / N : 0;
     const L = this.ledger;
     return {
-      N, V, U, T,
-      Pkin: N ? U / V : 0,        // 状態方程式 P = NkT/V（2D: = U/V）
+      N, V, U, T, Upot,
+      Pkin: N ? K / V : 0,        // 状態方程式 P = NkT/V（2D: = U/V）
       Pwall: this.P.all,           // 壁全体が受ける力から測った圧力
       Ppiston: this.P.piston,      // ピストンが受ける力から測った圧力
-      W: L.Wpiston + L.Wstir,
-      Wpiston: L.Wpiston, Wstir: L.Wstir,
+      W: L.Wpiston + L.Wstir + L.Wfield,
+      Wpiston: L.Wpiston, Wstir: L.Wstir, Wfield: L.Wfield,
       Q: L.Q + (this._partitionHeatTotal()),
       Qbath: L.Q,
       dU: U - L.U0,

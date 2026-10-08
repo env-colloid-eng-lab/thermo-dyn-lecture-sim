@@ -4,6 +4,7 @@ import { Gas, DIATHERMAL, ADIABATIC, SEMIPERMEABLE } from '../assets/js/engine.j
 import { HeatCapacityRun } from '../assets/js/experiments.js';
 import { lnChoose, binomHalf } from '../assets/js/entropy.js';
 import { CycleRunner } from '../assets/js/cycles.js';
+import { xEqBath, xEqIsolated, twoRegionF, boltzmannLayers, lnMultinomial } from '../assets/js/levels.js';
 
 let fails = 0;
 function check(name, cond, info) {
@@ -241,6 +242,61 @@ const f = (v, d = 3) => Number(v).toFixed(d);
   check('半透膜: 溶媒は左右で同じ密度になる', Math.abs(nL / 120 - 1) < 0.08, `左の溶媒 ⟨n⟩=${f(nL, 1)}（理論 120）`);
   check('浸透圧: P右 − P左 ≈ nkT/V', Math.abs(Pi / th - 1) < 0.12, `Π=${f(Pi, 4)} nkT/V=${f(th, 4)}`);
   check('浸透圧: 膜が溶質から受ける圧力 ≈ nkT/V', Math.abs(g.P.vpart / th - 1) < 0.12, `P膜=${f(g.P.vpart, 4)}`);
+}
+
+// 14) 高さによるエネルギーの段差（二領域・沈降平衡）
+{
+  const avgX = (g, steps) => {
+    let x = 0;
+    for (let k = 0; k < steps; k++) { g.advance(1); x += g.layerCounts()[1] / g.N; }
+    return x / steps;
+  };
+  // 孤立系：運動＋位置エネルギーが厳密に保存し、上にいる割合は全エントロピー最大の値に近づく
+  {
+    const g = new Gas({ H: 60, X: 90, Xmin: 90, Xmax: 90, r: 0.15, seed: 41 });
+    g.addParticles(300, 1, { x0: 0, x1: 90, y0: 0, y1: 60 });
+    g.setLevels(2, 1.5); g.resetLedger();
+    const E0 = g.kinetic() + g.potential();
+    for (let k = 0; k < 600; k++) g.advance(1);
+    const x = avgX(g, 3000), E = g.kinetic() + g.potential();
+    const th = xEqIsolated(1.5, E0 / g.N);
+    check('段差（孤立系）: 運動＋位置エネルギーの保存', Math.abs(E - E0) < 1e-8, `E0=${f(E0)} E=${f(E)}`);
+    check('段差（孤立系）: 上にいる割合 ≈ S 最大の値', Math.abs(x - th) < 0.02, `x=${f(x)} 理論=${f(th)} T=${f(g.kinetic() / g.N)}`);
+  }
+  // 熱源に接触：x ≈ 1/(1+e^{ΔE/T})、途中で段差を変えても ΔU = Q + W（厳密）
+  {
+    const g = new Gas({ H: 60, X: 90, Xmin: 90, Xmax: 90, r: 0.15, seed: 42 });
+    g.addParticles(300, 1, { x0: 0, x1: 90, y0: 0, y1: 60 });
+    g.walls = { left: DIATHERMAL, top: DIATHERMAL, bottom: DIATHERMAL };
+    g.bath = { left: true, top: true, bottom: true }; g.Tbath = 1;
+    g.setLevels(2, 0.5); g.resetLedger();
+    for (let k = 0; k < 200; k++) g.advance(1);
+    g.setLevels(2, 1.5);
+    for (let k = 0; k < 600; k++) g.advance(1);
+    const x = avgX(g, 3000), s = g.stats();
+    check('段差（熱源）: 上にいる割合 ≈ 1/(1+e^{ΔE/T})', Math.abs(x - xEqBath(1.5, 1)) < 0.02, `x=${f(x)} 理論=${f(xEqBath(1.5, 1))}`);
+    check('段差（熱源）: ΔU = Q + W（段差を変えた仕事を含め厳密）', Math.abs(s.dU - s.Q - s.W) < 1e-8, `ΔU=${f(s.dU)} Q=${f(s.Q)} W=${f(s.W)}`);
+    check('段差（熱源）: 自由エネルギー最小の位置 = 1/(1+e^{ΔE/T})', (() => {
+      let best = 0, fb = Infinity;
+      for (let i = 1; i < 10000; i++) { const xx = i / 10000, v = twoRegionF(xx, 1.5, 1); if (v < fb) { fb = v; best = xx; } }
+      return Math.abs(best - xEqBath(1.5, 1)) < 2e-4;
+    })());
+  }
+  // 多段（重力の近似）：層ごとの割合 ≈ e^{−kΔE/T} / Σ
+  {
+    const g = new Gas({ H: 60, X: 90, Xmin: 90, Xmax: 90, r: 0.15, seed: 43 });
+    g.addParticles(300, 1, { x0: 0, x1: 90, y0: 0, y1: 60 });
+    g.walls = { left: DIATHERMAL, top: DIATHERMAL, bottom: DIATHERMAL };
+    g.bath = { left: true, top: true, bottom: true }; g.Tbath = 1;
+    g.setLevels(6, 0.5); g.resetLedger();
+    for (let k = 0; k < 800; k++) g.advance(1);
+    const acc = new Array(6).fill(0);
+    for (let k = 0; k < 3000; k++) { g.advance(1); g.layerCounts().forEach((c, j) => { acc[j] += c / g.N / 3000; }); }
+    const th = boltzmannLayers(6, 0.5, 1);
+    const err = Math.max(...acc.map((v, j) => Math.abs(v - th[j])));
+    check('多段: 層ごとの割合 ≈ ボルツマン分布', err < 0.02, `測定=${acc.map((v) => f(v, 3)).join(',')} 理論=${th.map((v) => f(v, 3)).join(',')}`);
+    check('多段: ln(N!/ΠN_k!) は一様な分け方で最大', lnMultinomial([50, 50, 50, 50, 50, 50]) > lnMultinomial(g.layerCounts()));
+  }
 }
 
 console.log(fails ? `\n${fails} 件失敗` : '\nすべて成功');
