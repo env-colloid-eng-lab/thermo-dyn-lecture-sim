@@ -50,9 +50,9 @@ for (const pg of PAGES) {
     await page.waitForTimeout(600);
     if (width === 1400) {
       // すべてのボタンを2巡クリック → チェックボックス切替 → スライダーを最大・最小に
-      const n = await page.$$eval('main button', (bs) => bs.length);
+      const n = await page.$$eval('button', (bs) => bs.length);
       for (let rep = 0; rep < 2; rep++) for (let i = 0; i < n; i++) {
-        await page.evaluate((i) => { const b = document.querySelectorAll('main button')[i]; if (b && !b.disabled) b.click(); }, i);
+        await page.evaluate((i) => { const b = document.querySelectorAll('button')[i]; if (b && !b.disabled) b.click(); }, i);
         await page.waitForTimeout(100);
       }
       await page.evaluate(() => {
