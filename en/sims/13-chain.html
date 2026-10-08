@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>13 Entropic elasticity of a chain | Thermodynamics Simulations</title>
+<link rel="icon" href="../../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body>
+<header class="site-header"><div class="inner">
+  <h1>13 Entropic elasticity of a chain</h1><span class="sub">Why does rubber or a polymer pull back when stretched? ― the force comes from the "number of configurations", not from energy</span>
+  <nav>
+    <a href="../index.html">Contents</a>
+    <a href="01-operations.html">01 Walls & operations</a>
+    <a href="02-equilibrium.html">02 Relaxation to equilibrium</a>
+    <a href="03-processes.html">03 Quasi-static vs. irreversible</a>
+    <a href="04-isothermal.html">04 Isothermal energy balance</a>
+    <a href="05-extensive.html">05 Extensive & intensive</a>
+    <a href="06-heat-capacity.html">06 Heat capacity</a>
+    <a href="07-entropy.html">07 Entropy</a>
+    <a href="08-heat-engines.html">08 Heat engines</a>
+    <a href="09-osmosis.html">09 Osmotic pressure</a>
+    <a href="10-max-work.html">10 Reversible vs. irreversible</a>
+    <a href="11-sedimentation.html">11 Sedimentation</a>
+    <a href="12-partitions.html">12 Partitions & equilibrium</a>
+    <a href="13-chain.html" aria-current="page">13 Chain elasticity</a>
+    <a href="../../sims/13-chain.html" lang="ja" hreflang="ja">日本語</a>
+    <button id="btn-proj" title="Enlarge text">Projector mode</button>
+  </nav>
+</div></header>
+
+<main class="layout">
+  <div class="col">
+    <section class="card">
+      <h2><span class="tag">Micro</span>Making randomly connected chains one after another <span class="hint">one end fixed at the origin (+). Gray dots = ends so far, orange = chains whose end fell in the band</span></h2>
+      <div class="canvas-wrap"><canvas id="sim"></canvas></div>
+      <div class="readouts">
+        <div class="stat"><span class="k">Chains made</span><span class="v" id="r-M">0</span></div>
+        <div class="stat"><span class="k">⟨<i>x</i>²⟩ (measured)</span><span class="v" id="r-x2">–</span></div>
+        <div class="stat"><span class="k">Theory <i>N</i><sub>s</sub><i>b</i>²/2</span><span class="v" id="r-x2th">–</span></div>
+        <div class="stat"><span class="k">Ratio of configurations <i>P</i>(<i>x</i>)/<i>P</i>(0)</span><span class="v" id="r-ratio">–</span></div>
+        <div class="stat"><span class="k">Theory e<sup>−<i>x</i>²/2σ²</sup></span><span class="v" id="r-ratio-th">–</span></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2><span class="tag">Macro</span>From the number of configurations to free energy and force</h2>
+      <div class="canvas-wrap"><canvas id="plotP"></canvas></div>
+      <div class="canvas-wrap" style="margin-top:6px"><canvas id="plotF"></canvas></div>
+      <div class="readouts">
+        <div class="stat"><span class="k">Configurational entropy Δ<i>S</i> = <i>k</i> ln(<i>P</i>(<i>x</i>)/<i>P</i>(0))</span><span class="v" id="r-S">–</span></div>
+        <div class="stat"><span class="k">Δ<i>F</i> = −<i>T</i>Δ<i>S</i></span><span class="v" id="r-F">–</span></div>
+        <div class="stat int"><span class="k">Force needed <i>f</i> = <i>kTx</i>/σ² (theory)</span><span class="v" id="r-f">–</span></div>
+        <div class="stat"><span class="k"><i>f</i> from the measured width</span><span class="v" id="r-fm">–</span></div>
+      </div>
+      <div class="ledger">
+        <span class="term"><b>ΔU</b><span>0</span></span><span class="op">=</span>
+        <span class="term"><b>Q</b><span id="l-Q"></span></span><span class="op">+</span>
+        <span class="term"><b>W</b><span id="l-W"></span></span>
+        <span class="note">Stretching slowly from 0 to <i>x</i> in surroundings at temperature <i>T</i> (Δ<i>U</i> = 0 for an ideal chain). All the stretching work <i>W</i> = Δ<i>F</i> leaves as heat to the surroundings (<i>Q</i> = −<i>W</i>).</span>
+      </div>
+    </section>
+  </div>
+
+  <div class="col">
+    <section class="card ctrl">
+      <h2>Controls</h2>
+      <div class="btns">
+        <button id="btn-play" class="primary"></button>
+        <button id="btn-reset">Count again</button>
+      </div>
+      <div class="group-title">Chain and temperature</div>
+      <div class="row"><label for="Ns">Number of segments <i>N</i><sub>s</sub></label><input type="range" id="Ns" min="10" max="100" step="5" value="40"><output id="Ns-val"></output></div>
+      <div class="row"><label for="T">Temperature <i>T</i></label><input type="range" id="T" min="0.5" max="3" step="0.1" value="1"><output id="T-val"></output></div>
+      <div class="group-title">Stretch (fix the x coordinate of the end)</div>
+      <div class="row"><label for="xs">Extension <i>x</i>/σ</label><input type="range" id="xs" min="0" max="3" step="0.05" value="1.5"><output id="xs-val"></output></div>
+      <p class="hint" id="x-hint"></p>
+      <div class="group-title">Display</div>
+      <div><label class="check"><input type="checkbox" id="c-chains" checked>Draw chains</label></div>
+    </section>
+
+    <section class="card notes">
+      <h2>Goal</h2>
+      <p>A chain of <i>N</i><sub>s</sub> segments of length <i>b</i>, each pointing in a random direction (an ideal chain). Every shape has the same energy, yet a force is needed to hold the ends apart. The reason is the <b>number of configurations</b>: there are many shapes with the end near the origin, but few with the end far away. Stretching lowers the entropy, so in surroundings at temperature <i>T</i> the free energy <span class="math">F = U − TS</span> rises. Its slope is the force <span class="math">f = dF/dx</span>.</p>
+      <p>Let go and the chain contracts, because the number of configurations (entropy) increases in that direction ― once again, the second law decides the direction of change.</p>
+      <h3>Try it</h3>
+      <ol>
+        <li>Play and make many chains. The ends (gray dots) gather around the origin and become rarer farther away. The distribution in the upper plot approaches a Gaussian.</li>
+        <li>Change the "Extension". How much smaller is the fraction <i>P</i>(<i>x</i>) of ends in the band compared with <i>x</i> = 0? That is the decrease in configurational entropy, <span class="math">ΔS = k ln(P(x)/P(0))</span>.</li>
+        <li>In the lower plot <i>F</i>(<i>x</i>) is a parabola. Its slope (the tangent) is the force needed, proportional to <i>x</i> (Hooke's law). Same form as a spring, but the origin is entropy, not energy.</li>
+        <li>What happens to the force when you double the temperature? (The distribution does not change, but the force is proportional to <i>T</i>.)</li>
+        <li>Increase the number of segments <i>N</i><sub>s</sub>. What is the force at the same <i>x</i>? (Longer chains are softer.)</li>
+      </ol>
+      <div class="q"><b>Question</b> Hang a weight on a rubber band and warm it with a hair dryer. What happens? Why is it the opposite of an ordinary metal spring? (<span class="math">f ∝ T</span>)</div>
+      <div class="q"><b>Question</b> Stretch a rubber band quickly and touch it to your lips: it feels warm. When it is stretched adiabatically, what makes up for the decrease in configurational entropy? (The total entropy does not decrease.)</div>
+      <div class="q"><b>Question</b> When you stretch slowly, where does the work <i>W</i> = Δ<i>F</i> go? Think from Δ<i>U</i> = 0 for an ideal chain and the first law.</div>
+      <details><summary>Theory (2D ideal chain)</summary>
+        <p>The x coordinate of the end is <span class="math">x = Σ b cos θ<sub>j</sub></span>. The terms are independent with mean 0 and <span class="math">⟨cos²θ⟩ = 1/2</span>, so <span class="math">σ² = ⟨x²⟩ = N<sub>s</sub>b²/2</span> (in 3D, <span class="math">N<sub>s</sub>b²/3</span>). As a sum of many independent contributions, the distribution is approximately Gaussian, <span class="math">P(x) ∝ e<sup>−x²/2σ²</sup></span> (central limit theorem).</p>
+        <p>The ratio of the numbers of configurations with the end in bands of equal width is <span class="math">P(x)/P(0)</span>, so <span class="math">S(x) − S(0) = k ln(P(x)/P(0)) = −kx²/2σ²</span>. For an ideal chain the energy does not depend on the shape, so <span class="math">F(x) − F(0) = −T(S(x) − S(0)) = kTx²/2σ²</span>. From the equality of minimum work <span class="math">δW = dF</span>, the external force is <span class="math">f = dF/dx = kTx/σ² = 2kTx/(N<sub>s</sub>b²)</span> (in 3D, <span class="math">3kTx/(N<sub>s</sub>b²)</span>).</p>
+        <p>The Gaussian approximation holds when the end-to-end distance is much shorter than the full chain length <span class="math">N<sub>s</sub>b</span>. In this material the length <i>b</i> = 1 and <i>k</i> = 1.</p>
+      </details>
+    </section>
+  </div>
+</main>
+
+<script type="module">
+import { sampleChain, chainVar, chainP, chainF, chainForce } from '../../assets/js/chain.js';
+import { XYPlot, SERIES } from '../../assets/js/plot.js';
+import { $, fmt, fmtSigned, bindRange, bindCheck, Loop, bindPlayPause, setupCommon } from '../../assets/js/ui.js';
+
+setupCommon();
+const b = 1, K = 61, PER_FRAME = 120, MAXPTS = 1500;
+let Ns = 40, T = 1, xs = 1.5, showChains = true;
+let hist, M, sx2, ends, shown, hits, cBand = 0, c0 = 0;   // distribution, count, ⟨x²⟩, end points, chains to draw, chains in the band, counts in the bands (around x and 0)
+
+const plotP = new XYPlot($('plotP'), { height: 200, xmin: -1, xmax: 1, ymin: 0, ymax: null, xlabel: 'x (x coordinate of the end)', ylabel: 'P(x)', xd: 2, yd: 4 });
+const plotF = new XYPlot($('plotF'), { height: 220, xmin: -1, xmax: 1, ymin: 0, ymax: 1, xlabel: 'x (x coordinate of the end)', ylabel: 'F(x) − F(0)', xd: 2, yd: 3 });
+
+const sigma = () => Math.sqrt(chainVar(Ns, b));
+const xT = () => xs * sigma();               // extension
+const range = () => 4 * sigma();             // counting range ±4σ
+const binW = () => (2 * range()) / K;
+const binOf = (x) => Math.floor((x + range()) / binW());
+
+function reset() {
+  hist = new Array(K).fill(0); M = 0; sx2 = 0; ends = []; shown = []; hits = []; cBand = 0; c0 = 0;
+  $('x-hint').textContent = `σ = √(Nₛb²/2) = ${fmt(sigma(), 2)}, full chain length Nₛb = ${Ns}. x = ${fmt(xT(), 2)}`;
+}
+
+// --- drawing of the chains (own canvas) ---
+const cv = $('sim');
+let dpr = 1;
+function resize() {
+  dpr = window.devicePixelRatio || 1;
+  const w = cv.parentElement.clientWidth || 600, h = Math.round(Math.min(420, w * 0.62));
+  cv.style.width = w + 'px'; cv.style.height = h + 'px';
+  cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
+}
+if (typeof ResizeObserver !== 'undefined') new ResizeObserver(() => { resize(); draw(); }).observe(cv.parentElement);
+resize();
+
+function draw() {
+  const ctx = cv.getContext('2d'), W = cv.width, H = cv.height;
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, W, H);
+  const R = Math.max(range(), xT() + sigma()) * 1.05;
+  const s = Math.min(W / (2 * R), H / (1.6 * R));
+  const X = (x) => W / 2 + x * s, Y = (y) => H / 2 - y * s;
+  // the band (count configurations whose end x falls in this range)
+  const w = binW();
+  ctx.fillStyle = 'rgba(235,104,52,0.12)';
+  ctx.fillRect(X(xT() - w / 2), 0, w * s, H);
+  ctx.strokeStyle = 'rgba(235,104,52,0.6)'; ctx.lineWidth = 1 * dpr;
+  ctx.strokeRect(X(xT() - w / 2), 0, w * s, H);
+  // end points
+  ctx.fillStyle = 'rgba(95,94,90,0.35)';
+  for (const [x, y] of ends) { ctx.beginPath(); ctx.arc(X(x), Y(y), 1.6 * dpr, 0, 7); ctx.fill(); }
+  // chains
+  const line = (pts, color, width) => {
+    ctx.strokeStyle = color; ctx.lineWidth = width * dpr; ctx.beginPath();
+    pts.forEach(([x, y], k) => { if (k === 0) ctx.moveTo(X(x), Y(y)); else ctx.lineTo(X(x), Y(y)); });
+    ctx.stroke();
+  };
+  if (showChains) {
+    for (const c of shown) line(c, 'rgba(68,114,196,0.35)', 1.2);
+    for (const c of hits) { line(c, 'rgba(235,104,52,0.9)', 2); const e = c[c.length - 1]; ctx.beginPath(); ctx.arc(X(e[0]), Y(e[1]), 3.5 * dpr, 0, 7); ctx.fillStyle = '#eb6834'; ctx.fill(); }
+  }
+  // origin (fixed end)
+  ctx.strokeStyle = '#1f1f1f'; ctx.lineWidth = 2 * dpr;
+  ctx.beginPath(); ctx.moveTo(X(0) - 7 * dpr, Y(0)); ctx.lineTo(X(0) + 7 * dpr, Y(0)); ctx.moveTo(X(0), Y(0) - 7 * dpr); ctx.lineTo(X(0), Y(0) + 7 * dpr); ctx.stroke();
+}
+
+function sample() {
+  const w = binW(), x0 = xT();
+  for (let k = 0; k < PER_FRAME; k++) {
+    const c = sampleChain(Ns, b, Math.random), e = c[c.length - 1];
+    const j = binOf(e[0]);
+    if (j >= 0 && j < K) hist[j]++;
+    M++; sx2 += e[0] * e[0];
+    ends.push(e); if (ends.length > MAXPTS) ends.shift();
+    if (k < 2) { shown.push(c); if (shown.length > 24) shown.shift(); }
+    if (Math.abs(e[0]) < w / 2) c0++;
+    if (Math.abs(e[0] - x0) < w / 2) { cBand++; hits.push(c); if (hits.length > 6) hits.shift(); }
+  }
+}
+
+function update() {
+  const s2 = chainVar(Ns, b), w = binW(), x0 = xT();
+  const dens = hist.map((c) => c / Math.max(1, M) / w);
+  const centers = hist.map((_, j) => -range() + (j + 0.5) * w);
+  const j0 = binOf(0);
+  const ratio = c0 > 0 ? cBand / c0 : NaN;   // ratio of ends in the band around x and around the origin
+  const ratioTh = Math.exp(-(x0 * x0) / (2 * s2));
+  const s2m = M ? sx2 / M : NaN;
+  $('r-M').textContent = M;
+  $('r-x2').textContent = fmt(s2m, 2); $('r-x2th').textContent = fmt(s2, 2);
+  $('r-ratio').textContent = fmt(ratio, 3); $('r-ratio-th').textContent = fmt(ratioTh, 3);
+  const dS = Math.log(ratioTh), dF = chainF(x0, Ns, b, T), f = chainForce(x0, Ns, b, T);
+  $('r-S').textContent = fmtSigned(Number.isFinite(ratio) && ratio > 0 ? Math.log(ratio) : dS, 2);
+  $('r-F').textContent = fmtSigned(dF, 2);
+  $('r-f').textContent = fmt(f, 3);
+  $('r-fm').textContent = fmt(Number.isFinite(s2m) && s2m > 0 ? (T * x0) / s2m : NaN, 3);
+  $('l-W').textContent = fmtSigned(dF, 2); $('l-Q').textContent = fmtSigned(-dF, 2);
+  // distribution
+  Object.assign(plotP.opt, { xmin: -range(), xmax: range(), ymax: chainP(0, Ns, b) * 1.35 });
+  const stair = [];
+  dens.forEach((d, j) => { stair.push([centers[j] - w / 2, d], [centers[j] + w / 2, d]); });
+  plotP.refs = [{ label: 'Gaussian (theory)', color: SERIES[1], fn: (x) => chainP(x, Ns, b) }];
+  plotP.paths = [{ label: 'Measured (distribution of end x)', color: SERIES[0], pts: stair, width: 1.8 }];
+  plotP.marker = [x0, chainP(x0, Ns, b)];
+  plotP.draw();
+  // free energy (measured: −T ln(P(x)/P(0)), skipping sparse tails)
+  const Fm = [];
+  hist.forEach((c, j) => { if (c >= 8 && hist[j0] > 0) Fm.push([centers[j], -T * Math.log(c / hist[j0])]); });
+  const Fmax = chainF(range(), Ns, b, T);
+  Object.assign(plotF.opt, { xmin: -range(), xmax: range(), ymin: -0.08 * Fmax, ymax: Fmax * 1.05 });
+  const d = sigma();
+  plotF.refs = [{ label: 'F = kTx²/2σ² (theory)', color: SERIES[3], fn: (x) => chainF(x, Ns, b, T) }];
+  plotF.paths = [
+    { label: 'Measured −kT ln(P(x)/P(0))', color: SERIES[0], pts: Fm, width: 1.5 },
+    { label: 'Slope of tangent = force f', color: SERIES[1], pts: [[x0 - d, dF - f * d], [x0 + d, dF + f * d]], width: 2, dash: [6, 4] },
+  ];
+  plotF.marker = [x0, dF];
+  plotF.draw();
+}
+
+bindRange('Ns', (v) => { Ns = v; reset(); }, (v) => v.toFixed(0), false);
+bindRange('T', (v) => { T = v; }, (v) => v.toFixed(1), false);
+bindRange('xs', (v) => { xs = v; hits = []; cBand = 0; c0 = 0; $('x-hint').textContent = `σ = √(Nₛb²/2) = ${fmt(sigma(), 2)}, full chain length Nₛb = ${Ns}. x = ${fmt(xT(), 2)}`; }, (v) => v.toFixed(2), false);
+bindCheck('c-chains', (on) => { showChains = on; });
+$('btn-reset').addEventListener('click', reset);
+reset();
+
+let frame = 0;
+const loop = new Loop((paused) => {
+  if (!paused) { sample(); frame++; if (frame % 2 === 0) update(); }
+  draw();
+});
+bindPlayPause('btn-play', loop);
+</script>
+</body>
+</html>

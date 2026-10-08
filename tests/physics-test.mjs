@@ -4,6 +4,7 @@ import { Gas, DIATHERMAL, ADIABATIC, SEMIPERMEABLE } from '../assets/js/engine.j
 import { HeatCapacityRun } from '../assets/js/experiments.js';
 import { lnChoose, binomHalf } from '../assets/js/entropy.js';
 import { CycleRunner } from '../assets/js/cycles.js';
+import { sampleEnd, chainVar } from '../assets/js/chain.js';
 import { xEqBath, xEqIsolated, twoRegionF, boltzmannLayers, lnMultinomial } from '../assets/js/levels.js';
 
 let fails = 0;
@@ -333,6 +334,16 @@ const f = (v, d = 3) => Number(v).toFixed(d);
   for (let k = 0; k < 1500; k++) g.advance(1);
   let n1 = 0; for (let k = 0; k < 1000; k++) { g.advance(1); n1 += g.regionStats(0).N / 1000; }
   check('すべてを通す壁: 左右の粒子数がそろう', Math.abs(n1 / 150 - 1) < 0.05, `左 ⟨N⟩=${f(n1, 1)}（理論 150）`);
+}
+
+// 16) 理想鎖（13）：末端の x の分散 ≈ Ns b²/2（2次元）
+{
+  let a = 7;   // mulberry32
+  const rand = () => { a |= 0; a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+  let s2 = 0, s4 = 0; const M = 20000;
+  for (let k = 0; k < M; k++) { const [x] = sampleEnd(40, 1, rand); s2 += x * x / M; s4 += x ** 4 / M; }
+  check('理想鎖: ⟨x²⟩ ≈ Ns b²/2', Math.abs(s2 / chainVar(40, 1) - 1) < 0.03, `⟨x²⟩=${f(s2, 2)} 理論=${f(chainVar(40, 1), 2)}`);
+  check('理想鎖: ほぼガウス分布（⟨x⁴⟩ ≈ 3⟨x²⟩²）', Math.abs(s4 / (3 * s2 * s2) - 1) < 0.06, `比=${f(s4 / (3 * s2 * s2))}`);
 }
 
 console.log(fails ? `\n${fails} 件失敗` : '\nすべて成功');
