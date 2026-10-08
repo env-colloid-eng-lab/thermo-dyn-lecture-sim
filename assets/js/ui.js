@@ -1,6 +1,7 @@
 // =============================================================
 //  ui.js ― ページ共通の小さな UI ヘルパー
 // =============================================================
+import { tr } from './i18n.js';
 export const $ = (id) => document.getElementById(id);
 
 export function fmt(v, d = 2) {
@@ -56,7 +57,7 @@ export class Loop {
 
 export function bindPlayPause(id, loop) {
   const b = $(id);
-  const upd = () => { b.textContent = loop.running ? '⏸ 一時停止' : '▶ 再生'; b.setAttribute('aria-pressed', String(!loop.running)); };
+  const upd = () => { b.textContent = loop.running ? tr('⏸ 一時停止', '⏸ Pause') : tr('▶ 再生', '▶ Play'); b.setAttribute('aria-pressed', String(!loop.running)); };
   b.addEventListener('click', () => { loop.toggle(); upd(); });
   document.addEventListener('keydown', (e) => {
     if (e.code === 'Space' && !['INPUT', 'TEXTAREA', 'BUTTON', 'SELECT'].includes(document.activeElement?.tagName)) {

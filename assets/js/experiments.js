@@ -5,6 +5,7 @@
 //  テスト（Node）でも同じクラスをそのまま回して確かめる。
 // =============================================================
 import { ADIABATIC, DIATHERMAL } from './engine.js';
+import { tr } from './i18n.js';
 
 /**
  * 熱容量の測定。
@@ -34,7 +35,11 @@ export class HeatCapacityRun {
   }
 
   static PHASES = ['prep', 'before', 'heat', 'settle', 'after', 'done'];
-  static LABEL = { prep: '準備中', before: '加熱前の T を測定中', heat: '熱源に接触中（加熱）', settle: '熱源から離して待機', after: '加熱後の T を測定中', done: '測定完了' };
+  static LABEL = {
+    prep: tr('準備中', 'Preparing'), before: tr('加熱前の T を測定中', 'Measuring T before heating'),
+    heat: tr('熱源に接触中（加熱）', 'In contact with the reservoir (heating)'), settle: tr('熱源から離して待機', 'Separated from the reservoir, waiting'),
+    after: tr('加熱後の T を測定中', 'Measuring T after heating'), done: tr('測定完了', 'Done'),
+  };
 
   get label() { return HeatCapacityRun.LABEL[this.phase]; }
   /** 0..1 の進み具合 */

@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>09 Osmotic Pressure | Thermodynamics Simulations</title>
+<link rel="icon" href="../../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body>
+<header class="site-header"><div class="inner">
+  <h1>09 Osmotic Pressure</h1><span class="sub">A membrane that passes only the solvent: the solvent moves into the solution, and a pressure difference Π builds up</span>
+  <nav>
+    <a href="../index.html">Contents</a>
+    <a href="01-operations.html">01 Walls & operations</a>
+    <a href="02-equilibrium.html">02 Relaxation to equilibrium</a>
+    <a href="03-processes.html">03 Quasi-static vs. irreversible</a>
+    <a href="04-isothermal.html">04 Isothermal energy balance</a>
+    <a href="05-extensive.html">05 Extensive & intensive</a>
+    <a href="06-heat-capacity.html">06 Heat capacity</a>
+    <a href="07-entropy.html">07 Entropy</a>
+    <a href="08-heat-engines.html">08 Heat engines</a>
+    <a href="09-osmosis.html" aria-current="page">09 Osmotic pressure</a>
+    <a href="../../sims/09-osmosis.html" lang="ja" hreflang="ja">日本語</a>
+    <button id="btn-proj" title="Enlarge text">Projector mode</button>
+  </nav>
+</div></header>
+
+<main class="layout">
+  <div class="col">
+    <section class="card">
+      <h2><span class="tag">Micro</span>Left: pure solvent / Right: solution (solvent + solute) <span class="hint" id="state-hint"></span></h2>
+      <div class="canvas-wrap"><canvas id="sim"></canvas></div>
+      <div class="legend">
+        <span><span class="sw dia"></span>Diathermal wall (surroundings at constant temperature)</span>
+        <span><span class="sw semi"></span>Semipermeable membrane (passes only the solvent)</span>
+        <span><span class="dot p1"></span>Solvent (water)</span>
+        <span><span class="dot p2"></span>Solute</span>
+      </div>
+      <div class="readouts">
+        <div class="stat ext"><span class="k">Solvent particles, left</span><span class="v" id="r-nL"></span></div>
+        <div class="stat ext"><span class="k">Solvent particles, right</span><span class="v" id="r-nR"></span></div>
+        <div class="stat ext"><span class="k">Solute particles <i>n</i></span><span class="v" id="r-ns"></span></div>
+        <div class="stat ext"><span class="k">Solution volume <i>V</i></span><span class="v" id="r-V"></span></div>
+        <div class="stat int"><span class="k">Left pressure <i>P</i><sub>L</sub></span><span class="v" id="r-PL"></span></div>
+        <div class="stat int"><span class="k">Right pressure <i>P</i><sub>R</sub></span><span class="v" id="r-PR"></span></div>
+      </div>
+      <div class="readouts">
+        <div class="stat"><span class="k">Osmotic pressure Π = <i>P</i><sub>R</sub> − <i>P</i><sub>L</sub></span><span class="v" id="r-Pi"></span></div>
+        <div class="stat"><span class="k">Pressure of solute on the membrane</span><span class="v" id="r-Pm"></span></div>
+        <div class="stat"><span class="k">van 't Hoff <i>nkT</i>/<i>V</i></span><span class="v" id="r-th"></span></div>
+      </div>
+      <p class="hint" style="margin:4px 0 0">Pressure is the time average of the force on the wall (over roughly the last 200 time units). Because there are few particles, after switching to the membrane or pushing the piston, wait until the graphs settle before pressing "Record".</p>
+    </section>
+
+    <section class="card">
+      <h2>Time evolution</h2>
+      <div class="canvas-wrap"><canvas id="plotN"></canvas></div>
+      <div class="canvas-wrap" style="margin-top:6px"><canvas id="plotP"></canvas></div>
+    </section>
+
+    <section class="card">
+      <h2><span class="tag">Macro</span>Testing the van 't Hoff equation <span class="hint">"Record" adds the current values</span></h2>
+      <div class="canvas-wrap"><canvas id="plotV"></canvas></div>
+      <div class="table-wrap" style="margin-top:8px">
+        <table class="tbl" id="tbl">
+          <thead><tr><th>#</th><th>State</th><th><i>n</i></th><th><i>T</i></th><th><i>V</i></th><th><i>nkT</i>/<i>V</i></th><th>Π (pressure difference)</th><th>Π (membrane)</th><th>Ratio</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <p class="hint" id="tbl-empty">Nothing recorded yet.</p>
+    </section>
+  </div>
+
+  <div class="col">
+    <section class="card ctrl">
+      <h2>Controls</h2>
+      <div class="btns">
+        <button id="btn-play" class="primary"></button>
+        <button id="btn-reset">Reset</button>
+      </div>
+      <div class="row"><label for="speed">Playback speed</label><input type="range" id="speed" min="-0.7" max="1.6" step="0.05" value="0.48"><output id="speed-val"></output></div>
+
+      <div class="group-title">Initial state (press "Reset" after changing)</div>
+      <div class="row"><label for="ns">Solute particles <i>n</i></label><input type="range" id="ns" min="0" max="120" step="10" value="80"><output id="ns-val"></output></div>
+      <div class="row"><label for="T">Temperature <i>T</i></label><input type="range" id="T" min="0.5" max="2" step="0.1" value="1"><output id="T-val"></output></div>
+      <p class="hint" style="margin:0">Initially, particles are placed so that the left and right pressures are equal, and the partition is a wall that lets nothing through.</p>
+
+      <div class="group-title">Operations</div>
+      <div class="btns">
+        <button id="btn-semi">Make the partition semipermeable</button>
+      </div>
+      <div class="row"><label for="Pext">Pressure pushing the piston</label><input type="range" id="Pext" min="0.04" max="0.14" step="0.005" value="0.09"><output id="Pext-val"></output></div>
+      <div class="btns">
+        <button id="btn-push">Push the piston at this pressure</button>
+        <button id="btn-fix">Fix the piston</button>
+      </div>
+      <div class="btns"><button id="btn-rec">Record</button><button id="btn-clear">Clear table</button></div>
+
+      <div class="group-title">Display</div>
+      <div>
+        <label class="check"><input type="checkbox" id="c-heat">Heat exchange</label>
+        <label class="check"><input type="checkbox" id="c-trace">Track one particle</label>
+      </div>
+    </section>
+
+    <section class="card notes">
+      <h2>Goal</h2>
+      <p>A membrane that lets the solvent (water) through but not the solute is called a <b>semipermeable membrane</b>. If pure solvent and a solution are separated by a semipermeable membrane, solvent moves into the solution side (<b>osmosis</b>) and stops once the pressure on the solution side has become higher. The pressure difference at that point is the <b>osmotic pressure</b> Π. For a dilute solution, <span class="math">Π = (n/V)kT</span> (the <b>van 't Hoff equation</b>), which has the same form as the equation of state of an ideal gas.</p>
+      <h3>Try it</h3>
+      <ol>
+        <li>Press "Make the partition semipermeable". How do the numbers of solvent particles (blue) on the left and right change? What about the left and right pressures?</li>
+        <li>Wait a while, then compare Π (measured) with <i>nkT</i>/<i>V</i>. Press "Record".</li>
+        <li>Change the number of solute particles <i>n</i> or the temperature <i>T</i> and repeat "Reset" → semipermeable → Record. Do the points on the graph lie on a straight line?</li>
+        <li>Press "Push the piston at this pressure". If the pushing pressure is larger than the pressure on the solution side, only the solvent is squeezed out of the solution to the left (<b>reverse osmosis</b>). The solution becomes more concentrated and Π grows.</li>
+        <li>What if you reduce the pushing pressure? Solvent flows into the right side, and the piston is pushed back.</li>
+      </ol>
+      <div class="q"><b>Question</b> Solvent particles can pass freely back and forth through the membrane. Why, then, is there a <i>net</i> flow into the solution side? (Try connecting this with the entropy of mixing in 07.)</div>
+      <div class="q"><b>Question</b> Why can plant roots draw water from the soil? Why can crops no longer take up water when salt builds up in a field (salt damage, or soil salinization)? Try to explain using osmotic pressure.</div>
+      <div class="q"><b>Question</b> In a "reverse osmosis membrane" device that makes fresh water from seawater, roughly how much pressure must be applied on the seawater side?</div>
+      <details><summary>Osmotic pressure in this model</summary>
+        <p>Solvent particles pass straight through the membrane, so at equilibrium the solvent density (the solvent's "partial pressure") is the same on both sides. The pressure on the right is higher by the partial pressure of the solute, <span class="math">nkT/V</span>. Therefore <span class="math">Π = P<sub>R</sub> − P<sub>L</sub> = nkT/V</span>. Only the solute pushes on the membrane, so the "pressure of solute on the membrane" is also Π.</p>
+        <p>In a real solution the solvent is a liquid and solvent molecules exert forces on one another, but when the solute is dilute the same formula <span class="math">Π = cRT</span> (<i>c</i> is the molar concentration) holds. It follows from the condition that the chemical potential of the solvent is equal on both sides of the membrane.</p>
+        <p>On this page the particles are made smaller to approach a dilute solution. Even so, the particles have a finite size, so in a more concentrated solution the measured Π comes out slightly larger than <i>nkT</i>/<i>V</i>. This formula has the same form in 2D and 3D (<i>kT</i> per particle).</p>
+      </details>
+    </section>
+  </div>
+</main>
+
+<script type="module">
+import { Gas, ADIABATIC, DIATHERMAL, SEMIPERMEABLE } from '../../assets/js/engine.js';
+import { SimView } from '../../assets/js/render.js';
+import { TimePlot, XYPlot, SERIES } from '../../assets/js/plot.js';
+import { $, fmt, bindRange, bindCheck, Loop, bindPlayPause, setupCommon, bindSpeed } from '../../assets/js/ui.js';
+
+setupCommon();
+const H = 60, XM = 50, X0 = 100, NW = 240;   // NW: number of solvent particles (left + right)
+let gas, view, simRate = 0.1, frame = 0, ns = 80, T = 1, Pext = 0.09;
+let sm = null;          // values smoothed for display
+const rows = [];
+
+const plotN = new TimePlot($('plotN'), { height: 170, ylabel: 'Solvent particles', yZero: false, window: 1500,
+  series: [{ key: 'L', label: 'Left (pure solvent)', color: SERIES[0] }, { key: 'R', label: 'Right (solution)', color: SERIES[1] }] });
+const plotP = new TimePlot($('plotP'), { height: 170, ylabel: 'Pressure P', yZero: true, window: 1500,
+  series: [{ key: 'PL', label: 'P_L', color: SERIES[0] }, { key: 'PR', label: 'P_R', color: SERIES[1] }, { key: 'Pi', label: 'Π = P_R − P_L', color: SERIES[3] }] });
+const plotV = new XYPlot($('plotV'), { height: 240, xmin: 0, xmax: 0.12, ymin: 0, ymax: 0.13, xlabel: 'nkT/V', ylabel: 'Π', xd: 3, yd: 3 });
+plotV.refs = [{ label: "van 't Hoff Π = nkT/V", color: '#77756f', dash: [6, 4], fn: (x) => x }];
+
+function build() {
+  // make the particles small (r = 0.15) to approach an ideal dilute solution
+  gas = new Gas({ H, X: X0, Xmin: XM + 8, Xmax: 175, r: 0.15, seed: (Math.random() * 1e9) | 0 });
+  gas.setVPartition(XM, ADIABATIC);   // initially a partition that lets nothing through
+  // the left and right volumes are equal, so equal total particle numbers give equal pressures
+  const a = (NW + ns) / 2, b = (NW - ns) / 2;
+  gas.addParticles(a, T, { x0: 0, x1: XM, y0: 0, y1: H }, 0);
+  gas.addParticles(b, T, { x0: XM, x1: X0, y0: 0, y1: H }, 0);
+  if (ns > 0) gas.addParticles(ns, T, { x0: XM, x1: X0, y0: 0, y1: H }, 1);
+  gas.walls = { left: DIATHERMAL, top: DIATHERMAL, bottom: DIATHERMAL };
+  gas.bath = { left: true, top: true, bottom: true };
+  gas.Tbath = T;
+  gas.pTau = 200;
+  gas.piston.target = X0;
+  if (view) view.g = gas; else view = new SimView($('sim'), gas, { envPad: 5, Tref: 1, drawScale: 5.6 });
+  view.opt.showHeat = $('c-heat').checked;
+  gas.tracerOn = $('c-trace').checked;
+  sm = null;
+  plotN.reset(); plotP.reset();
+  $('btn-semi').disabled = false;
+  $('state-hint').textContent = '— the partition currently lets nothing through';
+}
+
+/** number of solute particles actually in the gas (counted from the particles, not taken from the slider) */
+function soluteCount() { let n = 0; for (let i = 0; i < gas.N; i++) if (gas.species[i] === 1) n++; return n; }
+
+function stateLabel() {
+  if (gas.vpart.type !== SEMIPERMEABLE) return 'Partition';
+  // the flow direction depends on whether the pushing pressure is above or below the solution-side pressure, so only the condition is stated here
+  return gas.piston.mode === 'force' ? `External pressure P=${fmt(gas.piston.Pext, 3)}` : 'Osmosis (fixed)';
+}
+
+function drawRows() {
+  const tb = $('tbl').querySelector('tbody');
+  tb.innerHTML = rows.map((r, k) => `<tr><td>${k + 1}</td><td style="text-align:left">${r.state}</td><td>${r.n}</td><td>${fmt(r.T, 2)}</td><td>${fmt(r.V, 0)}</td><td>${fmt(r.th, 4)}</td><td>${fmt(r.Pi, 4)}</td><td>${fmt(r.Pm, 4)}</td><td>${fmt(r.Pi / r.th, 2)}</td></tr>`).join('');
+  $('tbl-empty').hidden = rows.length > 0;
+  const ok = rows.filter((r) => r.n > 0);
+  plotV.paths = ok.map((r, k) => ({ label: k === 0 ? 'Measured: pressure difference P_R − P_L' : '', color: SERIES[1], pts: [[r.th, r.Pi]], ends: true }))
+    .concat(ok.filter((r) => Number.isFinite(r.Pm)).map((r, k) => ({ label: k === 0 ? 'Measured: pressure on the membrane' : '', color: SERIES[0], pts: [[r.th, r.Pm]], ends: true })));
+  plotV.draw();
+}
+
+bindRange('ns', (v) => { ns = v; }, (v) => v.toFixed(0), false);
+bindRange('T', (v) => { T = v; }, (v) => v.toFixed(1), false);
+bindRange('Pext', (v) => { Pext = v; if (gas && gas.piston.mode === 'force') gas.piston.Pext = v; }, (v) => v.toFixed(3), false);
+bindSpeed('speed', (v) => { simRate = v; });
+bindCheck('c-heat', (on) => { if (view) view.opt.showHeat = on; });
+bindCheck('c-trace', (on) => { if (gas) { gas.tracerOn = on; gas.tracer = []; } });
+$('btn-reset').addEventListener('click', build);
+$('btn-semi').addEventListener('click', () => {
+  gas.setVPartition(XM, SEMIPERMEABLE);
+  $('btn-semi').disabled = true;
+  $('state-hint').textContent = '— semipermeable membrane: only the solvent (blue) passes through';
+});
+$('btn-push').addEventListener('click', () => { Object.assign(gas.piston, { mode: 'force', Pext, u: 0 }); });
+$('btn-fix').addEventListener('click', () => { gas.piston.mode = 'position'; gas.piston.u = 0; gas.piston.target = gas.X; });
+$('btn-rec').addEventListener('click', () => {
+  if (!sm) return;
+  const n = soluteCount();
+  rows.push({ state: stateLabel(), n, T: sm.TR, V: sm.V, th: (n * sm.TR) / sm.V, Pi: gas.P.piston - gas.P.left, Pm: gas.vpart.type === SEMIPERMEABLE ? gas.P.vpart : NaN });
+  drawRows();
+});
+$('btn-clear').addEventListener('click', () => { rows.length = 0; drawRows(); });
+build();
+drawRows();
+
+const loop = new Loop((paused) => {
+  if (!paused) {
+    gas.advance(simRate);
+    gas.measure();
+    frame++;
+    let nL = 0;
+    for (let i = 0; i < gas.N; i++) if (gas.species[i] === 0 && gas.x[i] < XM) nL++;
+    const V = (gas.X - XM) * H, TR = gas.regionStats(1).T;
+    // time average for display (over about the same time as the pressure)
+    const k = Math.min(1, simRate / gas.pTau);
+    if (!sm) sm = { nL, V, TR };
+    sm.nL += k * 4 * (nL - sm.nL); sm.V += k * (V - sm.V); sm.TR += k * (TR - sm.TR);
+    const PL = gas.P.left, PR = gas.P.piston, Pi = PR - PL;
+    const n = soluteCount(), semi = gas.vpart.type === SEMIPERMEABLE;
+    $('r-nL').textContent = nL; $('r-nR').textContent = NW - nL; $('r-ns').textContent = n;
+    $('r-V').textContent = fmt(V, 0);
+    $('r-PL').textContent = fmt(PL, 4); $('r-PR').textContent = fmt(PR, 4);
+    $('r-Pi').textContent = fmt(Pi, 4); $('r-Pm').textContent = semi ? fmt(gas.P.vpart, 4) : '–';   // not a membrane pressure until the partition becomes semipermeable
+    $('r-th').textContent = fmt((n * sm.TR) / sm.V, 4);
+    plotN.push(gas.time, { L: sm.nL, R: NW - sm.nL });
+    plotP.push(gas.time, { PL, PR, Pi });
+    if (frame % 2 === 0) { plotN.draw(); plotP.draw(); }
+  }
+  view.draw();
+});
+bindPlayPause('btn-play', loop);
+</script>
+</body>
+</html>

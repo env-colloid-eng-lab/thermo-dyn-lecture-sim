@@ -3,7 +3,8 @@
 //  図の約束は講義スライドに合わせる:
 //    斜線の帯 = 断熱壁 / 細い実線 = 透熱壁 / 薄い青 = 流体
 // =============================================================
-import { ADIABATIC, DIATHERMAL } from './engine.js';
+import { ADIABATIC, DIATHERMAL, SEMIPERMEABLE } from './engine.js';
+import { tr } from './i18n.js';
 
 export const COLORS = {
   fluid: '#DAE3F3',
@@ -154,7 +155,7 @@ export class SimView {
       ctx.strokeRect(this.X(-wt - e), this.Y(-wt - e), (g.Xmax + this.pt + wt + 2 * e + 4) * s, (g.H + 2 * wt + 2 * e) * s);
       ctx.fillStyle = COLORS.text; ctx.font = `italic ${fontPx * 1.1}px serif`;
       ctx.textAlign = 'right'; ctx.textBaseline = 'bottom';
-      ctx.fillText(`環境 T = ${g.Tbath.toFixed(2)}`, this.X(g.Xmax + this.pt + e + 2), this.Y(g.H + wt + e) - 4 * dpr);
+      ctx.fillText(`${tr('環境', 'surroundings')} T = ${g.Tbath.toFixed(2)}`, this.X(g.Xmax + this.pt + e + 2), this.Y(g.H + wt + e) - 4 * dpr);
     }
     // --- 熱源ブロック（左壁に接触）---
     if (o.bathPad > 0 && g.bath.left && !allBath) {
@@ -165,7 +166,7 @@ export class SimView {
       ctx.strokeRect(this.X(bx0), this.Y(0), bw * s, g.H * s);
       ctx.fillStyle = COLORS.text; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.font = `${fontPx}px sans-serif`;
-      ctx.fillText('熱源', this.X(bx0 + bw / 2), this.Y(g.H / 2) - fontPx * 0.9);
+      ctx.fillText(tr('熱源', 'reservoir'), this.X(bx0 + bw / 2), this.Y(g.H / 2) - fontPx * 0.9);
       ctx.font = `italic ${fontPx * 1.15}px serif`;
       ctx.fillText(`T=${g.Tbath.toFixed(2)}`, this.X(bx0 + bw / 2), this.Y(g.H / 2) + fontPx * 0.5);
     }
@@ -184,7 +185,13 @@ export class SimView {
 
     // --- 仕切り壁 ---
     const pw = 1.4;
-    if (g.vpart) this.wallRect(ctx, g.vpart.x - pw / 2, 0, pw, g.H, g.vpart.type, 'center-v');
+    if (g.vpart && g.vpart.type === SEMIPERMEABLE) {
+      // 半透膜：破線（溶媒は通り抜ける）
+      ctx.strokeStyle = COLORS.wall; ctx.lineWidth = 2.2 * dpr;
+      ctx.setLineDash([5 * dpr, 4 * dpr]);
+      ctx.beginPath(); ctx.moveTo(this.X(g.vpart.x), this.Y(0)); ctx.lineTo(this.X(g.vpart.x), this.Y(g.H)); ctx.stroke();
+      ctx.setLineDash([]);
+    } else if (g.vpart) this.wallRect(ctx, g.vpart.x - pw / 2, 0, pw, g.H, g.vpart.type, 'center-v');
     if (g.hpart) this.wallRect(ctx, 0, g.hpart.y - pw / 2, g.X, pw, g.hpart.type, 'center-h');
 
     // --- 熱のやりとりの可視化 ---

@@ -15,6 +15,7 @@
 
 export const ADIABATIC = 'adiabatic';   // 断熱壁: 鏡面反射（エネルギーを通さない）
 export const DIATHERMAL = 'diathermal'; // 透熱壁: 熱源/相手と熱的に接触していればエネルギーを通す
+export const SEMIPERMEABLE = 'semipermeable'; // 半透膜（仕切り壁のみ）: 種類 pass の粒子（溶媒）は素通り、それ以外は鏡面反射
 
 // 再現性のある乱数
 function mulberry32(seed) {
@@ -81,10 +82,10 @@ export class Gas {
 
     // 圧力測定（運動量輸送の時間平均）
     this.pTau = o.pTau ?? 15;
-    this._imp = { piston: 0, all: 0, reg: new Float64Array(4) };
-    this.P = { piston: NaN, all: NaN, reg: new Float64Array(4).fill(NaN) };
+    this._imp = { piston: 0, all: 0, left: 0, vpart: 0, reg: new Float64Array(4) };
+    this.P = { piston: NaN, all: NaN, left: NaN, vpart: NaN, reg: new Float64Array(4).fill(NaN) };
     this._lastMeasure = 0;
-    this._acc = { w: 0, piston: 0, all: 0, reg: new Float64Array(4) };
+    this._acc = { w: 0, piston: 0, all: 0, left: 0, vpart: 0, reg: new Float64Array(4) };
 
     // 格子（衝突判定用）
     this._cell = Math.max(2 * this.r, 1.5);
@@ -188,7 +189,7 @@ export class Gas {
   setVPartition(x, type = ADIABATIC) {
     if (x == null) { this.vpart = null; this._updateRegions(); return; }
     const old = this.vpart;
-    this.vpart = { x, type, Tw: old?.Tw ?? this._meanT(), Cw: 30 };
+    this.vpart = { x, type, Tw: old?.Tw ?? this._meanT(), Cw: 30, pass: old?.pass ?? 0 };
     for (let i = 0; i < this.N; i++) this.px[i] = this.x[i];
     this._updateRegions();
   }
@@ -264,6 +265,7 @@ export class Gas {
     const imp = Math.abs((this.vx[i] - vx0) * nx + (this.vy[i] - vy0) * ny);
     this._imp.all += imp;
     this._imp.reg[this.region[i]] += imp;
+    if (side === 'left') this._imp.left += imp;
   }
 
   /** 仕切り壁での反射。透熱なら壁の内部自由度（温度 Tw, 熱容量 Cw）とエネルギー交換 */
@@ -285,6 +287,7 @@ export class Gas {
     if (!done) { if (nx !== 0) this.vx[i] = -vx0; else this.vy[i] = -vy0; }
     const imp = Math.abs((this.vx[i] - vx0) * nx + (this.vy[i] - vy0) * ny);
     this._imp.reg[this.region[i]] += imp;
+    if (part === this.vpart) this._imp.vpart += imp;
   }
 
   // ------------------------------------------------------------
@@ -352,7 +355,9 @@ export class Gas {
     const vp = this.vpart, hp = this.hpart;
     if (vp) {
       const c = vp.x;
+      const semi = vp.type === SEMIPERMEABLE;
       for (let i = 0; i < N; i++) {
+        if (semi && this.species[i] === vp.pass) continue;   // 溶媒は半透膜を素通り
         const left = this.px[i] < c;
         if (left && this.x[i] > c - r) {
           if (this.vx[i] > 0) { this._partHit(i, vp, -1, 0); }
@@ -524,6 +529,8 @@ export class Gas {
     A.w = A.w * dec + el;
     A.piston = A.piston * dec + this._imp.piston / H;
     A.all = A.all * dec + this._imp.all / (2 * X + 2 * H);
+    A.left = A.left * dec + this._imp.left / H;       // 左の外壁だけが受ける圧力
+    A.vpart = A.vpart * dec + this._imp.vpart / H;    // 縦の仕切り壁（膜）が受ける圧力（両側の合計）
     for (let g = 0; g < 4; g++) {
       const R = this.regionRect(g);
       const per = 2 * (R.x1 - R.x0) + 2 * (R.y1 - R.y0);
@@ -532,14 +539,16 @@ export class Gas {
     }
     this.P.piston = A.piston / A.w;
     this.P.all = A.all / A.w;
-    this._imp.piston = 0; this._imp.all = 0; this._imp.reg.fill(0);
+    this.P.left = A.left / A.w;
+    this.P.vpart = A.vpart / A.w;
+    this._imp.piston = 0; this._imp.all = 0; this._imp.left = 0; this._imp.vpart = 0; this._imp.reg.fill(0);
     this._lastMeasure = this.time;
   }
 
   resetPressure() {
-    this.P.piston = NaN; this.P.all = NaN; this.P.reg.fill(NaN);
-    this._imp.piston = 0; this._imp.all = 0; this._imp.reg.fill(0);
-    this._acc = { w: 0, piston: 0, all: 0, reg: new Float64Array(4) };
+    this.P.piston = NaN; this.P.all = NaN; this.P.left = NaN; this.P.vpart = NaN; this.P.reg.fill(NaN);
+    this._imp.piston = 0; this._imp.all = 0; this._imp.left = 0; this._imp.vpart = 0; this._imp.reg.fill(0);
+    this._acc = { w: 0, piston: 0, all: 0, left: 0, vpart: 0, reg: new Float64Array(4) };
     this._lastMeasure = this.time;
   }
 

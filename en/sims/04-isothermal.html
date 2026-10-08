@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>04 Energy Balance in an Isothermal Process | Thermodynamics Simulations</title>
+<link rel="icon" href="../../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body>
+<header class="site-header"><div class="inner">
+  <h1>04 Energy Balance in an Isothermal Process</h1><span class="sub">Work W was done, yet ΔU = 0? The energy leaves to the surroundings as heat</span>
+  <nav>
+    <a href="../index.html">Contents</a>
+    <a href="01-operations.html">01 Walls & operations</a>
+    <a href="02-equilibrium.html">02 Relaxation to equilibrium</a>
+    <a href="03-processes.html">03 Quasi-static vs. irreversible</a>
+    <a href="04-isothermal.html" aria-current="page">04 Isothermal energy balance</a>
+    <a href="05-extensive.html">05 Extensive & intensive</a>
+    <a href="06-heat-capacity.html">06 Heat capacity</a>
+    <a href="07-entropy.html">07 Entropy</a>
+    <a href="08-heat-engines.html">08 Heat engines</a>
+    <a href="09-osmosis.html">09 Osmotic pressure</a>
+    <a href="../../sims/04-isothermal.html" lang="ja" hreflang="ja">日本語</a>
+    <button id="btn-proj" title="Enlarge text">Projector mode</button>
+  </nav>
+</div></header>
+
+<main class="layout">
+  <div class="col">
+    <section class="card">
+      <h2><span class="tag">Micro</span>A gas in surroundings at constant temperature <span class="hint" id="mode-hint"></span></h2>
+      <div class="canvas-wrap"><canvas id="sim"></canvas></div>
+      <div class="legend">
+        <span><span class="sw adi"></span>Adiabatic wall</span>
+        <span><span class="sw dia"></span>Diathermal wall</span>
+        <span><span class="dot hot"></span>Collision where energy went from the surroundings into a particle</span>
+        <span><span class="dot cold"></span>Collision where energy went from a particle to the surroundings</span>
+        <span id="lg-speed" hidden>Slow<span class="grad"></span>Fast</span>
+      </div>
+
+      <h2 style="margin-top:12px"><span class="tag">Macro</span>Energy flow <span class="hint">Arrow motion = current direction of flow; numbers = totals since "Reset counters"</span></h2>
+      <div class="flow">
+        <div class="box out"><span class="t">The outside (the person moving the piston)</span><span class="n" id="f-out"></span><span class="t">work done</span></div>
+        <div class="arrow"><span>Work <i>W</i></span><div class="bar" id="a-W"></div><span id="r-Wrate"></span></div>
+        <div class="box sys"><span class="t">Change in internal energy of the system (gas)</span><span class="n" id="f-dU"></span><span class="t" id="f-U"></span></div>
+        <div class="arrow"><span>Heat −<i>Q</i></span><div class="bar q" id="a-Q"></div><span id="r-Qrate"></span></div>
+        <div class="box bath"><span class="t">Energy received by the reservoir (surroundings)</span><span class="n" id="f-bath"></span><span class="t">= −Q</span></div>
+      </div>
+      <div class="bars">
+        <div class="b"><span>Work <i>W</i> (came in)</span><div class="track"><div class="zero"></div><div class="fill" id="b-W" style="background:var(--s2)"></div></div><output id="o-W"></output></div>
+        <div class="b"><span>Δ<i>U</i> (stored in the system)</span><div class="track"><div class="zero"></div><div class="fill" id="b-dU" style="background:var(--s1)"></div></div><output id="o-dU"></output></div>
+        <div class="b"><span>−<i>Q</i> (went to the surroundings)</span><div class="track"><div class="zero"></div><div class="fill" id="b-Q" style="background:var(--hot)"></div></div><output id="o-Q"></output></div>
+      </div>
+      <div class="ledger">
+        <span class="term"><b>ΔU</b><span id="l-dU"></span></span><span class="op">=</span>
+        <span class="term"><b>Q</b><span id="l-Q"></span></span><span class="op">+</span>
+        <span class="term"><b>W</b><span id="l-W"></span></span>
+        <span class="note">Sum of the energy changes in every single collision: particle–piston collisions (work) and particle–diathermal-wall collisions (heat).</span>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Time evolution</h2>
+      <div class="canvas-wrap"><canvas id="plotE"></canvas></div>
+      <div class="canvas-wrap" style="margin-top:6px"><canvas id="plotT"></canvas></div>
+    </section>
+  </div>
+
+  <div class="col">
+    <section class="card ctrl">
+      <h2>Controls</h2>
+      <div class="btns">
+        <button id="btn-play" class="primary"></button>
+        <button id="btn-reset">Reset</button>
+        <button id="btn-ledger">Reset counters (W = Q = 0)</button>
+      </div>
+      <div class="row"><label for="speed">Playback speed</label><input type="range" id="speed" min="-0.7" max="1.6" step="0.05" value="0.78"><output id="speed-val"></output></div>
+
+      <div class="group-title">Type of wall</div>
+      <div class="seg" id="walls"><button data-value="dia" aria-pressed="true">Diathermal (isothermal process)</button><button data-value="adi">Adiabatic (adiabatic process)</button></div>
+      <div class="row"><label for="Tb">Temperature of surroundings <i>T</i></label><input type="range" id="Tb" min="0.5" max="2" step="0.05" value="1"><output id="Tb-val"></output></div>
+
+      <div class="group-title">Operation 1: piston</div>
+      <div class="seg" id="pspeed"><button data-value="0.03" aria-pressed="true">Slow (nearly quasi-static)</button><button data-value="0.5">Fast</button></div>
+      <div class="btns" style="margin-top:6px">
+        <button id="btn-comp">◀ Compress (V → V/2)</button>
+        <button id="btn-exp">Expand ▶ (V → original)</button>
+        <button id="btn-stop">Stop</button>
+      </div>
+
+      <div class="group-title">Display</div>
+      <div>
+        <label class="check"><input type="checkbox" id="c-heat" checked>Heat exchange</label>
+        <label class="check"><input type="checkbox" id="c-trace">Track one particle</label>
+        <label class="check"><input type="checkbox" id="c-speed">Color = speed</label>
+      </div>
+    </section>
+
+    <section class="card notes">
+      <h2>Goal</h2>
+      <p>The internal energy of an ideal gas depends only on temperature, so Δ<i>U</i> = 0 in an isothermal process. Yet we did work <i>W</i> with the piston. <b>Where did that energy go?</b></p>
+      <h3>Try it</h3>
+      <ol>
+        <li>With "Diathermal" and "Slow", <b>compress</b>. <i>W</i> grows but Δ<i>U</i> ≈ 0. What happens to −<i>Q</i> (the energy received by the surroundings)?</li>
+        <li>"Track one particle": the particle speeds up when it hits the piston and hands energy to the surroundings when it hits a diathermal wall (blue rings). This is what "heat" is, seen microscopically.</li>
+        <li><b>Expand</b>. Now the gas does work on the outside (<i>W</i> &lt; 0) and heat flows in from the surroundings (more red rings).</li>
+        <li>Switch to "Adiabatic" and do the same compression. Δ<i>U</i> = <i>W</i>, and the temperature rises.</li>
+      </ol>
+      <div class="q"><b>Question</b> The work <i>W</i> a person does with the piston is up to them. But the escape of that energy to the surroundings as heat happens regardless of our will. Explain this in connection with "the nature of heat" from the lecture.</div>
+      <div class="q"><b>Question</b> During isothermal compression, ΔU is not exactly 0 but fluctuates slightly. Why? (What if the number of particles were infinitely large?)</div>
+      <details><summary>Theoretical values (2D ideal gas)</summary>
+        <p>For an isothermal quasi-static change <i>V</i>₀ → <i>V</i>₁, <span class="math">W = NkT ln(V₀/V₁)</span>. With <i>N</i> = 300 and <i>T</i> = 1, halving the volume gives <span class="math">W = 300 × ln 2 ≈ 208</span> and <span class="math">Q = −W</span>. In the simulation it comes out a few percent larger because of the particle size and the finite piston speed.</p>
+      </details>
+    </section>
+  </div>
+</main>
+
+<script type="module">
+import { Gas, ADIABATIC, DIATHERMAL } from '../../assets/js/engine.js';
+import { SimView } from '../../assets/js/render.js';
+import { TimePlot, SERIES } from '../../assets/js/plot.js';
+import { $, fmt, fmtSigned, bindRange, bindCheck, segmented, Loop, bindPlayPause, setupCommon, updateLedger, bindSpeed } from '../../assets/js/ui.js';
+
+setupCommon();
+const H = 60, X0 = 100, N = 300;
+let gas, view, simRate = 0.1, frame = 0, wallMode = 'dia', speed = 0.03, Tb = 1;
+let hist = [];
+
+const plotE = new TimePlot($('plotE'), { height: 200, ylabel: 'Energy (cumulative)', yZero: true, window: 3000,
+  series: [{ key: 'W', label: 'Work W', color: SERIES[1] }, { key: 'mQ', label: 'To surroundings −Q', color: '#d6453d', dash: [6, 4] }, { key: 'dU', label: 'ΔU', color: SERIES[0] }] });
+const plotT = new TimePlot($('plotT'), { height: 150, ylabel: 'Temperature T', yZero: true, window: 3000,
+  series: [{ key: 'T', label: 'Gas temperature T', color: SERIES[0] }, { key: 'Tb', label: 'Temperature of surroundings', color: SERIES[1], dash: [6, 4] }] });
+
+function applyWalls() {
+  const t = wallMode === 'dia' ? DIATHERMAL : ADIABATIC;
+  gas.walls = { left: t, top: t, bottom: t };
+  gas.bath = { left: true, top: true, bottom: true };
+  gas.Tbath = Tb;
+  $('mode-hint').textContent = wallMode === 'dia' ? '— Diathermal walls: heat can be exchanged with the surroundings' : '— Adiabatic walls: no heat passes even though the surroundings are there';
+}
+
+function build() {
+  gas = new Gas({ H, X: X0, Xmin: 40, Xmax: 110, seed: (Math.random() * 1e9) | 0 });
+  gas.addParticles(N, Tb, { x0: 0, x1: X0, y0: 0, y1: H });
+  gas.piston.target = X0; gas.piston.speed = speed;
+  applyWalls();
+  if (view) view.g = gas; else view = new SimView($('sim'), gas, { envPad: 5, Tref: 1, drawScale: 2.8 });
+  view.opt.showHeat = $('c-heat').checked;
+  view.opt.colorMode = $('c-speed').checked ? 'speed' : 'species';
+  gas.tracerOn = $('c-trace').checked;
+  hist = []; plotE.reset(); plotT.reset();
+}
+
+segmented('walls', (v) => { wallMode = v; if (gas) applyWalls(); }, false);
+segmented('pspeed', (v) => { speed = parseFloat(v); if (gas) gas.piston.speed = speed; }, false);
+bindRange('Tb', (v) => { Tb = v; if (gas) gas.Tbath = v; }, (v) => v.toFixed(2), false);
+bindSpeed('speed', (v) => { simRate = v; });
+bindCheck('c-heat', (on) => { if (view) view.opt.showHeat = on; });
+bindCheck('c-trace', (on) => { if (gas) { gas.tracerOn = on; gas.tracer = []; } });
+bindCheck('c-speed', (on) => { if (view) view.opt.colorMode = on ? 'speed' : 'species'; $('lg-speed').hidden = !on; });
+$('btn-comp').addEventListener('click', () => { gas.piston.speed = speed; gas.piston.target = Math.max(gas.Xmin, gas.X / 2); });
+$('btn-exp').addEventListener('click', () => { gas.piston.speed = speed; gas.piston.target = X0; });
+$('btn-stop').addEventListener('click', () => { gas.piston.target = gas.X; });
+$('btn-reset').addEventListener('click', build);
+$('btn-ledger').addEventListener('click', () => { gas.resetLedger(); hist = []; plotE.reset(); });
+build();
+
+function setBar(id, v, scale) {
+  const el = $(id), w = Math.min(50, (Math.abs(v) / scale) * 50);
+  el.style.left = v >= 0 ? '50%' : (50 - w) + '%';
+  el.style.width = w + '%';
+}
+function setArrow(id, rate, thr) {
+  const el = $(id);
+  el.classList.toggle('idle', Math.abs(rate) < thr);
+  el.classList.toggle('rev', rate < 0);
+}
+
+const loop = new Loop((paused) => {
+  if (!paused) {
+    gas.advance(simRate);
+    gas.measure();
+    frame++;
+    const s = gas.stats();
+    hist.push([gas.time, s.W, s.Q]);
+    while (hist.length > 2 && hist[0][0] < gas.time - 500) hist.shift();
+    const dt = hist.length > 1 ? hist[hist.length - 1][0] - hist[0][0] : 1;
+    const Wrate = hist.length > 1 ? (s.W - hist[0][1]) / dt : 0;
+    const Qrate = hist.length > 1 ? (s.Q - hist[0][2]) / dt : 0;
+    setArrow('a-W', Wrate, 0.005);
+    setArrow('a-Q', -Qrate, 0.04);
+    $('r-Wrate').textContent = `${fmtSigned(Wrate, 2)} /t`;
+    $('r-Qrate').textContent = `${fmtSigned(-Qrate, 2)} /t`;
+    $('f-out').textContent = fmtSigned(s.W, 1);
+    $('f-dU').textContent = fmtSigned(s.dU, 1);
+    $('f-U').textContent = `U = ${fmt(s.U, 1)} (T = ${fmt(s.T, 2)})`;
+    $('f-bath').textContent = fmtSigned(-s.Q, 1);
+    const scale = Math.max(50, Math.abs(s.W), Math.abs(s.Q), Math.abs(s.dU));
+    setBar('b-W', s.W, scale); setBar('b-dU', s.dU, scale); setBar('b-Q', -s.Q, scale);
+    $('o-W').textContent = fmtSigned(s.W, 1); $('o-dU').textContent = fmtSigned(s.dU, 1); $('o-Q').textContent = fmtSigned(-s.Q, 1);
+    updateLedger('l-', s);
+    plotE.push(gas.time, { W: s.W, mQ: -s.Q, dU: s.dU });
+    plotT.push(gas.time, { T: s.T, Tb: wallMode === 'dia' ? gas.Tbath : NaN });
+    if (frame % 2 === 0) { plotE.draw(); plotT.draw(); }
+  }
+  view.draw();
+});
+bindPlayPause('btn-play', loop);
+</script>
+</body>
+</html>

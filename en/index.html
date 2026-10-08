@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Thermodynamics Simulations | Thermodynamics through Micro and Macro</title>
+<meta name="description" content="Educational thermodynamics simulations where you operate walls, operations, processes, the first law, and extensive/intensive variables while linking particle motion (micro) to state variables (macro).">
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+<header class="site-header"><div class="inner">
+  <h1>Thermodynamics through Micro and Macro</h1><span class="sub">Physics: Thermodynamics part - interactive materials</span>
+  <nav>
+    <a href="index.html" aria-current="page">Contents</a>
+    <a href="sims/01-operations.html">01 Walls & operations</a>
+    <a href="sims/02-equilibrium.html">02 Relaxation to equilibrium</a>
+    <a href="sims/03-processes.html">03 Quasi-static vs. irreversible</a>
+    <a href="sims/04-isothermal.html">04 Isothermal energy balance</a>
+    <a href="sims/05-extensive.html">05 Extensive & intensive</a>
+    <a href="sims/06-heat-capacity.html">06 Heat capacity</a>
+    <a href="sims/07-entropy.html">07 Entropy</a>
+    <a href="sims/08-heat-engines.html">08 Heat engines</a>
+    <a href="sims/09-osmosis.html">09 Osmotic pressure</a>
+    <a href="../index.html" lang="ja" hreflang="ja">日本語</a>
+    <button id="btn-proj" title="Enlarge text">Projector mode</button>
+  </nav>
+</div></header>
+
+<section class="hero">
+  <p>Thermodynamics is a theory built entirely from a macroscopic point of view. Still, if you look at what its "setups" and "operations" do at the microscopic level, the differences between work, heat, and internal energy become much easier to grasp. Here you move the particles in a container (micro) and check how temperature <i>T</i>, pressure <i>P</i>, volume <i>V</i>, internal energy <i>U</i>, work <i>W</i>, and heat <i>Q</i> (macro) are determined and how they change.</p>
+  <div class="legend" style="font-size:.9em">
+    <b style="color:var(--ink)">Figure conventions:</b>
+    <span><span class="sw adi"></span>Adiabatic wall (blocks heat)</span>
+    <span><span class="sw dia"></span>Diathermal wall (passes heat)</span>
+    <span><span class="sw fluid"></span>Fluid</span>
+    <span><span class="dot p1"></span><span class="dot p2"></span>Fluid particles</span>
+  </div>
+</section>
+
+<section class="toc">
+  <a class="item" href="sims/01-operations.html">
+    <span class="num">01</span>
+    <h2>Walls and operations</h2>
+    <p>Adiabatic and diathermal walls. How particle motion and <i>T, P, U</i> change with a piston (Operation 1), stirring (Operation 2), and contact with a heat reservoir (Operation 3).</p>
+    <div class="kw">Setup, equilibrium state, operations, mechanical / thermal operations, speed distribution</div>
+  </a>
+  <a class="item" href="sims/02-equilibrium.html">
+    <span class="num">02</span>
+    <h2>Relaxation to equilibrium</h2>
+    <p>Put two fluids at different temperatures in contact through a diathermal wall and leave them alone: they eventually settle into a state with no macroscopic change.</p>
+    <div class="kw">Equilibrium state, subsystems and composite system, heat transfer, fluctuation</div>
+  </a>
+  <a class="item" href="sims/03-processes.html">
+    <span class="num">03</span>
+    <h2>Quasi-static and irreversible processes</h2>
+    <p>Move the piston back and forth slowly / quickly, or let the gas expand freely into a vacuum. See the work on a P–V diagram.</p>
+    <div class="kw">Process, quasi-static process, reversibility, adiabatic process, isothermal process, irreversible adiabatic process</div>
+  </a>
+  <a class="item" href="sims/04-isothermal.html">
+    <span class="num">04</span>
+    <h2>Energy balance of an isothermal process</h2>
+    <p>Compress an ideal gas isothermally and all the work done on it goes to the surroundings as heat. See Δ<i>U</i> = <i>Q</i> + <i>W</i> as a flow of energy.</p>
+    <div class="kw">First law of thermodynamics, work and heat, the nature of heat</div>
+  </a>
+  <a class="item" href="sims/05-extensive.html">
+    <span class="num">05</span>
+    <h2>Extensive and intensive variables</h2>
+    <p>Divide a system with a wall / join identical systems. <i>N, V, U</i> add up, while <i>T, P</i> stay the same.</p>
+    <div class="kw">State variables, additivity, extensivity, intensivity</div>
+  </a>
+  <a class="item" href="sims/06-heat-capacity.html">
+    <span class="num">06</span>
+    <h2>Measuring heat capacity</h2>
+    <p>Add heat <i>Q</i> by contact with a heat reservoir and measure the temperature change Δ<i>T</i>. Why <i>C</i> = <i>Q</i>/Δ<i>T</i> differs at constant volume and at constant pressure (weighted piston).</p>
+    <div class="kw">Heat capacity, C<sub>V</sub>, C<sub>P</sub>, Mayer's relation, degrees of freedom</div>
+  </a>
+  <a class="item" href="sims/07-entropy.html">
+    <span class="num">07</span>
+    <h2>Entropy and the second law</h2>
+    <p>Free expansion, mixing, and heat transfer never undo themselves. Count the number of microstates <i>W</i> to get <i>S</i> = <i>k</i> ln <i>W</i>. What happens if you reverse all velocities?</p>
+    <div class="kw">Entropy, second law, irreversibility, Boltzmann's formula, entropy of mixing</div>
+  </a>
+  <a class="item" href="sims/08-heat-engines.html">
+    <span class="num">08</span>
+    <h2>Heat engines and heat pumps</h2>
+    <p>Run the Carnot cycle and the Stirling cycle automatically and measure the efficiency η and coefficient of performance COP from the P–V diagram and heat flows. Run it backwards and it becomes a heat pump.</p>
+    <div class="kw">Heat engine, Carnot cycle, efficiency, Stirling cycle, regenerator, heat pump, coefficient of performance</div>
+  </a>
+  <a class="item" href="sims/09-osmosis.html">
+    <span class="num">09</span>
+    <h2>Osmotic pressure</h2>
+    <p>Separate pure solvent from a solution with a semipermeable membrane that passes only the solvent. Solvent moves to the solution side and a pressure difference Π builds up. The van 't Hoff equation and reverse osmosis.</p>
+    <div class="kw">Semipermeable membrane, osmosis, osmotic pressure, van 't Hoff equation, reverse osmosis, chemical potential</div>
+  </a>
+</section>
+
+<section class="foot">
+  <div class="card notes">
+    <h2>The model used in these simulations</h2>
+    <ul>
+      <li>A two-dimensional hard-disk gas (particles collide elastically). Dimensionless units with particle mass <i>m</i> = 1 and Boltzmann constant <i>k</i><sub>B</sub> = 1.</li>
+      <li>Two-dimensional and monatomic, so there are 2 degrees of freedom: <span class="math">U = NkT</span>, <span class="math">PV = NkT</span> (<i>V</i> is area, <i>P</i> is force per unit length), heat capacity ratio <span class="math">γ = 2</span>. The difference from the three-dimensional <span class="math">U = (3/2)NkT</span> is the number of degrees of freedom.</li>
+      <li><b>Work <i>W</i></b>: the total change in kinetic energy when particles hit a moving piston or a rotating stirrer. <b>Heat <i>Q</i></b>: the total change in kinetic energy when particles hit a diathermal wall in contact with a heat reservoir. Both are counted collision by collision, so Δ<i>U</i> = <i>Q</i> + <i>W</i> holds exactly (apart from rounding errors).</li>
+      <li>Adiabatic walls reflect particles like a mirror. A particle that hits a diathermal wall in contact with a reservoir bounces back with a velocity drawn from the Maxwell distribution at the reservoir temperature.</li>
+      <li>The sign convention is the same as in the lecture: <i>W</i> is the work done on the system, <i>Q</i> is the heat received by the system.</li>
+    </ul>
+    <h3>Tips for using these in class</h3>
+    <ul>
+      <li>"Projector mode" at the top right enlarges the text. The space key toggles play / pause.</li>
+      <li>Each page has "Try it" and "Question" sections. They can also serve as material for report assignments.</li>
+      <li>No installation needed. Works on smartphones too (an internet connection is needed only to open the page).</li>
+    </ul>
+  </div>
+</section>
+<p class="foot">Created by Takuya Sugimoto (Institute of Life and Environmental Sciences, University of Tsukuba) / Free to use and modify for educational purposes (MIT License).</p>
+
+<script type="module">
+import { setupCommon } from '../assets/js/ui.js';
+setupCommon();
+</script>
+</body>
+</html>

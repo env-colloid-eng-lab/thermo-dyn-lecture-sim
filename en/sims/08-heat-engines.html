@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>08 Heat Engines and Heat Pumps | Thermodynamics Simulations</title>
+<link rel="icon" href="../../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body>
+<header class="site-header"><div class="inner">
+  <h1>08 Heat Engines and Heat Pumps</h1><span class="sub">Carnot cycle and Stirling cycle: turning heat into work, and using work to pump heat</span>
+  <nav>
+    <a href="../index.html">Contents</a>
+    <a href="01-operations.html">01 Walls & operations</a>
+    <a href="02-equilibrium.html">02 Relaxation to equilibrium</a>
+    <a href="03-processes.html">03 Quasi-static vs. irreversible</a>
+    <a href="04-isothermal.html">04 Isothermal energy balance</a>
+    <a href="05-extensive.html">05 Extensive & intensive</a>
+    <a href="06-heat-capacity.html">06 Heat capacity</a>
+    <a href="07-entropy.html">07 Entropy</a>
+    <a href="08-heat-engines.html" aria-current="page">08 Heat engines</a>
+    <a href="09-osmosis.html">09 Osmotic pressure</a>
+    <a href="../../sims/08-heat-engines.html" lang="ja" hreflang="ja">日本語</a>
+    <button id="btn-proj" title="Enlarge text">Projector mode</button>
+  </nav>
+</div></header>
+
+<main class="layout">
+  <div class="col">
+    <section class="card">
+      <h2><span class="tag">Micro</span>Gas in the cylinder (working substance) <span class="hint" id="mode-hint"></span></h2>
+      <div class="canvas-wrap"><canvas id="sim"></canvas></div>
+      <div class="legend">
+        <span><span class="sw adi"></span>Adiabatic wall</span>
+        <span><span class="sw dia"></span>Diathermal wall (in contact with a reservoir)</span>
+        <span><span class="dot hot"></span>Collision where energy went from the reservoir to a particle</span>
+        <span><span class="dot cold"></span>Collision where energy went from a particle to the reservoir</span>
+        <span id="lg-speed" hidden>slow<span class="grad"></span>fast</span>
+      </div>
+      <div class="phase">
+        <span>Current process: <b id="r-step">–</b></span>
+        <span class="hint" id="r-cycle"></span>
+      </div>
+
+      <h2 style="margin-top:12px"><span class="tag">Macro</span>Energy flow <span class="hint" id="flow-hint">Total over completed cycles</span></h2>
+      <div class="flow">
+        <div class="box bath"><span class="t">Hot reservoir <i>T</i><sub>h</sub> = <span id="f-Th"></span></span><span class="n" id="f-Qh"></span><span class="t" id="f-Qh-t"></span></div>
+        <div class="arrow"><span>Heat <i>Q</i><sub>h</sub></span><div class="bar q" id="a-h"></div></div>
+        <div class="box sys"><span class="t">Gas</span><span class="n" id="f-W"></span><span class="t" id="f-W-t"></span></div>
+        <div class="arrow"><span>Heat <i>Q</i><sub>c</sub></span><div class="bar q" id="a-c"></div></div>
+        <div class="box out" style="background:#eef4fd;border-color:#b8cdf0"><span class="t">Cold reservoir <i>T</i><sub>c</sub> = <span id="f-Tc"></span></span><span class="n" id="f-Qc"></span><span class="t" id="f-Qc-t"></span></div>
+      </div>
+      <div class="readouts">
+        <div class="stat"><span class="k" id="k-main">Efficiency η (measured)</span><span class="v" id="r-main">–</span></div>
+        <div class="stat"><span class="k" id="k-th">Theory (quasi-static)</span><span class="v" id="r-th"></span></div>
+        <div class="stat" id="st-regen"><span class="k" id="k-regen">With regenerator (measured)</span><span class="v" id="r-regen">–</span></div>
+        <div class="stat"><span class="k" id="k-carnot">Carnot limit</span><span class="v" id="r-carnot"></span></div>
+        <div class="stat"><span class="k">Cycles</span><span class="v" id="r-n">0</span></div>
+      </div>
+      <p class="q" id="r-warn" hidden></p>
+    </section>
+
+    <section class="card">
+      <h2><span class="tag">Macro</span>P–V diagram <span class="hint">Pressure from the equation of state NkT/V. When run slowly, shaded area ≈ net work per cycle</span></h2>
+      <div class="canvas-wrap"><canvas id="pv"></canvas></div>
+      <p class="hint" id="pv-area" style="margin:4px 0 0"></p>
+    </section>
+
+    <section class="card">
+      <h2>Energy budget of the last cycle <span class="hint"><i>Q</i>: heat received by the gas, <i>W</i>: work done on the gas</span></h2>
+      <div class="table-wrap">
+        <table class="tbl" id="tbl">
+          <thead><tr><th>Process</th><th>Reservoir</th><th><i>Q</i></th><th><i>W</i></th><th>Δ<i>U</i></th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <p class="hint" id="tbl-empty">Shown after one cycle is complete.</p>
+    </section>
+  </div>
+
+  <div class="col">
+    <section class="card ctrl">
+      <h2>Controls</h2>
+      <div class="btns">
+        <button id="btn-play" class="primary"></button>
+        <button id="btn-reset">Reset</button>
+      </div>
+      <div class="row"><label for="speed">Playback speed</label><input type="range" id="speed" min="0" max="2" step="0.05" value="1.5"><output id="speed-val"></output></div>
+
+      <div class="group-title">Cycle</div>
+      <div class="seg" id="type"><button data-value="carnot" aria-pressed="true">Carnot</button><button data-value="stirling">Stirling</button></div>
+      <div class="seg" id="dir" style="margin-top:6px"><button data-value="engine" aria-pressed="true">Heat engine (clockwise)</button><button data-value="pump">Heat pump (counterclockwise)</button></div>
+      <div class="row"><label for="Th">Hot reservoir <i>T</i><sub>h</sub></label><input type="range" id="Th" min="1.5" max="3" step="0.1" value="2"><output id="Th-val"></output></div>
+      <div class="row"><label for="Tc">Cold reservoir <i>T</i><sub>c</sub></label><input type="range" id="Tc" min="0.6" max="1.4" step="0.1" value="1"><output id="Tc-val"></output></div>
+      <div class="group-title">Piston speed</div>
+      <div class="seg" id="pspeed"><button data-value="0.03">Slow</button><button data-value="0.06" aria-pressed="true">Normal</button><button data-value="0.2">Fast</button></div>
+      <p class="hint" style="margin:0">Changing a setting restarts the cycle from the beginning.</p>
+
+      <div class="group-title">Display</div>
+      <div>
+        <label class="check"><input type="checkbox" id="c-heat" checked>Heat exchange</label>
+        <label class="check"><input type="checkbox" id="c-speed">Color = speed</label>
+      </div>
+    </section>
+
+    <section class="card notes">
+      <h2>Goal</h2>
+      <p>A device that repeatedly takes heat <i>Q</i><sub>h</sub> from a hot reservoir, turns part of it into work, and discards the rest to a cold reservoir is a <b>heat engine</b>. Run in reverse, it becomes a <b>heat pump</b> (refrigerator), which uses work to pump heat from the cold side to the hot side.</p>
+      <h3>Try it</h3>
+      <ol>
+        <li>Run a few cycles with "Carnot" and "Heat engine". The area enclosed by the cycle on the P–V diagram is the work done on the surroundings per cycle. Compare the measured efficiency η with the theory <span class="math">1 − T<sub>c</sub>/T<sub>h</sub></span>.</li>
+        <li>Change the piston speed to "Slow" or "Fast". What happens to the efficiency when it is fast? (Recall the irreversible processes in 03.)</li>
+        <li>What happens to the efficiency when you lower <i>T</i><sub>c</sub> or raise <i>T</i><sub>h</sub>?</li>
+        <li>Switch to "Heat pump". Work is done on the gas from outside; the gas takes heat from the cold side and gives off more heat to the hot side. The coefficient of performance (COP) is greater than 1.</li>
+        <li>"Stirling": the isothermal processes are connected by constant-volume processes. Without a regenerator (a heat-storage material that holds the heat exchanged at constant volume), the efficiency drops. In the heat-pump direction, without a regenerator the device may not even be able to pump heat out of the cold side (look at <i>Q</i> in the table).</li>
+      </ol>
+      <div class="q"><b>Question</b> Under every setting, the efficiency never exceeds the "Carnot limit". Explain why a heat engine that exceeded it would contradict the second law (the Clausius principle and the Thomson principle).</div>
+      <div class="q"><b>Question</b> In a heat pump, the heat delivered to the hot side is larger than the work done. Why doesn't this contradict energy conservation? Compare with an electric heater (COP = 1).</div>
+      <div class="q"><b>Question</b> The efficiency varies quite a lot from cycle to cycle. Why does the total over several cycles get closer to the theoretical value?</div>
+      <details><summary>Theoretical values (2D ideal gas, γ = 2)</summary>
+        <p>In an isothermal process (temperature <i>T</i>, volume <i>V</i>₁ → <i>V</i>₂), the heat received by the gas is <span class="math">Q = NkT ln(V₂/V₁)</span>. In an adiabatic process, <span class="math">TV = const.</span></p>
+        <p><b>Carnot</b>: <span class="math">Q<sub>h</sub> = NkT<sub>h</sub> ln r</span>, <span class="math">−Q<sub>c</sub> = NkT<sub>c</sub> ln r</span> (r is the volume ratio of the isothermal expansion; r = 2 on this page). Efficiency <span class="math">η = 1 − T<sub>c</sub>/T<sub>h</sub></span>; coefficient of performance of the heat pump <span class="math">COP = T<sub>h</sub>/(T<sub>h</sub> − T<sub>c</sub>)</span>.</p>
+        <p><b>Stirling</b>: the constant-volume processes exchange heat <span class="math">Nk(T<sub>h</sub> − T<sub>c</sub>)</span>. Without a regenerator this heat is also exchanged with the reservoirs, so <span class="math">η = (T<sub>h</sub> − T<sub>c</sub>) ln r / (T<sub>h</sub> ln r + T<sub>h</sub> − T<sub>c</sub>)</span>. With an ideal regenerator, the constant-volume heat just goes back and forth within the cycle, and the efficiency equals the Carnot efficiency.</p>
+        <p>For the reverse Stirling cycle (heat-pump direction) without a regenerator, the net heat received from the cold side is <span class="math">Nk(T<sub>c</sub> ln r − (T<sub>h</sub> − T<sub>c</sub>))</span>. If <span class="math">T<sub>c</sub> ln r &lt; T<sub>h</sub> − T<sub>c</sub></span>, this is negative: the work done from outside is simply dumped as heat into both reservoirs, and the device does not work as a heat pump (the COP shown is then less than 1).</p>
+        <p>The pressure on the P–V diagram is drawn from the equation of state <span class="math">NkT/V</span>. When the piston moves fast, the gas near the moving piston is out of equilibrium, and the pressure the piston actually feels differs from <span class="math">NkT/V</span>. For this reason, the shaded area and the net work −<i>W</i> in the table (counted collision by collision) agree well only when the piston moves slowly.</p>
+        <p>In the simulation the piston speed is finite and there is a temperature difference between the gas and the reservoirs, so the measured values are smaller than the theoretical ones. Because the number of particles is small, the value for each single cycle fluctuates a lot.</p>
+      </details>
+    </section>
+  </div>
+</main>
+
+<script type="module">
+import { Gas } from '../../assets/js/engine.js';
+import { CycleRunner, cycleDef } from '../../assets/js/cycles.js';
+import { SimView } from '../../assets/js/render.js';
+import { XYPlot, SERIES } from '../../assets/js/plot.js';
+import { $, fmt, fmtSigned, bindRange, bindCheck, segmented, Loop, bindPlayPause, setupCommon, bindSpeed } from '../../assets/js/ui.js';
+
+setupCommon();
+const H = 60, N = 200, X1 = 30, R = 2, XMAX = 155;
+let gas, view, run, simRate = 0.1, frame = 0;
+let type = 'carnot', dir = 'engine', Th = 2, Tc = 1, pspeed = 0.06;
+let cur = [], prev = null;   // P–V trajectories (current cycle, previous cycle)
+let thSlider, tcSlider;
+
+const pv = new XYPlot($('pv'), { height: 320, xmin: 0, xmax: XMAX * H, ymin: 0, ymax: 1, xlabel: 'V (area)', ylabel: 'P', xd: 0, yd: 4 });
+
+/** Turn the theoretical (quasi-static) cycle into a list of points on the P–V diagram */
+function theoryPts() {
+  const { states: S, kinds: K } = cycleDef(type, { Th, Tc, X1, r: R });
+  const pts = [];
+  for (let k = 0; k < 4; k++) {
+    const a = S[k], b = S[(k + 1) % 4], Va = a.X * H, Vb = b.X * H;
+    for (let j = 0; j <= 40; j++) {
+      const V = Va + ((Vb - Va) * j) / 40;
+      let P;
+      if (K[k] === 'iso') P = (N * a.T) / V;
+      else if (K[k] === 'adi') P = ((N * a.T) / Va) * (Va / V) ** 2;    // P V² = const.
+      else P = (N * (a.T + ((b.T - a.T) * j) / 40)) / Va;              // constant volume
+      pts.push([V, P]);
+    }
+  }
+  return pts;
+}
+
+function build() {
+  gas = new Gas({ H, X: X1, Xmin: 15, Xmax: XMAX, seed: (Math.random() * 1e9) | 0 });
+  gas.addParticles(N, Th, { x0: 0, x1: X1, y0: 0, y1: H });
+  run = new CycleRunner(gas, { type, dir, Th, Tc, X1, r: R, speed: pspeed });
+  if (view) view.g = gas; else view = new SimView($('sim'), gas, { envPad: 5, Tref: 1.5, drawScale: 2.8 });
+  view.opt.showHeat = $('c-heat').checked;
+  view.opt.colorMode = $('c-speed').checked ? 'speed' : 'species';
+  cur = []; prev = null;
+  const eng = dir === 'engine';
+  $('mode-hint').textContent = `— running the ${type === 'carnot' ? 'Carnot' : 'Stirling'} cycle automatically in the ${eng ? 'heat-engine' : 'heat-pump'} direction`;
+  $('k-main').textContent = eng ? 'Efficiency η (measured)' : 'COP (measured)';
+  $('k-th').textContent = eng ? 'Theoretical η (quasi-static)' : 'Theoretical COP (quasi-static)';
+  $('k-regen').textContent = 'With regenerator (measured)';
+  $('k-carnot').textContent = 'Carnot limit';
+  $('st-regen').hidden = type !== 'stirling';
+  $('r-th').textContent = fmt(run.theory.main, 3);
+  $('r-carnot').textContent = fmt(run.theory.carnot, 3);
+  $('r-main').textContent = '–'; $('r-regen').textContent = '–'; $('r-n').textContent = '0';
+  for (const id of ['f-Qh', 'f-Qc', 'f-W']) $(id).textContent = '–';
+  $('pv-area').textContent = '';
+  showWarn(null);
+  for (const id of ['f-Qh-t', 'f-Qc-t', 'f-W-t']) $(id).textContent = '';
+  $('flow-hint').textContent = 'Shown after one cycle is complete';
+  $('f-Th').textContent = fmt(Th, 1); $('f-Tc').textContent = fmt(Tc, 1);
+  pv.opt.ymax = ((N * Th) / (X1 * H)) * 1.15;
+  pv.refs = [
+    { label: `Isotherm T = ${fmt(Th, 1)}`, color: '#d6453d', dash: [3, 4], fn: (V) => (N * Th) / V },
+    { label: `Isotherm T = ${fmt(Tc, 1)}`, color: SERIES[0], dash: [3, 4], fn: (V) => (N * Tc) / V },
+  ];
+  drawTable(null);
+}
+
+function drawTable(c) {
+  const tb = $('tbl').querySelector('tbody');
+  $('tbl-empty').hidden = !!c;
+  if (!c) { tb.innerHTML = ''; return; }
+  const bath = (T) => (T == null ? '–' : T === Th ? `Hot ${fmt(Th, 1)}` : `Cold ${fmt(Tc, 1)}`);
+  let sQ = 0, sW = 0, sU = 0;
+  tb.innerHTML = c.steps.map((s) => {
+    sQ += s.Q; sW += s.W; sU += s.dU;
+    return `<tr><td>${s.label}</td><td>${bath(s.bathT)}</td><td>${fmtSigned(s.Q, 1)}</td><td>${fmtSigned(s.W, 1)}</td><td>${fmtSigned(s.dU, 1)}</td></tr>`;
+  }).join('') + `<tr class="sum"><td>Total for one cycle</td><td></td><td>${fmtSigned(sQ, 1)}</td><td>${fmtSigned(sW, 1)}</td><td>${fmtSigned(sU, 1)}</td></tr>`;
+}
+
+/** Area enclosed by a closed curve (clockwise positive) = ∮P dV */
+function loopArea(pts) {
+  let a = 0;
+  for (let k = 0; k < pts.length; k++) {
+    const [x0, y0] = pts[k], [x1, y1] = pts[(k + 1) % pts.length];
+    a += (x1 - x0) * (y0 + y1) / 2;
+  }
+  return a;
+}
+
+/** The reverse Stirling cycle without a regenerator may, depending on conditions, fail to pump heat out of the cold side */
+function showWarn(T) {
+  const el = $('r-warn');
+  const theoryBad = type === 'stirling' && dir === 'pump' && Tc * Math.log(R) < Th - Tc;
+  const measBad = dir === 'pump' && T && T.n > 0 && T.Qc < 0;
+  el.hidden = !(theoryBad || measBad);
+  if (el.hidden) return;
+  el.innerHTML = '<b>Note</b> In this operation without a regenerator, no net heat is being pumped out of the cold side (the cold reservoir also receives heat from the gas). ' +
+    'The work done from outside is simply dumped as heat into both reservoirs, so the device is not working as a heat pump (COP &lt; 1). ' +
+    (type === 'stirling' ? 'Compare with the "With regenerator" value.' : '');
+}
+
+function setArrow(id, active, q) {
+  const el = $(id);
+  el.classList.toggle('idle', !active);
+  el.classList.toggle('rev', id === 'a-h' ? q < 0 : q > 0);   // arrow direction = direction of heat flow
+}
+
+function restartWith(fn) { return (v) => { fn(v); build(); }; }
+segmented('type', restartWith((v) => { type = v; }), false);
+segmented('dir', restartWith((v) => { dir = v; }), false);
+segmented('pspeed', restartWith((v) => { pspeed = parseFloat(v); }), false);
+// keep Th/Tc ≤ 2.5 so that the piston does not go past the end during the Carnot adiabatic expansion
+thSlider = bindRange('Th', (v) => { Th = v; if (Th / Tc > 2.5) { Tc = Math.ceil((Th / 2.5) * 10) / 10; tcSlider?.set(Tc); } if (gas) build(); }, (v) => v.toFixed(1), false);
+tcSlider = bindRange('Tc', (v) => { Tc = v; if (Th / Tc > 2.5) { Th = Math.floor(Tc * 2.5 * 10) / 10; thSlider.set(Th); } if (gas) build(); }, (v) => v.toFixed(1), false);
+bindSpeed('speed', (v) => { simRate = v; });
+bindCheck('c-heat', (on) => { if (view) view.opt.showHeat = on; });
+bindCheck('c-speed', (on) => { if (view) view.opt.colorMode = on ? 'speed' : 'species'; $('lg-speed').hidden = !on; });
+$('btn-reset').addEventListener('click', build);
+build();
+
+const loop = new Loop((paused) => {
+  if (!paused) {
+    gas.advance(simRate);
+    const nBefore = run.cycles.length;
+    run.update();
+    frame++;
+    const U = gas.kinetic(), V = gas.X * H;
+    if (run.k >= 0) cur.push([V, U / V]);
+    if (cur.length > 3000) cur.splice(0, cur.length - 3000);
+    if (run.cycles.length > nBefore) {
+      const c = run.cycles[run.cycles.length - 1];
+      prev = cur; cur = [[V, U / V]];
+      drawTable(c);
+      const T = run.total, eng = dir === 'engine';
+      $('r-main').textContent = fmt(eng ? -T.W / T.Qh : -T.Qh / T.W, 3);
+      $('r-regen').textContent = fmt(eng ? -T.W / T.Qiso_h : -T.Qiso_h / T.W, 3);
+      $('r-n').textContent = T.n;
+      $('f-Qh').textContent = fmtSigned(T.Qh, 0);
+      $('f-Qc').textContent = fmtSigned(T.Qc, 0);
+      $('f-W').textContent = fmtSigned(-T.W, 0);
+      $('f-Qh-t').textContent = T.Qh >= 0 ? 'heat given to the gas' : 'heat received from the gas';
+      $('f-Qc-t').textContent = T.Qc >= 0 ? 'heat given to the gas' : 'heat received from the gas';
+      $('f-W-t').textContent = -T.W >= 0 ? 'work done on the surroundings −W' : 'work done on the gas W';
+      $('flow-hint').textContent = `Total over ${T.n} completed cycle(s) (signs as seen by the gas: Q is heat received)`;
+      $('pv-area').textContent = `Last cycle: shaded area = ${fmtSigned(loopArea(prev), 1)}, net work in the table −W = ${fmtSigned(-c.W, 1)}` +
+        (pspeed > 0.1 ? ' (they do not agree because the piston moves fast)' : '');
+      showWarn(T);
+    }
+    const s = run.step;
+    $('r-step').textContent = run.label;
+    $('r-cycle').textContent = run.k >= 0 ? `(cycle ${run.cycles.length + 1}, T = ${fmt(U / N, 2)})` : '';
+    const q = s && run._snap ? gas.stats().Q - run._snap.Q : 0;
+    setArrow('a-h', s && s.bathT === Th, q);
+    setArrow('a-c', s && s.bathT === Tc, q);
+    if (frame % 3 === 0) {
+      pv.paths = [{ label: 'Theory (quasi-static)', color: '#77756f', pts: theoryPts(), width: 1.5, dash: [6, 4] }];
+      if (prev) pv.paths.push({ label: 'Last cycle', color: SERIES[1], pts: prev, width: 1.5, closed: true, fillColor: dir === 'engine' ? 'rgba(235,104,52,0.18)' : 'rgba(42,120,214,0.15)' });
+      pv.paths.push({ label: 'Current cycle', color: SERIES[3], pts: cur, width: 2 });
+      pv.marker = [V, U / V];
+      pv.draw();
+    }
+  }
+  view.draw();
+});
+bindPlayPause('btn-play', loop);
+</script>
+</body>
+</html>
