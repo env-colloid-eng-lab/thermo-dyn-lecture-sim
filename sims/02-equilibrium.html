@@ -68,7 +68,7 @@
         <div class="stat int"><span class="k">傾き ∂<i>S</i>₁/∂<i>U</i>₁ = 1/<i>T</i>₁</span><span class="v" id="r-b1">–</span></div>
         <div class="stat int"><span class="k">傾き ∂<i>S</i>₂/∂<i>U</i>₂ = 1/<i>T</i>₂</span><span class="v" id="r-b2">–</span></div>
         <div class="stat"><span class="k">d<i>S</i>/d<i>U</i>₁ = 1/<i>T</i>₁ − 1/<i>T</i>₂</span><span class="v" id="r-dSdU">–</span></div>
-        <div class="stat"><span class="k">全体の Δ<i>S</i>（<i>k</i> 単位）</span><span class="v" id="r-dS">–</span></div>
+        <div class="stat"><span class="k">全体の Δ<i>S</i>（壁を含む、<i>k</i> 単位）</span><span class="v" id="r-dS">–</span></div>
       </div>
       <p class="q" id="r-dir" style="margin-top:8px"></p>
       <div class="canvas-wrap" style="margin-top:6px"><canvas id="plotS"></canvas></div>
@@ -128,7 +128,7 @@
       <details><summary>エントロピーの曲線（2次元理想気体）</summary>
         <p>体積と粒子数が一定の 2次元理想気体では <span class="math">S = Nk ln U + （V, N だけで決まる定数）</span>。<i>U</i> で微分すると <span class="math">∂S/∂U = Nk/U = 1/T</span>（<span class="math">U = NkT</span>）。この「エントロピーの傾きが 1/<i>T</i>」を熱力学的な温度の定義として使う。</p>
         <p>全体のエントロピーを <i>U</i>₁ で微分すると <span class="math">dS/dU₁ = 1/T₁ − 1/T₂</span>。<i>T</i>₁ &gt; <i>T</i>₂ なら負なので、<i>U</i>₁ が減る向き（1 から 2 へエネルギーが移る向き）に <i>S</i> が増える。頂上 <span class="math">dS/dU₁ = 0</span> が <span class="math">T₁ = T₂</span>。曲線は上に凸（凹関数）なので、頂上はただ一つで、そこが安定な平衡になる。</p>
-        <p>図の Δ<i>S</i> は、はじめの状態からの変化 <span class="math">ΔS = N₁ ln(U₁/U₁⁰) + N₂ ln(U₂/U₂⁰)</span>（<i>k</i> = 1）。曲線は、いまの気体のエネルギーの合計 <span class="math">U₁ + U₂</span> で描いています（仕切り壁が一時的に蓄える分だけ、この合計はわずかに変わる）。粒子数が有限なので、点は平衡のまわりで少しゆらぎます。</p>
+        <p>図の Δ<i>S</i> は、はじめの状態からの変化 <span class="math">ΔS = N₁ ln(U₁/U₁⁰) + N₂ ln(U₂/U₂⁰)</span>（<i>k</i> = 1）。曲線は、いまの気体のエネルギーの合計 <span class="math">U₁ + U₂</span> で描いています（仕切り壁が一時的に蓄える分だけ、この合計はわずかに変わる）。透熱の仕切り壁も小さな熱容量 <i>C</i><sub>w</sub> をもつので、「全体の Δ<i>S</i>」には壁の分 <span class="math">C<sub>w</sub> ln(T<sub>w</sub>/T<sub>w</sub>⁰)</span> も含めています（気体・壁を合わせた孤立系のエントロピー）。粒子数が有限なので、点は平衡のまわりで少しゆらぎます。</p>
       </details>
       <details><summary>モデルについて</summary>
         <p>透熱壁は「小さな熱容量をもつ壁」として模型化しています。粒子が壁に当たると、壁の温度 <i>T</i><sub>w</sub> のマクスウェル分布に従う速度で跳ね返り、そのぶん壁のエネルギーが増減します。両側の粒子が同じ壁とエネルギーをやりとりするので、壁を通して左右の流体の間で熱が移動します（気体＋壁の全エネルギーは厳密に保存）。</p>
@@ -146,14 +146,14 @@ import { $, fmt, fmtSigned, bindRange, bindCheck, segmented, Loop, bindPlayPause
 setupCommon();
 let gas, view, simRate = 0.1, frame = 0, partMode = 'adiabatic';
 let U0 = [0, 0];
-let sValid = true, sN = [0, 0], sTrail = [], sm = null, sUt = 0;   // エントロピーの図：有効か・粒子数・経路・ならした温度
+let sValid = true, sN = [0, 0], sTrail = [], sm = null, sUt = 0, Tw0 = 1;   // エントロピーの図：有効か・粒子数・経路・ならした温度
 const plotT = new TimePlot($('plotT'), { height: 170, ylabel: '温度 T', yZero: true, window: 600,
   series: [{ key: 'T1', label: '流体1の温度 T₁', color: SERIES[0] }, { key: 'T2', label: '流体2の温度 T₂', color: SERIES[1] }] });
 const plotU = new TimePlot($('plotU'), { height: 170, ylabel: '内部エネルギー U', yZero: true, window: 600,
   series: [{ key: 'U1', label: 'U₁', color: SERIES[0] }, { key: 'U2', label: 'U₂', color: SERIES[1] }, { key: 'Us', label: 'U₁+U₂', color: SERIES[3], dash: [6, 4] }] });
 const plotSU = new XYPlot($('plotSU'), { height: 250, xmin: 0, xmax: 1, ymin: -1, ymax: 1, xlabel: 'U₁ （左の内部エネルギー）', ylabel: 'ΔS （k 単位）', xd: 1, yd: 1 });
 const plotS = new TimePlot($('plotS'), { height: 170, ylabel: 'ΔS（k 単位）', yZero: true, window: 600,
-  series: [{ key: 'S1', label: 'ΔS₁（左）', color: SERIES[0], dash: [6, 4] }, { key: 'S2', label: 'ΔS₂（右）', color: SERIES[1], dash: [6, 4] }, { key: 'S', label: '全体 ΔS₁ + ΔS₂', color: SERIES[3] }] });
+  series: [{ key: 'S1', label: 'ΔS₁（左）', color: SERIES[0], dash: [6, 4] }, { key: 'S2', label: 'ΔS₂（右）', color: SERIES[1], dash: [6, 4] }, { key: 'Sw', label: 'ΔS（仕切り壁）', color: '#77756f', dash: [2, 3] }, { key: 'S', label: '全体 ΔS₁ + ΔS₂ + ΔS壁', color: SERIES[3] }] });
 const h1 = new HistPlot($('h1'), { height: 160, title: '流体1', label: '流体1の速さ' });
 const h2 = new HistPlot($('h2'), { height: 160, title: '流体2', label: '流体2の速さ', barColor: 'rgba(120,120,120,0.45)' });
 
@@ -177,8 +177,8 @@ function build() {
 }
 
 /** 2次元理想気体（体積一定）: S = N ln U + 定数。はじめの状態からの変化 ΔS（k = 1） */
-const dS1 = (u) => sN[0] * Math.log(u / U0[0]);
-const dS2 = (u) => sN[1] * Math.log(u / U0[1]);
+const dS1 = (u) => (u > 0 ? sN[0] * Math.log(u / U0[0]) : -Infinity);
+const dS2 = (u) => (u > 0 ? sN[1] * Math.log(u / U0[1]) : -Infinity);
 
 /** 全体のエントロピーを U₁ の関数として描く準備（外側は断熱なので U₁ + U₂ = 一定） */
 function setupEntropy(g0) {
@@ -186,13 +186,14 @@ function setupEntropy(g0) {
   sN = [g0[0].N, g0[1].N];
   const Ut = U0[0] + U0[1];
   sUt = Ut;
+  Tw0 = gas.vpart.Tw;
   const uStar = (Ut * sN[0]) / (sN[0] + sN[1]);          // 頂上：T₁ = T₂
   const Smax = dS1(uStar) + dS2(Ut - uStar);
   const span = Math.max(Smax, 20);
   Object.assign(plotSU.opt, { xmax: Ut, ymin: -0.8 * span, ymax: Smax + 0.35 * span });
   const lo = plotSU.opt.ymin - 1e3;   // 端（U → 0）で −∞ にならないように
   plotSU.refs = [
-    { label: '全体 S₁ + S₂', color: SERIES[3], fn: (u) => Math.max(lo, dS1(u) + dS2(sUt - u)) },
+    { label: '気体 S₁ + S₂', color: SERIES[3], fn: (u) => Math.max(lo, dS1(u) + dS2(sUt - u)) },
     { label: 'S₁（左）', color: SERIES[0], dash: [6, 4], fn: (u) => Math.max(lo, dS1(u)) },
     { label: 'S₂（右）', color: SERIES[1], dash: [6, 4], fn: (u) => Math.max(lo, dS2(sUt - u)) },
   ];
@@ -275,15 +276,17 @@ const loop = new Loop((paused) => {
       if (!sm) sm = { T1: g[0].T, T2: g[1].T };
       sm.T1 += k * (g[0].T - sm.T1); sm.T2 += k * (g[1].T - sm.T2);
       const S1 = dS1(g[0].U), S2 = dS2(g[1].U);
-      sUt = g[0].U + g[1].U;   // 仕切り壁が蓄える分だけわずかに変わる / changes slightly by what the wall stores
+      const Sw = gas.vpart.Cw * Math.log(gas.vpart.Tw / Tw0);   // 仕切り壁（熱容量 Cw）/ the partition wall (heat capacity Cw)
+      sUt = g[0].U + g[1].U;
+      plotSU.opt.xmax = sUt;   // 仕切り壁が蓄える分だけわずかに変わる / changes slightly by what the wall stores
       const uStar = (sUt * sN[0]) / (sN[0] + sN[1]);
       plotSU.peak = [uStar, dS1(uStar) + dS2(sUt - uStar)];
-      plotS.push(gas.time, { S1, S2, S: S1 + S2 });
+      plotS.push(gas.time, { S1, S2, Sw, S: S1 + S2 + Sw });
       plotSU.marker = [g[0].U, S1 + S2];
       if (frame % 4 === 0) { sTrail.push([g[0].U, S1 + S2]); if (sTrail.length > 400) sTrail.shift(); }
       $('r-b1').textContent = fmt(1 / sm.T1, 3); $('r-b2').textContent = fmt(1 / sm.T2, 3);
       $('r-dSdU').textContent = fmtSigned(1 / sm.T1 - 1 / sm.T2, 3);
-      $('r-dS').textContent = fmtSigned(S1 + S2, 1);
+      $('r-dS').textContent = fmtSigned(S1 + S2 + Sw, 1);
     }
     if (frame % 2 === 0) {
       plotT.draw(); plotU.draw();
