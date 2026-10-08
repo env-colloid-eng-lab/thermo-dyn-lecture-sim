@@ -177,15 +177,16 @@ export class SimView {
 
     // --- 高さによるエネルギーの段差（壁ではない）: 位置エネルギーの高い層ほど少し濃く、境目は灰色の点線 ---
     if (g.levels) {
-      const L = g.levels, h = g.H / L.n, emax = Math.max(0, (L.n - 1) * L.dE), emin = Math.min(0, (L.n - 1) * L.dE);
+      const L = g.levels, emax = Math.max(0, (L.n - 1) * L.dE), emin = Math.min(0, (L.n - 1) * L.dE);
+      const zb = [0, ...L.bounds, 1];                // 層の境目（下端からの割合）
+      const yOf = (z) => g.H * (1 - z);
       for (let k = 0; k < L.n; k++) {
-        const y0 = g.H - (k + 1) * h, e = k * L.dE;
-        const a = emax > emin ? (0.16 * (e - emin)) / (emax - emin) : 0;
-        if (a > 0) { ctx.fillStyle = `rgba(47,85,151,${a.toFixed(3)})`; ctx.fillRect(this.X(0), this.Y(y0), g.X * s, h * s); }
+        const e = k * L.dE, a = emax > emin ? (0.16 * (e - emin)) / (emax - emin) : 0;
+        if (a > 0) { ctx.fillStyle = `rgba(47,85,151,${a.toFixed(3)})`; ctx.fillRect(this.X(0), this.Y(yOf(zb[k + 1])), g.X * s, (zb[k + 1] - zb[k]) * g.H * s); }
       }
       ctx.strokeStyle = 'rgba(80,80,80,0.75)'; ctx.lineWidth = 1.3 * dpr; ctx.setLineDash([2 * dpr, 4 * dpr]);
       for (let k = 1; k < L.n; k++) {
-        const y = g.H - k * h;
+        const y = yOf(zb[k]);
         ctx.beginPath(); ctx.moveTo(this.X(0), this.Y(y)); ctx.lineTo(this.X(g.X), this.Y(y)); ctx.stroke();
       }
       ctx.setLineDash([]);
@@ -194,8 +195,7 @@ export class SimView {
       ctx.textAlign = 'right'; ctx.textBaseline = 'top';
       for (let k = 0; k < L.n; k++) {
         if (L.n > 4 && k !== 0 && k !== L.n - 1) continue;
-        const y0 = g.H - (k + 1) * h;
-        ctx.fillText(`ε = ${(k * L.dE).toFixed(2)}`, this.X(g.X) - 6 * dpr, this.Y(y0) + 3 * dpr);
+        ctx.fillText(`ε = ${(k * L.dE).toFixed(2)}`, this.X(g.X) - 6 * dpr, this.Y(yOf(zb[k + 1])) + 3 * dpr);
       }
     }
 

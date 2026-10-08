@@ -23,6 +23,8 @@
     <a href="09-osmosis.html">09 Osmotic pressure</a>
     <a href="10-max-work.html">10 Reversible vs. irreversible</a>
     <a href="11-sedimentation.html" aria-current="page">11 Sedimentation</a>
+    <a href="12-partitions.html">12 Partitions & equilibrium</a>
+    <a href="13-chain.html">13 Chain elasticity</a>
     <a href="../../sims/11-sedimentation.html" lang="ja" hreflang="ja">日本語</a>
     <button id="btn-proj" title="Enlarge text">Projector mode</button>
   </nav>
@@ -44,6 +46,7 @@
         <div class="stat"><span class="k" id="k-x">Fraction in the upper region <i>x</i></span><span class="v" id="r-x">–</span></div>
         <div class="stat"><span class="k" id="k-xavg">Time average</span><span class="v" id="r-xavg">–</span></div>
         <div class="stat"><span class="k" id="k-xth">Theoretical equilibrium value</span><span class="v" id="r-xth">–</span></div>
+        <div class="stat" id="st-Tm" hidden><span class="k">Temperature where <i>x</i> = 1/2, <i>T</i><sub>m</sub></span><span class="v" id="r-Tm">–</span></div>
         <div class="stat int"><span class="k">Gas temperature <i>T</i></span><span class="v" id="r-T">–</span></div>
       </div>
       <div class="ledger" aria-live="off">
@@ -57,6 +60,7 @@
     <section class="card">
       <h2><span class="tag">Macro</span><span id="curve-title">Direction of change</span> <span class="hint" id="curve-hint"></span></h2>
       <div id="wrap-curve"><div class="canvas-wrap"><canvas id="plotF"></canvas></div></div>
+      <div id="wrap-melt" hidden><h2 style="margin-top:10px">Changing the temperature: <i>x</i>(<i>T</i>) <span class="hint">change the reservoir temperature and add time-averaged points</span></h2><div class="canvas-wrap"><canvas id="plotM"></canvas></div></div>
       <div id="wrap-prof" hidden><div class="canvas-wrap"><canvas id="plotC"></canvas></div></div>
       <p class="q" id="r-dir" style="margin-top:8px"></p>
     </section>
@@ -84,11 +88,12 @@
       <div class="row"><label for="speed">Playback speed</label><input type="range" id="speed" min="-0.7" max="1.6" step="0.05" value="0.3"><output id="speed-val"></output></div>
 
       <div class="group-title">Experiment</div>
-      <div class="seg" id="mode"><button data-value="two" aria-pressed="true">Two regions (one step)</button><button data-value="multi">Many layers (approx. gravity)</button></div>
+      <div class="seg" id="mode"><button data-value="two" aria-pressed="true">Two regions (one step)</button><button data-value="multi">Many layers (approx. gravity)</button><button data-value="state">Two states (regions of different size)</button></div>
       <div class="seg" id="env" style="margin-top:6px"><button data-value="bath" aria-pressed="true">In contact with a reservoir</button><button data-value="iso">Adiabatic (isolated system)</button></div>
 
       <div class="group-title">Step (changing it during a run is work done from outside)</div>
       <div class="row" id="row-dE"><label for="dE">Energy of the upper region Δ<i>E</i></label><input type="range" id="dE" min="-1" max="4" step="0.1" value="1.5"><output id="dE-val"></output></div>
+      <div class="row" id="row-v2" hidden><label for="v2">Size of the upper region <i>v</i>₂</label><input type="range" id="v2" min="0.5" max="0.9" step="0.05" value="0.8"><output id="v2-val"></output></div>
       <div class="row" id="row-mgH" hidden><label for="mgH">Over the full height <i>mgH</i></label><input type="range" id="mgH" min="0" max="6" step="0.25" value="3"><output id="mgH-val"></output></div>
       <div class="row" id="row-nL" hidden><label for="nL">Number of layers <i>n</i></label><input type="range" id="nL" min="2" max="12" step="1" value="6"><output id="nL-val"></output></div>
 
@@ -118,6 +123,7 @@
         <li>Look at the "Entropy budget". As particles gather at the bottom, the configurational entropy of the system <b>decreases</b>. Even so, heat flows out into the reservoir, the reservoir's entropy increases, and <b>the total increases</b>.</li>
         <li>Switch to "Adiabatic (isolated system)". As particles move down, potential energy turns into kinetic energy and the gas warms up ("Color = speed"). This time it stops where the total entropy <i>S</i>(<i>x</i>) is maximal.</li>
         <li>Switch to "Many layers (approx. gravity)" and increase the number of layers <i>n</i>. The concentration in each layer approaches the smooth exponential <span class="math">e<sup>−z/ℓ</sup></span>. What happens when you change <i>mgH</i> or <i>T</i>?</li>
+        <li>Switch to "Two states". The upper region is higher in energy by Δ<i>E</i>, but its size is <i>v</i>₂ (the lower one is <i>v</i>₁ = 1 − <i>v</i>₂), so there are more ways to place particles there. Raise the reservoir temperature: <i>x</i> crosses 1/2 and the upper region takes over. Check that temperature <i>T</i><sub>m</sub> in the plot below (a model of protein denaturation / melting).</li>
         <li>Changing Δ<i>E</i> during a run changes <i>W</i> in the ledger. Changing the step is work done from outside, lifting (or lowering) the particles.</li>
       </ol>
       <div class="q"><b>Question</b> Even in equilibrium the particles keep moving up and down. If "movement stops in equilibrium" is not right, what is balanced? (Think about the number crossing upward and the number coming down.)</div>
@@ -134,6 +140,10 @@
         <p>Divide the container into <i>n</i> layers and give a particle in the <i>k</i>-th layer from the bottom the energy <span class="math">k·mgH/n</span> (a staircase approximation of the gravitational potential energy <i>mgz</i>). The same condition as for two regions holds between any two neighboring layers, so the fraction is proportional to <span class="math">e<sup>−k·mgH/(nkT)</sup></span>. As <i>n</i> grows this becomes the continuous distribution <span class="math">c(z) = c(0) e<sup>−z/ℓ</sup></span>, <span class="math">ℓ = kT/mg</span>. The dotted line in the plot is for continuous gravity.</p>
         <p>What becomes constant in equilibrium is not the concentration but the chemical potential, which combines the concentration term and the potential energy term: <span class="math">kT ln c(z) + mgz</span>. The same formula explains why the pressure (density) of an isothermal atmosphere decreases exponentially with height.</p>
       </details>
+      <details><summary>Two-state model (protein folding)</summary>
+        <p>The upper region has <span class="math">v₂/v₁</span> times as many places as the lower one, so the entropy per particle is larger by <span class="math">Δs = k ln(v₂/v₁)</span>. The free energy difference between up and down is <span class="math">Δg = ΔE − TΔs</span>, and <span class="math">x/(1−x) = e<sup>−Δg/kT</sup> = (v₂/v₁)e<sup>−ΔE/kT</sup></span>.</p>
+        <p>At low temperature the Δ<i>E</i> term wins and the lower (low-energy) state dominates; at high temperature the <i>T</i>Δ<i>s</i> term wins and the upper state (more ways to be placed) dominates. They swap at <span class="math">Δg = 0</span>, i.e. <span class="math">T<sub>m</sub> = ΔE/Δs</span>. For a protein, the lower state is the folded state F (low energy from bonds within the molecule, but few shapes) and the upper state the unfolded state U (higher energy, many shapes); it denatures at the temperature where <span class="math">Δh − TΔs</span> changes sign.</p>
+      </details>
       <details><summary>How the entropy budget is counted</summary>
         <p>The configurational entropy of the system is the number of ways to split the particles among the layers, <span class="math">ln(N!/ΠN_k!)</span> (all layers have the same size). The part from the speeds is <span class="math">Nk ln T</span> for a 2D ideal gas. The entropy change of the reservoir is the heat it received divided by its temperature (the heat <i>Q</i> received by the gas with the sign reversed). The temperature shown is slightly smoothed. Because the number of particles is small, every quantity fluctuates.</p>
       </details>
@@ -147,7 +157,7 @@
 
 <script type="module">
 import { Gas, ADIABATIC, DIATHERMAL } from '../../assets/js/engine.js';
-import { xEqIsolated, twoRegionF, twoRegionS, boltzmannLayers, tEqIsolatedLayers, lnMultinomial, layersF, layersS } from '../../assets/js/levels.js';
+import { xEqBath, meltT, xEqIsolated, twoRegionF, twoRegionS, boltzmannLayers, tEqIsolatedLayers, lnMultinomial, layersF, layersS } from '../../assets/js/levels.js';
 import { SimView } from '../../assets/js/render.js';
 import { TimePlot, XYPlot, SERIES } from '../../assets/js/plot.js';
 import { $, fmt, fmtSigned, bindRange, bindCheck, segmented, Loop, bindPlayPause, setupCommon, updateLedger, bindSpeed } from '../../assets/js/ui.js';
@@ -155,8 +165,8 @@ import { $, fmt, fmtSigned, bindRange, bindCheck, segmented, Loop, bindPlayPause
 setupCommon();
 const H = 60, X = 90;
 let gas, view, simRate = 0.1, frame = 0;
-let mode = 'two', env = 'bath', dE = 1.5, mgH = 3, nL = 6, T0 = 1, N = 300;
-let c0 = 0, cnt0 = [], Tinit = 1, Sbath = 0, Qprev = 0, sm = null, avg = null, trail = [];
+let mode = 'two', env = 'bath', dE = 1.5, mgH = 3, nL = 6, T0 = 1, N = 300, v2 = 0.8, meltPts = [];
+let tT = 0, c0 = 0, cnt0 = [], Tinit = 1, Sbath = 0, Qprev = 0, sm = null, avg = null, trail = [];
 
 const plotF = new XYPlot($('plotF'), { height: 260, xmin: 0, xmax: 1, ymin: -1, ymax: 1, xlabel: 'x (fraction in the upper region)', ylabel: 'F/N', xd: 3, yd: 3 });
 const plotC = new XYPlot($('plotC'), { height: 300, xmin: 0, xmax: 3, ymin: 0, ymax: 1, xlabel: 'c/c̄ (layer concentration ÷ mean concentration)', ylabel: 'z/H (height)', xd: 2, yd: 2 });
@@ -166,8 +176,12 @@ const plotS = new TimePlot($('plotS'), { height: 200, ylabel: 'ΔS (units of k)'
     { key: 'th', label: 'Theoretical total (after equilibrium)', color: '#77756f', dash: [6, 4] }] });
 const plotX = new TimePlot($('plotX'), { height: 170, ylabel: 'fraction x', yZero: true, window: 800, series: [] });
 
-const levelN = () => (mode === 'two' ? 2 : nL);
-const levelE = () => (mode === 'two' ? dE : mgH / nL);
+const levelN = () => (mode === 'multi' ? nL : 2);
+const levelE = () => (mode === 'multi' ? mgH / nL : dE);
+// 二状態：上の領域の広さ v2（境目の高さ 1 − v2）。それ以外は同じ広さ
+const V2 = () => (mode === 'state' ? v2 : 0.5);
+const bounds = () => (mode === 'state' ? [1 - v2] : undefined);
+const fr = () => (mode === 'state' ? [1 - v2, v2] : undefined);
 
 function build() {
   gas = new Gas({ H, X, Xmin: X, Xmax: X, r: 0.15, seed: (Math.random() * 1e9) | 0 });
@@ -176,14 +190,15 @@ function build() {
   gas.walls = bath ? { left: DIATHERMAL, top: DIATHERMAL, bottom: DIATHERMAL } : { left: ADIABATIC, top: ADIABATIC, bottom: ADIABATIC };
   gas.bath = { left: bath, top: bath, bottom: bath };
   gas.Tbath = T0;
-  gas.setLevels(levelN(), levelE());
+  gas.setLevels(levelN(), levelE(), bounds());
   gas.resetLedger();
-  cnt0 = gas.layerCounts(); c0 = lnMultinomial(cnt0); Tinit = T0;
+  cnt0 = gas.layerCounts(); c0 = lnMultinomial(cnt0, fr()); meltPts = []; Tinit = T0;
   Sbath = 0; Qprev = 0; sm = null; avg = null; trail = [];
   if (view) view.g = gas; else view = new SimView($('sim'), gas, { envPad: 5, Tref: 1, drawScale: 5.6, pistonRod: false });
   view.opt.colorMode = $('c-speed').checked ? 'speed' : 'species';
   view.opt.showHeat = $('c-heat').checked;
-  const two = mode === 'two';
+  const two = mode !== 'multi';
+  $('row-v2').hidden = mode !== 'state'; $('wrap-melt').hidden = mode !== 'state'; $('st-Tm').hidden = mode !== 'state';
   $('row-dE').hidden = !two; $('row-mgH').hidden = two; $('row-nL').hidden = two;
   $('wrap-curve').hidden = !two; $('wrap-prof').hidden = two;
   $('lbl-T').innerHTML = bath ? 'Reservoir temperature <i>T</i>' : 'Initial temperature <i>T</i>₀';
@@ -192,12 +207,13 @@ function build() {
   $('k-x').innerHTML = two ? 'Fraction in the upper region <i>x</i>' : 'Height of the center of mass ⟨<i>z</i>⟩/<i>H</i>';
   $('k-xth').textContent = 'Theoretical equilibrium value';
   $('curve-title').textContent = two ? (bath ? 'Direction of change: the way the free energy F(x) decreases' : 'Direction of change: the way the total entropy S(x) increases') : 'Concentration in each layer (sedimentation equilibrium)';
-  $('curve-hint').textContent = two ? (bath ? 'per particle, difference from x = 1/2 (k = 1)' : 'per particle, difference from x = 1/2 (units of k)') : 'bars = measured (time average), dashed = theory (staircase), dotted = continuous gravity';
+  $('curve-hint').textContent = two ? (bath ? 'per particle, difference from uniform placement (k = 1)' : 'per particle, difference from uniform placement (units of k)') : 'bars = measured (time average), dashed = theory (staircase), dotted = continuous gravity';
   plotF.opt.ylabel = bath ? 'ΔF/N' : 'ΔS/N';
   plotX.opt.ylabel = two ? 'fraction x' : '⟨z⟩/H';
   plotX.opt.series = two
     ? [{ key: 'x', label: 'Fraction in the upper region x', color: SERIES[0] }, { key: 'th', label: 'Theoretical equilibrium', color: '#77756f', dash: [6, 4] }]
     : [{ key: 'x', label: 'Height of the center of mass ⟨z⟩/H', color: SERIES[0] }, { key: 'th', label: 'Theoretical equilibrium', color: '#77756f', dash: [6, 4] }];
+  if (mode === 'state') $('mode-hint').textContent = '— the upper region is higher in energy by ΔE but has size v₂ (more ways to be placed)';
   plotS.reset(); plotX.reset();
 }
 
@@ -205,18 +221,18 @@ function build() {
 function theory() {
   const n = levelN(), e = levelE();
   const E = gas.kinetic() + gas.potential();
-  const T = env === 'bath' ? gas.Tbath : (n === 2 ? E / gas.N - xEqIsolated(e, E / gas.N) * e : tEqIsolatedLayers(n, e, E / gas.N));
-  const p = boltzmannLayers(n, e, T);
+  const T = env === 'bath' ? gas.Tbath : (n === 2 ? E / gas.N - xEqIsolated(e, E / gas.N, V2()) * e : tEqIsolatedLayers(n, e, E / gas.N));
+  const p = boltzmannLayers(n, e, T, fr());
   // total entropy change from the start (uniform placement) to equilibrium: −ΔF/T with a reservoir, ΔS when isolated; not shown if the step or reservoir temperature was changed during the run
   const eq = p.map((v) => v * gas.N);
   const dStot = Math.abs(gas.ledger.Wfield) > 1e-9 || (env === 'bath' && gas.Tbath !== Tinit) ? NaN
-    : env === 'bath' ? (layersF(cnt0, e, T) - layersF(eq, e, T)) / T : layersS(eq, e, E) - layersS(cnt0, e, E);
+    : env === 'bath' ? (layersF(cnt0, e, T, fr()) - layersF(eq, e, T, fr())) / T : layersS(eq, e, E, fr()) - layersS(cnt0, e, E, fr());
   return { n, e, T, E, p, dStot, x: p[n - 1], zmean: p.reduce((a, v, k) => a + v * (k + 0.5) / n, 0) };
 }
 
 function drawCurve(th, x) {
   const e = th.e, eN = th.E / gas.N;
-  const fn = env === 'bath' ? (u) => twoRegionF(u, e, gas.Tbath) : (u) => twoRegionS(u, e, eN);
+  const fn = env === 'bath' ? (u) => twoRegionF(u, e, gas.Tbath, V2()) : (u) => twoRegionS(u, e, eN, V2());
   let lo = Infinity, hi = -Infinity;
   for (let k = 1; k < 200; k++) { const v = fn(k / 200); if (Number.isFinite(v)) { lo = Math.min(lo, v); hi = Math.max(hi, v); } }
   const pad = Math.max(0.05, 0.12 * (hi - lo));
@@ -226,6 +242,18 @@ function drawCurve(th, x) {
     { label: 'Path so far', color: SERIES[2], pts: trail, width: 1.5 }];
   plotF.marker = [x, fn(x)];
   plotF.draw();
+}
+
+const plotM = new XYPlot($('plotM'), { height: 220, xmin: 0.3, xmax: 3, ymin: 0, ymax: 1, xlabel: 'T (reservoir temperature)', ylabel: 'x', xd: 2, yd: 3 });
+/** 二状態：x(T) の理論曲線と、温度ごとの測定（時間平均） */
+function drawMelt(xAvg) {
+  const Tm = meltT(dE, v2);
+  $('r-Tm').textContent = Number.isFinite(Tm) && Tm > 0 ? fmt(Tm, 3) : '–';
+  plotM.refs = [{ label: 'Fraction in the upper region (theory)', color: SERIES[3], fn: (T) => xEqBath(dE, T, v2) }];
+  plotM.paths = [{ label: 'Measured (time average)', color: SERIES[0], pts: meltPts.concat(env === 'bath' ? [[gas.Tbath, xAvg]] : []), dots: true }];
+  if (Number.isFinite(Tm) && Tm > 0.3 && Tm < 3) plotM.paths.push({ label: 'T_m', color: '#77756f', pts: [[Tm, 0], [Tm, 1]], dash: [4, 4], width: 1.2 });
+  plotM.marker = env === 'bath' ? [gas.Tbath, xAvg] : null;
+  plotM.draw();
 }
 
 function drawProfile(th) {
@@ -257,10 +285,15 @@ function showDirection(two, xNow, xTh, sig) {
 
 segmented('mode', (v) => { mode = v; build(); }, false);
 segmented('env', (v) => { env = v; build(); }, false);
-bindRange('dE', (v) => { dE = v; if (gas && mode === 'two') gas.setLevels(2, dE); }, (v) => v.toFixed(1), false);
+bindRange('v2', (v) => { v2 = v; if (gas && mode === 'state') build(); }, (v) => v.toFixed(2), false);
+bindRange('dE', (v) => { dE = v; if (gas && mode !== 'multi') { gas.setLevels(2, dE, bounds()); meltPts = []; } }, (v) => v.toFixed(1), false);
 bindRange('mgH', (v) => { mgH = v; if (gas && mode === 'multi') gas.setLevels(nL, mgH / nL); }, (v) => v.toFixed(2), false);
 bindRange('nL', (v) => { nL = v; if (gas && mode === 'multi') build(); }, (v) => v.toFixed(0), false);
-bindRange('T', (v) => { T0 = v; if (!gas) return; if (env === 'bath') gas.Tbath = v; else build(); }, (v) => v.toFixed(1), false);
+bindRange('T', (v) => {
+  // 二状態：温度を変える前の時間平均を x(T) の図に残す
+  if (gas && mode === 'state' && env === 'bath' && avg && gas.time - tT > 150) meltPts.push([gas.Tbath, avg[1]]);
+  T0 = v; if (!gas) return; if (env === 'bath') { gas.Tbath = v; tT = gas.time; } else build();
+}, (v) => v.toFixed(1), false);
 bindRange('N', (v) => { N = v; if (gas) build(); }, (v) => v.toFixed(0), false);
 bindSpeed('speed', (v) => { simRate = v; });
 bindCheck('c-speed', (on) => { if (view) view.opt.colorMode = on ? 'speed' : 'species'; $('lg-speed').hidden = !on; $('lg-species').hidden = on; });
@@ -272,7 +305,7 @@ const loop = new Loop((paused) => {
   if (!paused) {
     gas.advance(simRate);
     frame++;
-    const s = gas.stats(), th = theory(), two = mode === 'two';
+    const s = gas.stats(), th = theory(), two = mode !== 'multi';
     const counts = gas.layerCounts(), frac = counts.map((c) => c / gas.N);
     // reservoir entropy: add up the heat it received, −dQ, divided by its temperature at that moment
     if (env === 'bath') Sbath -= (s.Q - Qprev) / gas.Tbath;
@@ -285,7 +318,7 @@ const loop = new Loop((paused) => {
     const xAvg = two ? avg[1] : avg.reduce((a, v, j) => a + v * (j + 0.5) / th.n, 0);
     const xTh = two ? th.x : th.zmean;
     // count the speed part with the unsmoothed temperature (so fluctuations from exchange with the reservoir cancel the reservoir term)
-    const Sc = lnMultinomial(counts) - c0, Sk = gas.N * Math.log(s.T / Tinit);
+    const Sc = lnMultinomial(counts, fr()) - c0, Sk = gas.N * Math.log(s.T / Tinit);
     plotS.push(gas.time, { Sc, Sk, Sb: Sbath, St: Sc + Sk + Sbath, th: th.dStot });
     plotX.push(gas.time, { x: xNow, th: xTh });
     $('r-x').textContent = fmt(xNow, 3); $('r-xavg').textContent = fmt(xAvg, 3); $('r-xth').textContent = fmt(xTh, 3);
@@ -297,9 +330,10 @@ const loop = new Loop((paused) => {
     if (frame % 2 === 0) {
       plotS.draw(); plotX.draw();
       if (two) {
-        const fn = env === 'bath' ? (u) => twoRegionF(u, th.e, gas.Tbath) : (u) => twoRegionS(u, th.e, th.E / gas.N);
+        const fn = env === 'bath' ? (u) => twoRegionF(u, th.e, gas.Tbath, V2()) : (u) => twoRegionS(u, th.e, th.E / gas.N, V2());
         for (const p of trail) p[1] = fn(p[0]);   // redraw the whole curve when conditions change
         drawCurve(th, xNow);
+        if (mode === 'state') drawMelt(avg[1]);
       } else drawProfile(th);
       // judge the direction from the time average (so it does not flicker with fluctuations); σ is a rough size of fluctuations
       const sig = two ? Math.sqrt(th.x * (1 - th.x) / gas.N) : 0.25 / Math.sqrt(gas.N * th.n);

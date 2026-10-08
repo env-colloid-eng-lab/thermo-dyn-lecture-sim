@@ -14,7 +14,7 @@ const shots = process.argv.includes('--shots');
 const PAGES = ['index.html', 'sims/01-operations.html', 'sims/02-equilibrium.html',
   'sims/03-processes.html', 'sims/04-isothermal.html', 'sims/05-extensive.html',
   'sims/06-heat-capacity.html', 'sims/07-entropy.html', 'sims/08-heat-engines.html', 'sims/09-osmosis.html',
-  'sims/10-max-work.html', 'sims/11-sedimentation.html'];
+  'sims/10-max-work.html', 'sims/11-sedimentation.html', 'sims/12-partitions.html', 'sims/13-chain.html'];
 PAGES.push(...PAGES.map((p) => 'en/' + p));   // 英語版も同じように確かめる
 
 let chromium;

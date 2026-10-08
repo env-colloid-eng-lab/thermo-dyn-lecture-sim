@@ -23,6 +23,8 @@
     <a href="09-osmosis.html">09 浸透圧</a>
     <a href="10-max-work.html">10 可逆と不可逆</a>
     <a href="11-sedimentation.html" aria-current="page">11 沈降平衡</a>
+    <a href="12-partitions.html">12 仕切りと平衡条件</a>
+    <a href="13-chain.html">13 鎖の弾性</a>
     <a href="../en/sims/11-sedimentation.html" lang="en" hreflang="en">English</a>
     <button id="btn-proj" title="文字を大きくする">投影モード</button>
   </nav>
@@ -44,6 +46,7 @@
         <div class="stat"><span class="k" id="k-x">上の領域にいる割合 <i>x</i></span><span class="v" id="r-x">–</span></div>
         <div class="stat"><span class="k" id="k-xavg">時間平均</span><span class="v" id="r-xavg">–</span></div>
         <div class="stat"><span class="k" id="k-xth">理論の平衡値</span><span class="v" id="r-xth">–</span></div>
+        <div class="stat" id="st-Tm" hidden><span class="k"><i>x</i> = 1/2 になる温度 <i>T</i><sub>m</sub></span><span class="v" id="r-Tm">–</span></div>
         <div class="stat int"><span class="k">気体の温度 <i>T</i></span><span class="v" id="r-T">–</span></div>
       </div>
       <div class="ledger" aria-live="off">
@@ -57,6 +60,7 @@
     <section class="card">
       <h2><span class="tag">マクロ</span><span id="curve-title">変化の向き</span> <span class="hint" id="curve-hint"></span></h2>
       <div id="wrap-curve"><div class="canvas-wrap"><canvas id="plotF"></canvas></div></div>
+      <div id="wrap-melt" hidden><h2 style="margin-top:10px">温度を変えると：<i>x</i>(<i>T</i>) <span class="hint">熱源の温度を変えて、時間平均の点を重ねていく</span></h2><div class="canvas-wrap"><canvas id="plotM"></canvas></div></div>
       <div id="wrap-prof" hidden><div class="canvas-wrap"><canvas id="plotC"></canvas></div></div>
       <p class="q" id="r-dir" style="margin-top:8px"></p>
     </section>
@@ -84,11 +88,12 @@
       <div class="row"><label for="speed">再生速度</label><input type="range" id="speed" min="-0.7" max="1.6" step="0.05" value="0.3"><output id="speed-val"></output></div>
 
       <div class="group-title">実験</div>
-      <div class="seg" id="mode"><button data-value="two" aria-pressed="true">二領域（段差1つ）</button><button data-value="multi">多段（重力の近似）</button></div>
+      <div class="seg" id="mode"><button data-value="two" aria-pressed="true">二領域（段差1つ）</button><button data-value="multi">多段（重力の近似）</button><button data-value="state">二状態（広さの違う二領域）</button></div>
       <div class="seg" id="env" style="margin-top:6px"><button data-value="bath" aria-pressed="true">熱源に接触</button><button data-value="iso">断熱（孤立系）</button></div>
 
       <div class="group-title">段差（途中で変えると、外からの仕事になる）</div>
       <div class="row" id="row-dE"><label for="dE">上の領域のエネルギー Δ<i>E</i></label><input type="range" id="dE" min="-1" max="4" step="0.1" value="1.5"><output id="dE-val"></output></div>
+      <div class="row" id="row-v2" hidden><label for="v2">上の領域の広さ <i>v</i>₂</label><input type="range" id="v2" min="0.5" max="0.9" step="0.05" value="0.8"><output id="v2-val"></output></div>
       <div class="row" id="row-mgH" hidden><label for="mgH">全体の高さぶん <i>mgH</i></label><input type="range" id="mgH" min="0" max="6" step="0.25" value="3"><output id="mgH-val"></output></div>
       <div class="row" id="row-nL" hidden><label for="nL">層の数 <i>n</i></label><input type="range" id="nL" min="2" max="12" step="1" value="6"><output id="nL-val"></output></div>
 
@@ -118,6 +123,7 @@
         <li>「エントロピーの収支」を見る。粒子が下に集まるので系の配置のエントロピーは<b>減る</b>。それでも熱源へ熱が出ていくぶん熱源のエントロピーが増え、<b>全体では増える</b>。</li>
         <li>「断熱（孤立系）」にする。粒子が下へ移ると位置エネルギーが運動エネルギーになり、気体の温度が上がる（「色＝速さ」）。今度は全体のエントロピー <i>S</i>(<i>x</i>) が最大の所で止まる。</li>
         <li>「多段（重力の近似）」にして層の数 <i>n</i> を増やす。層ごとの濃度が、なめらかな指数関数 <span class="math">e<sup>−z/ℓ</sup></span> に近づく。<i>mgH</i> や <i>T</i> を変えると？</li>
+        <li>「二状態」にする。上の領域はエネルギーが Δ<i>E</i> 高いが、広さが <i>v</i>₂（下は <i>v</i>₁ = 1 − <i>v</i>₂）なので置き方が多い。熱源の温度を上げていくと、<i>x</i> = 1/2 をまたいで上の領域が優勢になる。その温度 <i>T</i><sub>m</sub> を下のグラフで確かめよう（タンパク質の変性・融解のモデル）。</li>
         <li>途中で Δ<i>E</i> を変えると、帳簿の <i>W</i> が変わる。段差を変えることは、粒子を持ち上げる（下ろす）外からの仕事。</li>
       </ol>
       <div class="q"><b>問い</b>　平衡でも粒子は上下を行き来し続けている。「平衡では移動が止まる」のではないとしたら、何がつり合っているのだろう？（上へ越える数と下へ来る数を考えよう）</div>
@@ -134,6 +140,10 @@
         <p>容器を <i>n</i> 層に分け、下から <i>k</i> 番目の層の粒子1個のエネルギーを <span class="math">k·mgH/n</span> とする（重力の位置エネルギー <i>mgz</i> を階段で近似）。どの隣り合う2層の間でも二領域と同じ条件が成り立つので、割合は <span class="math">e<sup>−k·mgH/(nkT)</sup></span> に比例する。<i>n</i> を大きくすると連続な分布 <span class="math">c(z) = c(0) e<sup>−z/ℓ</sup></span>、<span class="math">ℓ = kT/mg</span> になる。図の点線は連続な重力の場合です。</p>
         <p>平衡で一定になるのは濃度ではなく、濃度の項と位置エネルギーの項を合わせた化学ポテンシャル <span class="math">kT ln c(z) + mgz</span>。等温大気の圧力（密度）が高さとともに指数関数で減るのも同じ式です。</p>
       </details>
+      <details><summary>二状態モデル（タンパク質の折りたたみ）</summary>
+        <p>上の領域に置ける場所の数は下の <span class="math">v₂/v₁</span> 倍なので、粒子1個あたりのエントロピーが <span class="math">Δs = k ln(v₂/v₁)</span> だけ大きい。上下の自由エネルギー差は <span class="math">Δg = ΔE − TΔs</span> になり、<span class="math">x/(1−x) = e<sup>−Δg/kT</sup> = (v₂/v₁)e<sup>−ΔE/kT</sup></span>。</p>
+        <p>低温では Δ<i>E</i> の項が勝って下（エネルギーが低い状態）が優勢、高温では <i>T</i>Δ<i>s</i> の項が勝って上（置き方の多い状態）が優勢。入れ替わる温度は <span class="math">Δg = 0</span> から <span class="math">T<sub>m</sub> = ΔE/Δs</span>。タンパク質では、下＝折りたたまれた状態 F（分子内の結合でエネルギーが低いが、形は限られる）、上＝ほどけた状態 U（エネルギーは高いが、とれる形が多い）にあたり、<span class="math">Δh − TΔs</span> の符号が変わる温度で変性する。</p>
+      </details>
       <details><summary>エントロピーの収支の数え方</summary>
         <p>系の配置のエントロピーは層への分け方の数 <span class="math">ln(N!/ΠN_k!)</span>（層の大きさは同じ）。速さの部分は2次元の理想気体で <span class="math">Nk ln T</span>。熱源のエントロピー変化は、受け取った熱を熱源の温度で割ったもの（気体が受け取った熱 <i>Q</i> の符号を反転）。表示の温度は少しならした値です。粒子数が少ないので、どの量もゆらぎます。</p>
       </details>
@@ -147,7 +157,7 @@
 
 <script type="module">
 import { Gas, ADIABATIC, DIATHERMAL } from '../assets/js/engine.js';
-import { xEqIsolated, twoRegionF, twoRegionS, boltzmannLayers, tEqIsolatedLayers, lnMultinomial, layersF, layersS } from '../assets/js/levels.js';
+import { xEqBath, meltT, xEqIsolated, twoRegionF, twoRegionS, boltzmannLayers, tEqIsolatedLayers, lnMultinomial, layersF, layersS } from '../assets/js/levels.js';
 import { SimView } from '../assets/js/render.js';
 import { TimePlot, XYPlot, SERIES } from '../assets/js/plot.js';
 import { $, fmt, fmtSigned, bindRange, bindCheck, segmented, Loop, bindPlayPause, setupCommon, updateLedger, bindSpeed } from '../assets/js/ui.js';
@@ -155,8 +165,8 @@ import { $, fmt, fmtSigned, bindRange, bindCheck, segmented, Loop, bindPlayPause
 setupCommon();
 const H = 60, X = 90;
 let gas, view, simRate = 0.1, frame = 0;
-let mode = 'two', env = 'bath', dE = 1.5, mgH = 3, nL = 6, T0 = 1, N = 300;
-let c0 = 0, cnt0 = [], Tinit = 1, Sbath = 0, Qprev = 0, sm = null, avg = null, trail = [];
+let mode = 'two', env = 'bath', dE = 1.5, mgH = 3, nL = 6, T0 = 1, N = 300, v2 = 0.8, meltPts = [];
+let tT = 0, c0 = 0, cnt0 = [], Tinit = 1, Sbath = 0, Qprev = 0, sm = null, avg = null, trail = [];
 
 const plotF = new XYPlot($('plotF'), { height: 260, xmin: 0, xmax: 1, ymin: -1, ymax: 1, xlabel: 'x （上の領域にいる割合）', ylabel: 'F/N', xd: 3, yd: 3 });
 const plotC = new XYPlot($('plotC'), { height: 300, xmin: 0, xmax: 3, ymin: 0, ymax: 1, xlabel: 'c/c̄ （層の濃度 ÷ 平均の濃度）', ylabel: 'z/H （高さ）', xd: 2, yd: 2 });
@@ -166,8 +176,12 @@ const plotS = new TimePlot($('plotS'), { height: 200, ylabel: 'ΔS（k 単位）
     { key: 'th', label: '全体の理論値（平衡後）', color: '#77756f', dash: [6, 4] }] });
 const plotX = new TimePlot($('plotX'), { height: 170, ylabel: '割合 x', yZero: true, window: 800, series: [] });
 
-const levelN = () => (mode === 'two' ? 2 : nL);
-const levelE = () => (mode === 'two' ? dE : mgH / nL);
+const levelN = () => (mode === 'multi' ? nL : 2);
+const levelE = () => (mode === 'multi' ? mgH / nL : dE);
+// 二状態：上の領域の広さ v2（境目の高さ 1 − v2）。それ以外は同じ広さ
+const V2 = () => (mode === 'state' ? v2 : 0.5);
+const bounds = () => (mode === 'state' ? [1 - v2] : undefined);
+const fr = () => (mode === 'state' ? [1 - v2, v2] : undefined);
 
 function build() {
   gas = new Gas({ H, X, Xmin: X, Xmax: X, r: 0.15, seed: (Math.random() * 1e9) | 0 });
@@ -176,14 +190,15 @@ function build() {
   gas.walls = bath ? { left: DIATHERMAL, top: DIATHERMAL, bottom: DIATHERMAL } : { left: ADIABATIC, top: ADIABATIC, bottom: ADIABATIC };
   gas.bath = { left: bath, top: bath, bottom: bath };
   gas.Tbath = T0;
-  gas.setLevels(levelN(), levelE());
+  gas.setLevels(levelN(), levelE(), bounds());
   gas.resetLedger();
-  cnt0 = gas.layerCounts(); c0 = lnMultinomial(cnt0); Tinit = T0;
+  cnt0 = gas.layerCounts(); c0 = lnMultinomial(cnt0, fr()); meltPts = []; Tinit = T0;
   Sbath = 0; Qprev = 0; sm = null; avg = null; trail = [];
   if (view) view.g = gas; else view = new SimView($('sim'), gas, { envPad: 5, Tref: 1, drawScale: 5.6, pistonRod: false });
   view.opt.colorMode = $('c-speed').checked ? 'speed' : 'species';
   view.opt.showHeat = $('c-heat').checked;
-  const two = mode === 'two';
+  const two = mode !== 'multi';
+  $('row-v2').hidden = mode !== 'state'; $('wrap-melt').hidden = mode !== 'state'; $('st-Tm').hidden = mode !== 'state';
   $('row-dE').hidden = !two; $('row-mgH').hidden = two; $('row-nL').hidden = two;
   $('wrap-curve').hidden = !two; $('wrap-prof').hidden = two;
   $('lbl-T').innerHTML = bath ? '熱源の温度 <i>T</i>' : 'はじめの温度 <i>T</i>₀';
@@ -192,12 +207,13 @@ function build() {
   $('k-x').innerHTML = two ? '上の領域にいる割合 <i>x</i>' : '重心の高さ ⟨<i>z</i>⟩/<i>H</i>';
   $('k-xth').textContent = '理論の平衡値';
   $('curve-title').textContent = two ? (bath ? '変化の向き：自由エネルギー F(x) が減る向き' : '変化の向き：全体のエントロピー S(x) が増える向き') : '層ごとの濃度（沈降平衡）';
-  $('curve-hint').textContent = two ? (bath ? '1粒子あたり、x = 1/2 からの差（k = 1）' : '1粒子あたり、x = 1/2 からの差（k 単位）') : '棒＝測定（時間平均）、破線＝理論（階段）、点線＝連続な重力';
+  $('curve-hint').textContent = two ? (bath ? '1粒子あたり、一様に置いた状態からの差（k = 1）' : '1粒子あたり、一様に置いた状態からの差（k 単位）') : '棒＝測定（時間平均）、破線＝理論（階段）、点線＝連続な重力';
   plotF.opt.ylabel = bath ? 'ΔF/N' : 'ΔS/N';
   plotX.opt.ylabel = two ? '割合 x' : '⟨z⟩/H';
   plotX.opt.series = two
     ? [{ key: 'x', label: '上の領域にいる割合 x', color: SERIES[0] }, { key: 'th', label: '理論の平衡値', color: '#77756f', dash: [6, 4] }]
     : [{ key: 'x', label: '重心の高さ ⟨z⟩/H', color: SERIES[0] }, { key: 'th', label: '理論の平衡値', color: '#77756f', dash: [6, 4] }];
+  if (mode === 'state') $('mode-hint').textContent = '— 上の領域はエネルギーが ΔE 高いが、広さが v₂（置き方が多い）';
   plotS.reset(); plotX.reset();
 }
 
@@ -205,18 +221,18 @@ function build() {
 function theory() {
   const n = levelN(), e = levelE();
   const E = gas.kinetic() + gas.potential();
-  const T = env === 'bath' ? gas.Tbath : (n === 2 ? E / gas.N - xEqIsolated(e, E / gas.N) * e : tEqIsolatedLayers(n, e, E / gas.N));
-  const p = boltzmannLayers(n, e, T);
+  const T = env === 'bath' ? gas.Tbath : (n === 2 ? E / gas.N - xEqIsolated(e, E / gas.N, V2()) * e : tEqIsolatedLayers(n, e, E / gas.N));
+  const p = boltzmannLayers(n, e, T, fr());
   // はじめ（一様に置いた状態）から平衡までの全体のエントロピー変化：熱源なら −ΔF/T、孤立系なら ΔS。途中で段差や熱源の温度を変えたら出さない
   const eq = p.map((v) => v * gas.N);
   const dStot = Math.abs(gas.ledger.Wfield) > 1e-9 || (env === 'bath' && gas.Tbath !== Tinit) ? NaN
-    : env === 'bath' ? (layersF(cnt0, e, T) - layersF(eq, e, T)) / T : layersS(eq, e, E) - layersS(cnt0, e, E);
+    : env === 'bath' ? (layersF(cnt0, e, T, fr()) - layersF(eq, e, T, fr())) / T : layersS(eq, e, E, fr()) - layersS(cnt0, e, E, fr());
   return { n, e, T, E, p, dStot, x: p[n - 1], zmean: p.reduce((a, v, k) => a + v * (k + 0.5) / n, 0) };
 }
 
 function drawCurve(th, x) {
   const e = th.e, eN = th.E / gas.N;
-  const fn = env === 'bath' ? (u) => twoRegionF(u, e, gas.Tbath) : (u) => twoRegionS(u, e, eN);
+  const fn = env === 'bath' ? (u) => twoRegionF(u, e, gas.Tbath, V2()) : (u) => twoRegionS(u, e, eN, V2());
   let lo = Infinity, hi = -Infinity;
   for (let k = 1; k < 200; k++) { const v = fn(k / 200); if (Number.isFinite(v)) { lo = Math.min(lo, v); hi = Math.max(hi, v); } }
   const pad = Math.max(0.05, 0.12 * (hi - lo));
@@ -226,6 +242,18 @@ function drawCurve(th, x) {
     { label: 'これまでの経路', color: SERIES[2], pts: trail, width: 1.5 }];
   plotF.marker = [x, fn(x)];
   plotF.draw();
+}
+
+const plotM = new XYPlot($('plotM'), { height: 220, xmin: 0.3, xmax: 3, ymin: 0, ymax: 1, xlabel: 'T （熱源の温度）', ylabel: 'x', xd: 2, yd: 3 });
+/** 二状態：x(T) の理論曲線と、温度ごとの測定（時間平均） */
+function drawMelt(xAvg) {
+  const Tm = meltT(dE, v2);
+  $('r-Tm').textContent = Number.isFinite(Tm) && Tm > 0 ? fmt(Tm, 3) : '–';
+  plotM.refs = [{ label: '上の領域にいる割合（理論）', color: SERIES[3], fn: (T) => xEqBath(dE, T, v2) }];
+  plotM.paths = [{ label: '測定（時間平均）', color: SERIES[0], pts: meltPts.concat(env === 'bath' ? [[gas.Tbath, xAvg]] : []), dots: true }];
+  if (Number.isFinite(Tm) && Tm > 0.3 && Tm < 3) plotM.paths.push({ label: 'T_m', color: '#77756f', pts: [[Tm, 0], [Tm, 1]], dash: [4, 4], width: 1.2 });
+  plotM.marker = env === 'bath' ? [gas.Tbath, xAvg] : null;
+  plotM.draw();
 }
 
 function drawProfile(th) {
@@ -257,10 +285,15 @@ function showDirection(two, xNow, xTh, sig) {
 
 segmented('mode', (v) => { mode = v; build(); }, false);
 segmented('env', (v) => { env = v; build(); }, false);
-bindRange('dE', (v) => { dE = v; if (gas && mode === 'two') gas.setLevels(2, dE); }, (v) => v.toFixed(1), false);
+bindRange('v2', (v) => { v2 = v; if (gas && mode === 'state') build(); }, (v) => v.toFixed(2), false);
+bindRange('dE', (v) => { dE = v; if (gas && mode !== 'multi') { gas.setLevels(2, dE, bounds()); meltPts = []; } }, (v) => v.toFixed(1), false);
 bindRange('mgH', (v) => { mgH = v; if (gas && mode === 'multi') gas.setLevels(nL, mgH / nL); }, (v) => v.toFixed(2), false);
 bindRange('nL', (v) => { nL = v; if (gas && mode === 'multi') build(); }, (v) => v.toFixed(0), false);
-bindRange('T', (v) => { T0 = v; if (!gas) return; if (env === 'bath') gas.Tbath = v; else build(); }, (v) => v.toFixed(1), false);
+bindRange('T', (v) => {
+  // 二状態：温度を変える前の時間平均を x(T) の図に残す
+  if (gas && mode === 'state' && env === 'bath' && avg && gas.time - tT > 150) meltPts.push([gas.Tbath, avg[1]]);
+  T0 = v; if (!gas) return; if (env === 'bath') { gas.Tbath = v; tT = gas.time; } else build();
+}, (v) => v.toFixed(1), false);
 bindRange('N', (v) => { N = v; if (gas) build(); }, (v) => v.toFixed(0), false);
 bindSpeed('speed', (v) => { simRate = v; });
 bindCheck('c-speed', (on) => { if (view) view.opt.colorMode = on ? 'speed' : 'species'; $('lg-speed').hidden = !on; $('lg-species').hidden = on; });
@@ -272,7 +305,7 @@ const loop = new Loop((paused) => {
   if (!paused) {
     gas.advance(simRate);
     frame++;
-    const s = gas.stats(), th = theory(), two = mode === 'two';
+    const s = gas.stats(), th = theory(), two = mode !== 'multi';
     const counts = gas.layerCounts(), frac = counts.map((c) => c / gas.N);
     // 熱源のエントロピー：受け取った熱 −dQ をそのときの熱源の温度で割って足していく
     if (env === 'bath') Sbath -= (s.Q - Qprev) / gas.Tbath;
@@ -285,7 +318,7 @@ const loop = new Loop((paused) => {
     const xAvg = two ? avg[1] : avg.reduce((a, v, j) => a + v * (j + 0.5) / th.n, 0);
     const xTh = two ? th.x : th.zmean;
     // 速さの部分はならさない温度で数える（熱源とのやりとりによるゆらぎが、熱源の項と打ち消し合うように）
-    const Sc = lnMultinomial(counts) - c0, Sk = gas.N * Math.log(s.T / Tinit);
+    const Sc = lnMultinomial(counts, fr()) - c0, Sk = gas.N * Math.log(s.T / Tinit);
     plotS.push(gas.time, { Sc, Sk, Sb: Sbath, St: Sc + Sk + Sbath, th: th.dStot });
     plotX.push(gas.time, { x: xNow, th: xTh });
     $('r-x').textContent = fmt(xNow, 3); $('r-xavg').textContent = fmt(xAvg, 3); $('r-xth').textContent = fmt(xTh, 3);
@@ -297,9 +330,10 @@ const loop = new Loop((paused) => {
     if (frame % 2 === 0) {
       plotS.draw(); plotX.draw();
       if (two) {
-        const fn = env === 'bath' ? (u) => twoRegionF(u, th.e, gas.Tbath) : (u) => twoRegionS(u, th.e, th.E / gas.N);
+        const fn = env === 'bath' ? (u) => twoRegionF(u, th.e, gas.Tbath, V2()) : (u) => twoRegionS(u, th.e, th.E / gas.N, V2());
         for (const p of trail) p[1] = fn(p[0]);   // 条件を変えたら曲線ごと描き直す
         drawCurve(th, xNow);
+        if (mode === 'state') drawMelt(avg[1]);
       } else drawProfile(th);
       // 向きの判定は時間平均で（ゆらぎでちらつかないように）。σ はゆらぎの大きさの目安
       const sig = two ? Math.sqrt(th.x * (1 - th.x) / gas.N) : 0.25 / Math.sqrt(gas.N * th.n);

@@ -5,7 +5,7 @@ import { HeatCapacityRun } from '../assets/js/experiments.js';
 import { lnChoose, binomHalf } from '../assets/js/entropy.js';
 import { CycleRunner } from '../assets/js/cycles.js';
 import { sampleEnd, chainVar } from '../assets/js/chain.js';
-import { xEqBath, xEqIsolated, twoRegionF, boltzmannLayers, lnMultinomial } from '../assets/js/levels.js';
+import { xEqBath, xEqIsolated, twoRegionF, boltzmannLayers, lnMultinomial, meltT } from '../assets/js/levels.js';
 
 let fails = 0;
 function check(name, cond, info) {
@@ -298,6 +298,22 @@ const f = (v, d = 3) => Number(v).toFixed(d);
     check('多段: 層ごとの割合 ≈ ボルツマン分布', err < 0.02, `測定=${acc.map((v) => f(v, 3)).join(',')} 理論=${th.map((v) => f(v, 3)).join(',')}`);
     check('多段: ln(N!/ΠN_k!) は一様な分け方で最大', lnMultinomial([50, 50, 50, 50, 50, 50]) > lnMultinomial(g.layerCounts()));
   }
+}
+
+// 14b) 二状態（広さの違う二領域）：x/(1−x) = (v2/v1) e^{−ΔE/T}、T_m で x = 1/2
+{
+  const g = new Gas({ H: 60, X: 90, Xmin: 90, Xmax: 90, r: 0.15, seed: 44 });
+  g.addParticles(300, 1, { x0: 0, x1: 90, y0: 0, y1: 60 });
+  g.walls = { left: DIATHERMAL, top: DIATHERMAL, bottom: DIATHERMAL };
+  g.bath = { left: true, top: true, bottom: true };
+  const v2 = 0.8, dE = 1.5, Tm = meltT(dE, v2);
+  g.Tbath = Tm;
+  g.setLevels(2, dE, [1 - v2]); g.resetLedger();
+  for (let k = 0; k < 600; k++) g.advance(1);
+  let x = 0; for (let k = 0; k < 3000; k++) { g.advance(1); x += g.layerCounts()[1] / g.N / 3000; }
+  check('二状態: T = T_m で上にいる割合 ≈ 1/2', Math.abs(x - 0.5) < 0.03 && Math.abs(xEqBath(dE, Tm, v2) - 0.5) < 1e-12, `x=${f(x)} T_m=${f(Tm)}`);
+  const s = g.stats();
+  check('二状態: ΔU = Q + W (厳密)', Math.abs(s.dU - s.Q - s.W) < 1e-8);
 }
 
 // 15) 可動の仕切り（12）：全エネルギー保存、部分系ごとの ΔU = Q + W、透熱なら T と P がそろう

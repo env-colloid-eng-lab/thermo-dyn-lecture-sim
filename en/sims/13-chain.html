@@ -35,7 +35,7 @@
     <section class="card">
       <h2><span class="tag">Micro</span>Making randomly connected chains one after another <span class="hint">one end fixed at the origin (+). Gray dots = ends so far, orange = chains whose end fell in the band</span></h2>
       <div class="canvas-wrap"><canvas id="sim"></canvas></div>
-      <div class="readouts">
+      <div class="readouts wrap">
         <div class="stat"><span class="k">Chains made</span><span class="v" id="r-M">0</span></div>
         <div class="stat"><span class="k">⟨<i>x</i>²⟩ (measured)</span><span class="v" id="r-x2">–</span></div>
         <div class="stat"><span class="k">Theory <i>N</i><sub>s</sub><i>b</i>²/2</span><span class="v" id="r-x2th">–</span></div>
@@ -48,7 +48,7 @@
       <h2><span class="tag">Macro</span>From the number of configurations to free energy and force</h2>
       <div class="canvas-wrap"><canvas id="plotP"></canvas></div>
       <div class="canvas-wrap" style="margin-top:6px"><canvas id="plotF"></canvas></div>
-      <div class="readouts">
+      <div class="readouts wrap">
         <div class="stat"><span class="k">Configurational entropy Δ<i>S</i> = <i>k</i> ln(<i>P</i>(<i>x</i>)/<i>P</i>(0))</span><span class="v" id="r-S">–</span></div>
         <div class="stat"><span class="k">Δ<i>F</i> = −<i>T</i>Δ<i>S</i></span><span class="v" id="r-F">–</span></div>
         <div class="stat int"><span class="k">Force needed <i>f</i> = <i>kTx</i>/σ² (theory)</span><span class="v" id="r-f">–</span></div>

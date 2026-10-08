@@ -258,10 +258,14 @@ export class Gas {
   // ------------------------------------------------------------
   //  高さによるエネルギーの段差
   // ------------------------------------------------------------
-  /** n 層（n < 2 なら段差なし）、1段あたりのエネルギー dE。途中で変えた分は仕事として記録 */
-  setLevels(n, dE) {
+  /**
+   * n 層（n < 2 なら段差なし）、1段あたりのエネルギー dE。途中で変えた分は仕事として記録。
+   * bounds：層の境目の高さ（下端からの割合、昇順、n−1 個）。省くと等間隔
+   */
+  setLevels(n, dE, bounds) {
     const U0 = this.potential();
-    this.levels = n >= 2 ? { n, dE } : null;
+    const b = bounds && bounds.length === n - 1 ? bounds.slice() : Array.from({ length: Math.max(0, n - 1) }, (_, k) => (k + 1) / n);
+    this.levels = n >= 2 ? { n, dE, bounds: b } : null;
     const dW = this.potential() - U0;
     this.ledger.Wfield += dW;
   }
@@ -270,8 +274,10 @@ export class Gas {
   layerOf(y) {
     const L = this.levels;
     if (!L) return 0;
-    const k = Math.floor(((this.H - y) / this.H) * L.n);
-    return k < 0 ? 0 : k >= L.n ? L.n - 1 : k;
+    const z = (this.H - y) / this.H;
+    let k = 0;
+    while (k < L.n - 1 && z >= L.bounds[k]) k++;
+    return k;
   }
 
   /** 層ごとの粒子数 */
@@ -283,7 +289,7 @@ export class Gas {
 
   /** 1刻みのあいだに層の境目を越えた粒子：登れなければ跳ね返り、越えたら鉛直の速さを変える */
   _crossLevels() {
-    const L = this.levels, H = this.H, h = H / L.n;
+    const L = this.levels, H = this.H;
     for (let i = 0; i < this.N; i++) {
       const k0 = this.layerOf(this.py[i]), k1 = this.layerOf(this.y[i]);
       if (k0 === k1) continue;
@@ -292,7 +298,7 @@ export class Gas {
       if (e >= 0) {
         this.vy[i] = Math.sign(vy) * Math.sqrt(2 * e);
       } else {
-        const yb = H - Math.max(k0, k1) * h;          // 境目の高さ
+        const yb = H - L.bounds[Math.max(k0, k1) - 1] * H;   // 境目の高さ
         this.vy[i] = -vy;
         this.y[i] = 2 * yb - this.y[i];
       }

@@ -175,7 +175,7 @@ export class XYPlot extends Base {
   /**
    * opt: xmin,xmax,ymin,ymax（ymaxはnullで自動）
    * refs: [{label,color,dash,fn}]  参照曲線 y = fn(x)
-   * paths: [{label,color,pts:[[x,y]],fill:bool,closed:bool,ends:bool}]
+   * paths: [{label,color,pts:[[x,y]],fill:bool,closed:bool,ends:bool,dots:bool}]
    */
   constructor(canvas, opt) {
     super(canvas, Object.assign({ xmin: 0, xmax: 1, ymin: 0, ymax: null }, opt));
@@ -227,6 +227,11 @@ export class XYPlot extends Base {
     ctx.setLineDash([]);
     for (const p of this.paths) {
       if (p.pts.length < 1) continue;
+      if (p.dots) {   // 点だけを描く（測定値など）
+        ctx.fillStyle = p.color;
+        for (const [x, y] of p.pts) { ctx.beginPath(); ctx.arc(sx(x), sy(y), 4 * this.dpr, 0, 7); ctx.fill(); }
+        continue;
+      }
       ctx.strokeStyle = p.color; ctx.lineWidth = (p.width || 2) * this.dpr;
       ctx.setLineDash(p.dash ? p.dash.map((v) => v * this.dpr) : []);
       ctx.beginPath();

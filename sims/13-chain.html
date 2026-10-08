@@ -35,7 +35,7 @@
     <section class="card">
       <h2><span class="tag">ミクロ</span>でたらめにつながった鎖を次々につくる <span class="hint">一端を原点（＋）に固定。灰色の点＝これまでの末端、橙＝末端が帯の中に入った鎖</span></h2>
       <div class="canvas-wrap"><canvas id="sim"></canvas></div>
-      <div class="readouts">
+      <div class="readouts wrap">
         <div class="stat"><span class="k">つくった鎖の数</span><span class="v" id="r-M">0</span></div>
         <div class="stat"><span class="k">⟨<i>x</i>²⟩（測定）</span><span class="v" id="r-x2">–</span></div>
         <div class="stat"><span class="k">理論 <i>N</i><sub>s</sub><i>b</i>²/2</span><span class="v" id="r-x2th">–</span></div>
@@ -48,7 +48,7 @@
       <h2><span class="tag">マクロ</span>配置の数から自由エネルギーと力へ</h2>
       <div class="canvas-wrap"><canvas id="plotP"></canvas></div>
       <div class="canvas-wrap" style="margin-top:6px"><canvas id="plotF"></canvas></div>
-      <div class="readouts">
+      <div class="readouts wrap">
         <div class="stat"><span class="k">配置のエントロピー Δ<i>S</i> = <i>k</i> ln(<i>P</i>(<i>x</i>)/<i>P</i>(0))</span><span class="v" id="r-S">–</span></div>
         <div class="stat"><span class="k">Δ<i>F</i> = −<i>T</i>Δ<i>S</i></span><span class="v" id="r-F">–</span></div>
         <div class="stat int"><span class="k">必要な力 <i>f</i> = <i>kTx</i>/σ²（理論）</span><span class="v" id="r-f">–</span></div>
