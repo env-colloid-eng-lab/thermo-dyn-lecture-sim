@@ -11,6 +11,7 @@ GitHub Pages（main / root）でそのまま公開される静的サイト。
 - **ビルド不要・外部ライブラリなし** を維持する（素の HTML + ES Modules + Canvas）。CDN や npm パッケージを実行時に読み込まない。
 - **UI と解説は日本語**。講義スライドの用語に合わせる（断熱壁・透熱壁・操作1〜3・準静的過程・示量変数/示強変数 など）。
 - **英語版**（`en/`）も同じ内容に保つ。日本語ページを変えたら、対応する `en/` のページも同じように直す（id・数値・ロジックは同一、文章だけ英語）。JavaScript 内の表示文字列は `tr('日本語', 'English')`（`assets/js/i18n.js`）で書く。
+- **記号**：圧力は大文字 *P*、ヘルムホルツの自由エネルギーは *F*（*F* = *U* − *TS*）。講義テキストと記号をそろえる。
 - **符号の約束は ΔU = Q + W**（W：系が「された」仕事、Q：系が「受け取った」熱）。表示・解説・テストすべてで統一。
 - **図の約束**：斜線の帯＝断熱壁、細い実線＝透熱壁、薄い青＝流体（`assets/js/render.js`）。
 - **物理モデル**：2次元剛体円板気体、m = 1、k_B = 1。`U = NkT`、`PV = NkT`、γ = 2。3次元の式（3/2 NkT など）を書かない。書くなら「3次元なら」と明記する。
@@ -51,13 +52,13 @@ npm run serve                      # http://localhost:8000/ で表示を確認
 
 ## ファイル構成
 
-- `index.html` 目次 / `sims/01〜09-*.html` 各シミュレーション / `en/` 英語版（同じ構成）
-- `assets/js/engine.js` 分子動力学（`Gas` クラス：壁・熱源・ピストン・撹拌翼・仕切り（断熱・透熱・半透膜）・圧力測定・帳簿）
+- `index.html` 目次 / `sims/01〜11-*.html` 各シミュレーション / `en/` 英語版（同じ構成）
+- `assets/js/engine.js` 分子動力学（`Gas` クラス：壁・熱源・ピストン・撹拌翼・仕切り（断熱・透熱・半透膜）・高さによるエネルギーの段差（`setLevels`）・圧力測定・帳簿）
   - ピストンは `piston.mode` が `'position'`（目標位置へ一定の速さ）か `'force'`（質量 `M`、外圧 `Pext` の定圧ピストン）
   - `gas.advance(t)` で時間 t だけ進める（速い粒子がいると自動で刻みを細かくする）
 - `assets/js/render.js` 描画（`SimView`）、`plot.js` グラフ（`TimePlot` / `XYPlot` / `HistPlot`）、`ui.js` UI 部品
   - 再生速度は `bindSpeed()`（対数スライダー、×1 = 1フレームで時間 0.1）
-- `assets/js/experiments.js`（熱容量の測定手順）、`entropy.js`（場合の数）、`cycles.js`（サイクルの自動運転）：DOM に依存しない。ページとテストの両方から使う
+- `assets/js/experiments.js`（熱容量の測定手順）、`entropy.js`（場合の数）、`cycles.js`（サイクルの自動運転）、`levels.js`（段差のある気体の理論）：DOM に依存しない。ページとテストの両方から使う
 - `tests/physics-test.mjs` 物理テスト、`tests/smoke-browser.mjs` ブラウザ操作テスト
 
 ## 表示・教育上の方針

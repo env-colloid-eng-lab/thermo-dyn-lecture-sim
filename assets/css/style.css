@@ -176,3 +176,21 @@ table.tbl .int { color: #c4511f; }
   .bars .b { grid-template-columns: 7.5em 1fr 4em; }
   .site-header nav { margin-left: 0; }
 }
+
+/* ---------- 取り出した仕事と失われた仕事（10） ---------- */
+.stack { display: grid; gap: 6px; margin-top: 8px; }
+.stack .b { display: grid; grid-template-columns: 8.5em 1fr 8em; align-items: center; gap: 8px; font-size: .88em; }
+.stack .track { position: relative; height: 18px; background: #f1f0ec; border-radius: 4px; overflow: hidden; }
+.stack .fill { position: absolute; top: 0; bottom: 0; }
+.stack .fill.wout { background: var(--s2); }
+.stack .fill.lost { background: repeating-linear-gradient(135deg, #b9b8b2 0 4px, #dcdbd5 4px 8px); }
+.stack .max { position: absolute; top: 0; bottom: 0; border-right: 2px dashed #52514e; }
+.stack output { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; font-size: .95em; }
+.sw.wout { background: var(--s2); border-color: var(--s2); }
+.sw.lost { background: repeating-linear-gradient(135deg, #b9b8b2 0 4px, #dcdbd5 4px 8px); border-color: #b9b8b2; }
+.twin { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.twin h3 { font-size: .92em; margin: 0 0 4px; color: var(--accent-ink); }
+@media (max-width: 600px) {
+  .twin { grid-template-columns: 1fr; }
+  .stack .b { grid-template-columns: 6.5em 1fr 6.5em; }
+}

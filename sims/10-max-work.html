@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>10 可逆と不可逆の比較 | 熱力学シミュレーション</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+<header class="site-header"><div class="inner">
+  <h1>10 同じ始状態と終状態：可逆と不可逆</h1><span class="sub">等温膨張と自由膨張 ― 熱と仕事は経路で違い、取り出せる仕事の上限は自由エネルギーで決まる</span>
+  <nav>
+    <a href="../index.html">目次</a>
+    <a href="01-operations.html">01 壁と操作</a>
+    <a href="02-equilibrium.html">02 平衡への緩和</a>
+    <a href="03-processes.html">03 準静的と不可逆</a>
+    <a href="04-isothermal.html">04 等温過程の収支</a>
+    <a href="05-extensive.html">05 示量と示強</a>
+    <a href="06-heat-capacity.html">06 熱容量</a>
+    <a href="07-entropy.html">07 エントロピー</a>
+    <a href="08-heat-engines.html">08 熱機関</a>
+    <a href="09-osmosis.html">09 浸透圧</a>
+    <a href="10-max-work.html" aria-current="page">10 可逆と不可逆</a>
+    <a href="11-sedimentation.html">11 沈降平衡</a>
+    <a href="../en/sims/10-max-work.html" lang="en" hreflang="en">English</a>
+    <button id="btn-proj" title="文字を大きくする">投影モード</button>
+  </nav>
+</div></header>
+
+<main class="layout">
+  <div class="col">
+    <section class="card">
+      <h2><span class="tag">ミクロ</span>同じ始状態から、同じ終状態（体積 2 倍）へ <span class="hint" id="r-state"></span></h2>
+      <div class="twin">
+        <div>
+          <h3>A：熱源に接して、ピストンで膨張</h3>
+          <div class="canvas-wrap"><canvas id="simA"></canvas></div>
+          <p class="hint" id="r-A" style="margin:2px 0 0"></p>
+        </div>
+        <div>
+          <h3>B：断熱容器で、真空へ自由膨張</h3>
+          <div class="canvas-wrap"><canvas id="simB"></canvas></div>
+          <p class="hint" id="r-B" style="margin:2px 0 0"></p>
+        </div>
+      </div>
+      <div class="legend">
+        <span><span class="sw adi"></span>断熱壁</span>
+        <span><span class="sw dia"></span>透熱壁（熱源と接触）</span>
+        <span id="lg-speed" hidden>遅い<span class="grad"></span>速い</span>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2><span class="tag">マクロ</span>始状態から終状態までの収支 <span class="hint"><i>Q</i>：気体が受け取った熱、<i>W</i>：気体がされた仕事（<i>k</i> = 1）</span></h2>
+      <div class="table-wrap">
+        <table class="tbl" id="tbl">
+          <thead><tr><th></th><th>A（測定）</th><th>B（測定）</th><th>可逆な等温膨張（理論）</th><th>自由膨張（理論）</th></tr></thead>
+          <tbody>
+            <tr><td>熱 <i>Q</i></td><td id="a-Q"></td><td id="b-Q"></td><td id="t-Q"></td><td>0</td></tr>
+            <tr><td>仕事 <i>W</i></td><td id="a-W"></td><td id="b-W"></td><td id="t-W"></td><td>0</td></tr>
+            <tr><td>Δ<i>U</i> = <i>Q</i> + <i>W</i></td><td id="a-dU"></td><td id="b-dU"></td><td>0</td><td>0</td></tr>
+            <tr><td>気体の Δ<i>S</i>（状態量）</td><td id="a-Sg"></td><td id="b-Sg"></td><td id="t-Sg"></td><td id="t-Sg2"></td></tr>
+            <tr><td>熱源の Δ<i>S</i> = −<i>Q</i>/<i>T</i></td><td id="a-Sb"></td><td id="b-Sb"></td><td id="t-Sb"></td><td>0</td></tr>
+            <tr class="sum"><td>全体の Δ<i>S</i></td><td id="a-St"></td><td id="b-St"></td><td>0</td><td id="t-St2"></td></tr>
+            <tr class="whole"><td>Δ<i>F</i> = Δ<i>U</i> − <i>T</i>Δ<i>S</i><sub>気体</sub>（状態量）</td><td id="a-F"></td><td id="b-F"></td><td id="t-F"></td><td id="t-F2"></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="hint" style="margin:4px 0 0">気体の Δ<i>S</i> は状態量なので、終状態が同じなら A でも B でも同じ（<span class="math">Nk ln 2</span>）。違うのは熱源の Δ<i>S</i>、つまり外界の変化。B の値は、仕切りを外した後に落ち着いた平衡状態についてのもの。</p>
+
+      <h2 style="margin-top:12px"><span class="tag">マクロ</span>取り出した仕事と、失われた仕事 <span class="hint">破線＝取り出せる仕事の上限 −Δ<i>F</i> = <i>NkT</i> ln 2</span></h2>
+      <div class="stack">
+        <div class="b"><span>可逆（理論）</span><div class="track"><div class="fill wout" id="s-rev-w"></div><div class="fill lost" id="s-rev-l"></div><div class="max" id="s-rev-m"></div></div><output id="o-rev"></output></div>
+        <div class="b"><span>A（測定）</span><div class="track"><div class="fill wout" id="s-a-w"></div><div class="fill lost" id="s-a-l"></div><div class="max" id="s-a-m"></div></div><output id="o-a"></output></div>
+        <div class="b"><span>B（測定）</span><div class="track"><div class="fill wout" id="s-b-w"></div><div class="fill lost" id="s-b-l"></div><div class="max" id="s-b-m"></div></div><output id="o-b"></output></div>
+      </div>
+      <div class="legend">
+        <span><span class="sw wout"></span>取り出した仕事 <i>W</i><sub>out</sub> = −<i>W</i></span>
+        <span><span class="sw lost"></span>失われた仕事 <i>T</i>Δ<i>S</i><sub>全体</sub></span>
+        <span>（理論では <span class="math">W_out + TΔS_全体 = −ΔF</span>）</span>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>時間変化 <span class="hint">「膨張を始める」からの変化（<i>k</i> 単位）</span></h2>
+      <div class="canvas-wrap"><canvas id="plotS"></canvas></div>
+    </section>
+  </div>
+
+  <div class="col">
+    <section class="card ctrl">
+      <h2>操作パネル</h2>
+      <div class="btns">
+        <button id="btn-play" class="primary"></button>
+        <button id="btn-reset">はじめから</button>
+        <button id="btn-start">膨張を始める</button>
+      </div>
+      <div class="row"><label for="speed">再生速度</label><input type="range" id="speed" min="-0.7" max="1.6" step="0.05" value="0.78"><output id="speed-val"></output></div>
+
+      <div class="group-title">A のピストンを動かす速さ</div>
+      <div class="seg" id="pspeed"><button data-value="0.03" aria-pressed="true">ゆっくり（準静的に近い）</button><button data-value="0.5">速い</button></div>
+
+      <div class="group-title">はじめの状態（変えると、はじめから）</div>
+      <div class="row"><label for="T">温度 <i>T</i>（A の熱源も）</label><input type="range" id="T" min="0.5" max="2" step="0.1" value="1"><output id="T-val"></output></div>
+      <div class="row"><label for="N">粒子数 <i>N</i></label><input type="range" id="N" min="100" max="300" step="50" value="200"><output id="N-val"></output></div>
+
+      <div class="group-title">表示</div>
+      <div>
+        <label class="check"><input type="checkbox" id="c-speed">色＝速さ</label>
+        <label class="check"><input type="checkbox" id="c-heat" checked>熱のやりとり</label>
+      </div>
+    </section>
+
+    <section class="card notes">
+      <h2>ねらい</h2>
+      <p>温度 <i>T</i> の理想気体の体積を 2 倍にする。A は熱源に接したままピストンをゆっくり引く（可逆な等温膨張）。B は断熱容器の仕切りを外して真空へ広がらせる（自由膨張）。どちらも終わりは「温度 <i>T</i>、体積 2 倍」の同じ平衡状態で、Δ<i>U</i> = 0。</p>
+      <p>それでも熱 <i>Q</i> と仕事 <i>W</i> は経路によって違う（状態量ではない）。一方、気体のエントロピー変化は同じ。違いは <b>外界（熱源）のエントロピー</b> に現れ、全体のエントロピー変化は A で 0、B で <span class="math">Nk ln 2</span>。第二法則 <span class="math">ΔS_全体 ≥ 0</span> から、取り出せる仕事には上限 <span class="math">W_out ≤ −ΔF</span>（<b>最大仕事の原理</b>）がつく。</p>
+      <h3>やってみよう</h3>
+      <ol>
+        <li>「膨張を始める」。B はすぐに広がるが、A はピストンがゆっくり動く（再生速度を上げてよい）。表の <i>Q</i>, <i>W</i>, Δ<i>U</i> を A と B で比べる。</li>
+        <li>終わったら「気体の Δ<i>S</i>」と「熱源の Δ<i>S</i>」を比べる。A では熱源から受け取った熱のぶん熱源の <i>S</i> が減り、全体ではほぼ 0。B では熱源とやりとりがなく、全体で <span class="math">N ln 2</span> 増える。</li>
+        <li>下の棒グラフ：A は上限 −Δ<i>F</i> いっぱいまで仕事を取り出し、B は 0。B では取り出せたはずの仕事 <span class="math">NkT ln 2</span> がすべて「失われた」。</li>
+        <li>「速い」にして、もう一度。A の取り出した仕事は減り、そのぶん全体のエントロピーが増える（失われた仕事 <span class="math">TΔS_全体</span>）。合計はいつも −Δ<i>F</i> の近く。</li>
+      </ol>
+      <div class="q"><b>問い</b>　B の気体を、ひとりでに左半分へ戻らせることはできない。第二法則でどう説明できる？ 外から仕事をして元に戻すとき、最低どれだけの仕事が必要か（最小仕事 <span class="math">W ≥ ΔF</span>）。そのとき熱源へ出ていく熱は？</div>
+      <div class="q"><b>問い</b>　自由膨張でもエネルギーは少しも減っていない（Δ<i>U</i> = 0）。それなのに「仕事を取り出す機会が失われた」とはどういう意味だろう？</div>
+      <div class="q"><b>問い</b>　A でもゆっくりなら全体の Δ<i>S</i> ≈ 0。では A を逆向き（ゆっくり圧縮）に行うと、気体・熱源・外界はすべて元に戻るだろうか？ B を逆向きにできないこととの違いは？</div>
+      <details><summary>理論値（2次元理想気体, <i>k</i> = 1）</summary>
+        <p>可逆な等温膨張：<span class="math">W = −∫P dV = −NkT ln(V₂/V₁) = −NkT ln 2</span>、<span class="math">Q = −W</span>。気体の <span class="math">ΔS = Nk ln 2</span>、熱源の <span class="math">ΔS = −Q/T = −Nk ln 2</span>、全体で 0。</p>
+        <p>自由膨張：<span class="math">Q = W = 0</span>、<span class="math">ΔU = 0</span> なので温度は変わらず、終状態は可逆な等温膨張と同じ。気体の <span class="math">ΔS = Nk ln 2</span>（状態量）、熱源の変化はないので全体で <span class="math">Nk ln 2</span>。</p>
+        <p>ヘルムホルツの自由エネルギー <span class="math">F = U − TS</span> の変化は、どちらも <span class="math">ΔF = −NkT ln 2</span>。熱源（温度 <i>T</i>）と熱をやりとりする過程では <span class="math">Q ≤ TΔS</span>（第二法則）なので、第一法則と合わせて <span class="math">W ≥ ΔF</span>、取り出す仕事 <span class="math">W_out = −W ≤ −ΔF</span>。さらに <span class="math">W_out = −ΔF − TΔS_全体</span> と書け、不可逆性（<span class="math">ΔS_全体 &gt; 0</span>）があると取り出せる仕事が減る。</p>
+      </details>
+      <details><summary>測定値について</summary>
+        <p>粒子は大きさのある円板なので、圧力は理想気体より少し大きく、A の |<i>W</i>| は理論値より 2〜3％大きくなります。そのため A をゆっくり動かしても、全体の Δ<i>S</i> は 0 のまわりに数程度（<span class="math">N ln 2 ≈ 139</span> に比べて小さい）ずれることがあります。粒子数が少ないので、気体の温度と熱源の Δ<i>S</i> はゆらぎますが、両者のゆらぎは打ち消し合うので、全体の Δ<i>S</i> はなめらかです。</p>
+      </details>
+    </section>
+  </div>
+</main>
+
+<script type="module">
+import { Gas, ADIABATIC, DIATHERMAL } from '../assets/js/engine.js';
+import { SimView } from '../assets/js/render.js';
+import { TimePlot, SERIES } from '../assets/js/plot.js';
+import { $, fmt, fmtSigned, bindRange, bindCheck, segmented, Loop, bindPlayPause, setupCommon, bindSpeed } from '../assets/js/ui.js';
+
+setupCommon();
+const H = 60, X0 = 45, X1 = 90;
+let gA, gB, vA, vB, simRate = 0.6, frame = 0;
+let T = 1, N = 200, pspeed = 0.03, started = false, SbA = 0, QpA = 0, T0A = 1, T0B = 1, tDone = null, t0 = 0;
+
+const plotS = new TimePlot($('plotS'), { height: 220, ylabel: 'ΔS（k 単位）', yZero: true, window: 3000,
+  series: [{ key: 'Sg', label: 'A：気体', color: SERIES[0], dash: [6, 4] }, { key: 'Sb', label: 'A：熱源', color: '#d6453d', dash: [2, 3] },
+    { key: 'St', label: 'A：全体', color: SERIES[3] }, { key: 'StB', label: 'B：全体', color: SERIES[1] }] });
+
+function build() {
+  const seed = (Math.random() * 1e9) | 0;
+  gA = new Gas({ H, X: X0, Xmin: X0, Xmax: X1, r: 0.15, seed });
+  gA.addParticles(N, T, { x0: 0, x1: X0, y0: 0, y1: H });
+  gA.walls = { left: DIATHERMAL, top: DIATHERMAL, bottom: DIATHERMAL };
+  gA.bath = { left: true, top: true, bottom: true };
+  gA.Tbath = T;
+  gA.resetLedger();
+  gB = new Gas({ H, X: X1, Xmin: X1, Xmax: X1, r: 0.15, seed: seed + 1 });
+  gB.setVPartition(X0, ADIABATIC);
+  gB.addParticles(N, T, { x0: 0, x1: X0, y0: 0, y1: H });
+  gB.resetLedger();
+  if (vA) { vA.g = gA; vB.g = gB; } else {
+    vA = new SimView($('simA'), gA, { envPad: 5, Tref: 1, drawScale: 5.6 });
+    vB = new SimView($('simB'), gB, { envPad: 5, Tref: 1, drawScale: 5.6, pistonRod: false });   // B の右壁は動かない
+  }
+  for (const v of [vA, vB]) { v.opt.Tref = T; v.opt.colorMode = $('c-speed').checked ? 'speed' : 'species'; v.opt.showHeat = $('c-heat').checked; }
+  started = false; SbA = 0; QpA = 0; tDone = null;
+  $('btn-start').disabled = false;
+  $('r-state').textContent = '— 「膨張を始める」を押す';
+  plotS.reset();
+  // 理論値（2次元理想気体、k = 1）
+  const L = N * Math.log(2);
+  $('t-Q').textContent = fmtSigned(T * L, 1); $('t-W').textContent = fmtSigned(-T * L, 1);
+  $('t-Sg').textContent = fmtSigned(L, 1); $('t-Sg2').textContent = fmtSigned(L, 1);
+  $('t-Sb').textContent = fmtSigned(-L, 1); $('t-St2').textContent = fmtSigned(L, 1);
+  $('t-F').textContent = fmtSigned(-T * L, 1); $('t-F2').textContent = fmtSigned(-T * L, 1);
+  for (const k of ['Q', 'W', 'dU', 'Sg', 'Sb', 'St', 'F']) { $('a-' + k).textContent = '–'; $('b-' + k).textContent = '–'; }
+  setStack('rev', T * L, 0);
+  setStack('a', 0, 0); setStack('b', 0, 0);
+  $('o-a').textContent = '–'; $('o-b').textContent = '–';
+}
+
+/** 棒：取り出した仕事と失われた仕事。破線は上限 −ΔF */
+function setStack(id, wout, lost) {
+  const max = T * N * Math.log(2), scale = max * 1.25;
+  const w = Math.max(0, wout), l = Math.max(0, lost);
+  const pct = (v) => `${Math.min(100, (100 * v) / scale).toFixed(2)}%`;
+  Object.assign($(`s-${id}-w`).style, { left: '0', width: pct(w) });
+  Object.assign($(`s-${id}-l`).style, { left: pct(w), width: pct(l) });
+  $(`s-${id}-m`).style.width = pct(max);
+  $(`o-${id}`).textContent = `${fmt(wout, 0)} + ${fmt(lost, 0)}`;
+}
+
+function start() {
+  if (started) return;
+  started = true;
+  gA.resetLedger(); gB.resetLedger();
+  SbA = 0; QpA = 0;
+  T0A = gA.kinetic() / gA.N; T0B = gB.kinetic() / gB.N; t0 = gA.time;
+  gA.piston.speed = pspeed; gA.piston.target = X1;
+  gB.setVPartition(null);
+  $('btn-start').disabled = true;
+  plotS.reset();
+}
+
+segmented('pspeed', (v) => { pspeed = parseFloat(v); if (gA && started && gA.X < X1) gA.piston.speed = pspeed; }, false);
+bindRange('T', (v) => { T = v; if (gA) build(); }, (v) => v.toFixed(1), false);
+bindRange('N', (v) => { N = v; if (gA) build(); }, (v) => v.toFixed(0), false);
+bindSpeed('speed', (v) => { simRate = v; });
+bindCheck('c-speed', (on) => { for (const v of [vA, vB]) if (v) v.opt.colorMode = on ? 'speed' : 'species'; $('lg-speed').hidden = !on; });
+bindCheck('c-heat', (on) => { for (const v of [vA, vB]) if (v) v.opt.showHeat = on; });
+$('btn-reset').addEventListener('click', build);
+$('btn-start').addEventListener('click', start);
+build();
+
+const loop = new Loop((paused) => {
+  if (!paused) {
+    gA.advance(simRate); gB.advance(simRate);
+    frame++;
+    const sA = gA.stats(), sB = gB.stats();
+    $('r-A').textContent = `T = ${fmt(sA.T, 2)}、V = ${fmt(sA.V, 0)}` + (started ? (gA.X < X1 - 1e-9 ? '（ピストンを引いている）' : '（膨張が終わった）') : '');
+    $('r-B').textContent = `T = ${fmt(sB.T, 2)}、V = ${fmt(gB.vpart ? X0 * H : sB.V, 0)}` + (started ? '（仕切りを外した）' : '（右半分は真空）');
+    if (started) {
+      // 熱源のエントロピー：熱源が受け取った熱 −dQ を熱源の温度で割って足していく
+      SbA -= (sA.Q - QpA) / gA.Tbath; QpA = sA.Q;
+      // 気体のエントロピー（2次元理想気体）：N ln(V/V₀) + N ln(T/T₀)。温度はならさない（熱源の項とゆらぎが打ち消し合う）
+      const SgA = N * Math.log(gA.X / X0) + N * Math.log(sA.T / T0A);
+      const SgB = N * Math.log(2) + N * Math.log(sB.T / T0B);
+      const StA = SgA + SbA, StB = SgB;
+      plotS.push(gA.time - t0, { Sg: SgA, Sb: SbA, St: StA, StB });
+      const set = (p, k, v) => { $(`${p}-${k}`).textContent = fmtSigned(v, 1); };
+      set('a', 'Q', sA.Q); set('a', 'W', sA.W); set('a', 'dU', sA.dU); set('a', 'Sg', SgA); set('a', 'Sb', SbA); set('a', 'St', StA);
+      set('a', 'F', sA.dU - T * SgA);
+      set('b', 'Q', sB.Q); set('b', 'W', sB.W); set('b', 'dU', sB.dU); set('b', 'Sg', SgB); set('b', 'Sb', 0); set('b', 'St', StB);
+      set('b', 'F', sB.dU - T * SgB);
+      if (frame % 3 === 0) { setStack('a', -sA.W, T * StA); setStack('b', -sB.W, T * StB); }
+      if (gA.X >= X1 - 1e-9 && tDone == null) tDone = gA.time;
+      $('r-state').textContent = tDone == null ? '— 膨張中' : '— A の膨張が終わった。熱源と平衡になるまで少し待つと、値が落ち着く';
+      if (frame % 2 === 0) plotS.draw();
+    }
+  }
+  vA.draw(); vB.draw();
+});
+bindPlayPause('btn-play', loop);
+</script>
+</body>
+</html>
