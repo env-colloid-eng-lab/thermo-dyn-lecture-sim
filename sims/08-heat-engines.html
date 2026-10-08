@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>08 熱機関とヒートポンプ | 熱力学シミュレーション</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+<header class="site-header"><div class="inner">
+  <h1>08 熱機関とヒートポンプ</h1><span class="sub">カルノーサイクル・スターリングサイクル ― 熱を仕事に、仕事で熱をくみ上げる</span>
+  <nav>
+    <a href="../index.html">目次</a>
+    <a href="01-operations.html">01 壁と操作</a>
+    <a href="02-equilibrium.html">02 平衡への緩和</a>
+    <a href="03-processes.html">03 準静的と不可逆</a>
+    <a href="04-isothermal.html">04 等温過程の収支</a>
+    <a href="05-extensive.html">05 示量と示強</a>
+    <a href="06-heat-capacity.html">06 熱容量</a>
+    <a href="07-entropy.html">07 エントロピー</a>
+    <a href="08-heat-engines.html" aria-current="page">08 熱機関</a>
+    <button id="btn-proj" title="文字を大きくする">投影モード</button>
+  </nav>
+</div></header>
+
+<main class="layout">
+  <div class="col">
+    <section class="card">
+      <h2><span class="tag">ミクロ</span>シリンダの中の気体（作業物質） <span class="hint" id="mode-hint"></span></h2>
+      <div class="canvas-wrap"><canvas id="sim"></canvas></div>
+      <div class="legend">
+        <span><span class="sw adi"></span>断熱壁</span>
+        <span><span class="sw dia"></span>透熱壁（熱源と接触中）</span>
+        <span><span class="dot hot"></span>熱源から粒子へエネルギーが入った衝突</span>
+        <span><span class="dot cold"></span>粒子から熱源へエネルギーが出た衝突</span>
+        <span id="lg-speed" hidden>遅い<span class="grad"></span>速い</span>
+      </div>
+      <div class="phase">
+        <span>いまの過程：<b id="r-step">―</b></span>
+        <span class="hint" id="r-cycle"></span>
+      </div>
+
+      <h2 style="margin-top:12px"><span class="tag">マクロ</span>エネルギーの流れ <span class="hint" id="flow-hint">終わったサイクルの合計</span></h2>
+      <div class="flow">
+        <div class="box bath"><span class="t">高温熱源 <i>T</i><sub>h</sub> = <span id="f-Th"></span></span><span class="n" id="f-Qh"></span><span class="t" id="f-Qh-t"></span></div>
+        <div class="arrow"><span>熱 <i>Q</i><sub>h</sub></span><div class="bar q" id="a-h"></div></div>
+        <div class="box sys"><span class="t">気体</span><span class="n" id="f-W"></span><span class="t" id="f-W-t"></span></div>
+        <div class="arrow"><span>熱 <i>Q</i><sub>c</sub></span><div class="bar q" id="a-c"></div></div>
+        <div class="box out" style="background:#eef4fd;border-color:#b8cdf0"><span class="t">低温熱源 <i>T</i><sub>c</sub> = <span id="f-Tc"></span></span><span class="n" id="f-Qc"></span><span class="t" id="f-Qc-t"></span></div>
+      </div>
+      <div class="readouts">
+        <div class="stat"><span class="k" id="k-main">効率 η（測定）</span><span class="v" id="r-main">–</span></div>
+        <div class="stat"><span class="k" id="k-th">理論（準静的）</span><span class="v" id="r-th"></span></div>
+        <div class="stat" id="st-regen"><span class="k" id="k-regen">再生器ありなら（測定）</span><span class="v" id="r-regen">–</span></div>
+        <div class="stat"><span class="k" id="k-carnot">カルノーの上限</span><span class="v" id="r-carnot"></span></div>
+        <div class="stat"><span class="k">サイクル数</span><span class="v" id="r-n">0</span></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2><span class="tag">マクロ</span>P–V 図 <span class="hint">塗った面積 ＝ 1サイクルの正味の仕事</span></h2>
+      <div class="canvas-wrap"><canvas id="pv"></canvas></div>
+    </section>
+
+    <section class="card">
+      <h2>直前の1サイクルの収支 <span class="hint"><i>Q</i>：気体が受け取った熱、<i>W</i>：気体がされた仕事</span></h2>
+      <div class="table-wrap">
+        <table class="tbl" id="tbl">
+          <thead><tr><th>過程</th><th>熱源</th><th><i>Q</i></th><th><i>W</i></th><th>Δ<i>U</i></th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <p class="hint" id="tbl-empty">1サイクル回ると表示されます。</p>
+    </section>
+  </div>
+
+  <div class="col">
+    <section class="card ctrl">
+      <h2>操作パネル</h2>
+      <div class="btns">
+        <button id="btn-play" class="primary"></button>
+        <button id="btn-reset">はじめから</button>
+      </div>
+      <div class="row"><label for="speed">再生速度</label><input type="range" id="speed" min="0" max="2" step="0.05" value="1.5"><output id="speed-val"></output></div>
+
+      <div class="group-title">サイクル</div>
+      <div class="seg" id="type"><button data-value="carnot" aria-pressed="true">カルノー</button><button data-value="stirling">スターリング</button></div>
+      <div class="seg" id="dir" style="margin-top:6px"><button data-value="engine" aria-pressed="true">熱機関（時計回り）</button><button data-value="pump">ヒートポンプ（反時計回り）</button></div>
+      <div class="row"><label for="Th">高温熱源 <i>T</i><sub>h</sub></label><input type="range" id="Th" min="1.5" max="3" step="0.1" value="2"><output id="Th-val"></output></div>
+      <div class="row"><label for="Tc">低温熱源 <i>T</i><sub>c</sub></label><input type="range" id="Tc" min="0.6" max="1.4" step="0.1" value="1"><output id="Tc-val"></output></div>
+      <div class="group-title">ピストンの速さ</div>
+      <div class="seg" id="pspeed"><button data-value="0.03">ゆっくり</button><button data-value="0.06" aria-pressed="true">ふつう</button><button data-value="0.2">速い</button></div>
+      <p class="hint" style="margin:0">条件を変えると、はじめから回し直します。</p>
+
+      <div class="group-title">表示</div>
+      <div>
+        <label class="check"><input type="checkbox" id="c-heat" checked>熱のやりとり</label>
+        <label class="check"><input type="checkbox" id="c-speed">色＝速さ</label>
+      </div>
+    </section>
+
+    <section class="card notes">
+      <h2>ねらい</h2>
+      <p>高温の熱源から熱 <i>Q</i><sub>h</sub> を受け取り、その一部を仕事にして、残りを低温の熱源に捨てる。これを繰り返す装置が <b>熱機関</b>。逆向きに回すと、仕事をして低温側から高温側へ熱をくみ上げる <b>ヒートポンプ</b>（冷凍機）になる。</p>
+      <h3>やってみよう</h3>
+      <ol>
+        <li>「カルノー」「熱機関」で数サイクル回す。P–V 図のサイクルが囲む面積が、1サイクルで外へした仕事。測定した効率 η と理論 <span class="math">1 − T<sub>c</sub>/T<sub>h</sub></span> を比べる。</li>
+        <li>ピストンの速さを「ゆっくり」「速い」に変える。速いと効率はどうなる？（03 の不可逆過程を思い出そう）</li>
+        <li><i>T</i><sub>c</sub> を下げる／<i>T</i><sub>h</sub> を上げると効率は？</li>
+        <li>「ヒートポンプ」にする。気体は外から仕事をされ、低温側から熱を受け取って、高温側へより多くの熱を出す。成績係数 COP は 1 より大きい。</li>
+        <li>「スターリング」：等温過程の間を定積過程でつなぐ。再生器（定積で出し入れする熱をためておく蓄熱材）がないと効率は下がる。</li>
+      </ol>
+      <div class="q"><b>問い</b>　どの条件でも、効率は「カルノーの上限」を超えない。もし超える熱機関があったら、第二法則（クラウジウスの原理・トムソンの原理）と矛盾することを説明してみよう。</div>
+      <div class="q"><b>問い</b>　ヒートポンプで高温側に出した熱は、した仕事より多い。エネルギー保存と矛盾しないのはなぜ？ 電気ヒーター（COP = 1）と比べてみよう。</div>
+      <div class="q"><b>問い</b>　1サイクルごとの効率はかなりばらつく。何サイクルか合計すると理論値に近づくのはなぜ？</div>
+      <details><summary>理論値（2次元理想気体, γ = 2）</summary>
+        <p>等温過程（温度 <i>T</i>, 体積 <i>V</i>₁ → <i>V</i>₂）で気体が受け取る熱は <span class="math">Q = NkT ln(V₂/V₁)</span>。断熱過程は <span class="math">TV = 一定</span>。</p>
+        <p><b>カルノー</b>：<span class="math">Q<sub>h</sub> = NkT<sub>h</sub> ln r</span>、<span class="math">−Q<sub>c</sub> = NkT<sub>c</sub> ln r</span>（r は等温膨張の体積比。このページでは r = 2）。効率 <span class="math">η = 1 − T<sub>c</sub>/T<sub>h</sub></span>、ヒートポンプの成績係数 <span class="math">COP = T<sub>h</sub>/(T<sub>h</sub> − T<sub>c</sub>)</span>。</p>
+        <p><b>スターリング</b>：定積過程で <span class="math">Nk(T<sub>h</sub> − T<sub>c</sub>)</span> の熱を出し入れする。再生器がなければこれも熱源とやりとりするので <span class="math">η = (T<sub>h</sub> − T<sub>c</sub>) ln r / (T<sub>h</sub> ln r + T<sub>h</sub> − T<sub>c</sub>)</span>。理想的な再生器があれば定積の熱はサイクルの中で行き来するだけになり、効率はカルノーと同じになる。</p>
+        <p>シミュレーションではピストンの速さが有限で、熱源との温度差もあるので、測定値は理論値より小さくなります。粒子数が少ないので、1サイクルごとの値は大きくゆらぎます。</p>
+      </details>
+    </section>
+  </div>
+</main>
+
+<script type="module">
+import { Gas } from '../assets/js/engine.js';
+import { CycleRunner, cycleDef } from '../assets/js/cycles.js';
+import { SimView } from '../assets/js/render.js';
+import { XYPlot, SERIES } from '../assets/js/plot.js';
+import { $, fmt, fmtSigned, bindRange, bindCheck, segmented, Loop, bindPlayPause, setupCommon, bindSpeed } from '../assets/js/ui.js';
+
+setupCommon();
+const H = 60, N = 200, X1 = 30, R = 2, XMAX = 155;
+let gas, view, run, simRate = 0.1, frame = 0;
+let type = 'carnot', dir = 'engine', Th = 2, Tc = 1, pspeed = 0.06;
+let cur = [], prev = null;   // P–V 図の軌跡（いまのサイクル・直前のサイクル）
+let thSlider, tcSlider;
+
+const pv = new XYPlot($('pv'), { height: 320, xmin: 0, xmax: XMAX * H, ymin: 0, ymax: 1, xlabel: 'V（面積）', ylabel: 'P', xd: 0, yd: 4 });
+
+/** 理論のサイクル（準静的）を P–V 図の点列にする */
+function theoryPts() {
+  const { states: S, kinds: K } = cycleDef(type, { Th, Tc, X1, r: R });
+  const pts = [];
+  for (let k = 0; k < 4; k++) {
+    const a = S[k], b = S[(k + 1) % 4], Va = a.X * H, Vb = b.X * H;
+    for (let j = 0; j <= 40; j++) {
+      const V = Va + ((Vb - Va) * j) / 40;
+      let P;
+      if (K[k] === 'iso') P = (N * a.T) / V;
+      else if (K[k] === 'adi') P = ((N * a.T) / Va) * (Va / V) ** 2;    // P V² = 一定
+      else P = (N * (a.T + ((b.T - a.T) * j) / 40)) / Va;              // 定積
+      pts.push([V, P]);
+    }
+  }
+  return pts;
+}
+
+function build() {
+  gas = new Gas({ H, X: X1, Xmin: 15, Xmax: XMAX, seed: (Math.random() * 1e9) | 0 });
+  gas.addParticles(N, Th, { x0: 0, x1: X1, y0: 0, y1: H });
+  run = new CycleRunner(gas, { type, dir, Th, Tc, X1, r: R, speed: pspeed });
+  if (view) view.g = gas; else view = new SimView($('sim'), gas, { envPad: 5, Tref: 1.5, drawScale: 2.8 });
+  view.opt.showHeat = $('c-heat').checked;
+  view.opt.colorMode = $('c-speed').checked ? 'speed' : 'species';
+  cur = []; prev = null;
+  const eng = dir === 'engine';
+  $('mode-hint').textContent = `— ${type === 'carnot' ? 'カルノー' : 'スターリング'}サイクルを${eng ? '熱機関' : 'ヒートポンプ'}の向きに自動で回す`;
+  $('k-main').textContent = eng ? '効率 η（測定）' : '成績係数 COP（測定）';
+  $('k-th').textContent = eng ? '理論の η（準静的）' : '理論の COP（準静的）';
+  $('k-regen').textContent = '再生器ありなら（測定）';
+  $('k-carnot').textContent = 'カルノーの上限';
+  $('st-regen').hidden = type !== 'stirling';
+  $('r-th').textContent = fmt(run.theory.main, 3);
+  $('r-carnot').textContent = fmt(run.theory.carnot, 3);
+  $('r-main').textContent = '–'; $('r-regen').textContent = '–'; $('r-n').textContent = '0';
+  for (const id of ['f-Qh', 'f-Qc', 'f-W']) $(id).textContent = '–';
+  for (const id of ['f-Qh-t', 'f-Qc-t', 'f-W-t']) $(id).textContent = '';
+  $('flow-hint').textContent = '1サイクル回ると表示されます';
+  $('f-Th').textContent = fmt(Th, 1); $('f-Tc').textContent = fmt(Tc, 1);
+  pv.opt.ymax = ((N * Th) / (X1 * H)) * 1.15;
+  pv.refs = [
+    { label: `等温線 T = ${fmt(Th, 1)}`, color: '#d6453d', dash: [3, 4], fn: (V) => (N * Th) / V },
+    { label: `等温線 T = ${fmt(Tc, 1)}`, color: SERIES[0], dash: [3, 4], fn: (V) => (N * Tc) / V },
+  ];
+  drawTable(null);
+}
+
+function drawTable(c) {
+  const tb = $('tbl').querySelector('tbody');
+  $('tbl-empty').hidden = !!c;
+  if (!c) { tb.innerHTML = ''; return; }
+  const bath = (T) => (T == null ? '―' : T === Th ? `高温 ${fmt(Th, 1)}` : `低温 ${fmt(Tc, 1)}`);
+  let sQ = 0, sW = 0, sU = 0;
+  tb.innerHTML = c.steps.map((s) => {
+    sQ += s.Q; sW += s.W; sU += s.dU;
+    return `<tr><td>${s.label}</td><td>${bath(s.bathT)}</td><td>${fmtSigned(s.Q, 1)}</td><td>${fmtSigned(s.W, 1)}</td><td>${fmtSigned(s.dU, 1)}</td></tr>`;
+  }).join('') + `<tr class="sum"><td>1サイクルの合計</td><td></td><td>${fmtSigned(sQ, 1)}</td><td>${fmtSigned(sW, 1)}</td><td>${fmtSigned(sU, 1)}</td></tr>`;
+}
+
+function setArrow(id, active, q) {
+  const el = $(id);
+  el.classList.toggle('idle', !active);
+  el.classList.toggle('rev', id === 'a-h' ? q < 0 : q > 0);   // 矢印の向き＝熱の流れる向き
+}
+
+function restartWith(fn) { return (v) => { fn(v); build(); }; }
+segmented('type', restartWith((v) => { type = v; }), false);
+segmented('dir', restartWith((v) => { dir = v; }), false);
+segmented('pspeed', restartWith((v) => { pspeed = parseFloat(v); }), false);
+// カルノーの断熱膨張でピストンが端を超えないよう Th/Tc ≤ 2.5 に保つ
+thSlider = bindRange('Th', (v) => { Th = v; if (Th / Tc > 2.5) { Tc = Math.ceil((Th / 2.5) * 10) / 10; tcSlider?.set(Tc); } if (gas) build(); }, (v) => v.toFixed(1), false);
+tcSlider = bindRange('Tc', (v) => { Tc = v; if (Th / Tc > 2.5) { Th = Math.floor(Tc * 2.5 * 10) / 10; thSlider.set(Th); } if (gas) build(); }, (v) => v.toFixed(1), false);
+bindSpeed('speed', (v) => { simRate = v; });
+bindCheck('c-heat', (on) => { if (view) view.opt.showHeat = on; });
+bindCheck('c-speed', (on) => { if (view) view.opt.colorMode = on ? 'speed' : 'species'; $('lg-speed').hidden = !on; });
+$('btn-reset').addEventListener('click', build);
+build();
+
+const loop = new Loop((paused) => {
+  if (!paused) {
+    gas.advance(simRate);
+    const nBefore = run.cycles.length;
+    run.update();
+    frame++;
+    const U = gas.kinetic(), V = gas.X * H;
+    if (run.k >= 0) cur.push([V, U / V]);
+    if (cur.length > 3000) cur.splice(0, cur.length - 3000);
+    if (run.cycles.length > nBefore) {
+      const c = run.cycles[run.cycles.length - 1];
+      prev = cur; cur = [[V, U / V]];
+      drawTable(c);
+      const T = run.total, eng = dir === 'engine';
+      $('r-main').textContent = fmt(eng ? -T.W / T.Qh : -T.Qh / T.W, 3);
+      $('r-regen').textContent = fmt(eng ? -T.W / T.Qiso_h : -T.Qiso_h / T.W, 3);
+      $('r-n').textContent = T.n;
+      $('f-Qh').textContent = fmtSigned(T.Qh, 0);
+      $('f-Qc').textContent = fmtSigned(T.Qc, 0);
+      $('f-W').textContent = fmtSigned(-T.W, 0);
+      $('f-Qh-t').textContent = T.Qh >= 0 ? '気体へ渡した熱' : '気体から受け取った熱';
+      $('f-Qc-t').textContent = T.Qc >= 0 ? '気体へ渡した熱' : '気体から受け取った熱';
+      $('f-W-t').textContent = -T.W >= 0 ? '外へした仕事 −W' : '外からされた仕事 W';
+      $('flow-hint').textContent = `終わった ${T.n} サイクルの合計（気体から見た符号：Q は受け取った熱）`;
+    }
+    const s = run.step;
+    $('r-step').textContent = run.label;
+    $('r-cycle').textContent = run.k >= 0 ? `（${run.cycles.length + 1} サイクル目, T = ${fmt(U / N, 2)}）` : '';
+    const q = s && run._snap ? gas.stats().Q - run._snap.Q : 0;
+    setArrow('a-h', s && s.bathT === Th, q);
+    setArrow('a-c', s && s.bathT === Tc, q);
+    if (frame % 3 === 0) {
+      pv.paths = [{ label: '理論（準静的）', color: '#77756f', pts: theoryPts(), width: 1.5, dash: [6, 4] }];
+      if (prev) pv.paths.push({ label: '直前のサイクル', color: SERIES[1], pts: prev, width: 1.5, closed: true, fillColor: dir === 'engine' ? 'rgba(235,104,52,0.18)' : 'rgba(42,120,214,0.15)' });
+      pv.paths.push({ label: 'いまのサイクル', color: SERIES[3], pts: cur, width: 2 });
+      pv.marker = [V, U / V];
+      pv.draw();
+    }
+  }
+  view.draw();
+});
+bindPlayPause('btn-play', loop);
+</script>
+</body>
+</html>

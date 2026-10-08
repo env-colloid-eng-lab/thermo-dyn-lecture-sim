@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>07 エントロピーと第二法則 | 熱力学シミュレーション</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+<header class="site-header"><div class="inner">
+  <h1>07 エントロピーと第二法則</h1><span class="sub">ひとりでに起こる変化は戻らない ― 自由膨張・混合・熱の移動</span>
+  <nav>
+    <a href="../index.html">目次</a>
+    <a href="01-operations.html">01 壁と操作</a>
+    <a href="02-equilibrium.html">02 平衡への緩和</a>
+    <a href="03-processes.html">03 準静的と不可逆</a>
+    <a href="04-isothermal.html">04 等温過程の収支</a>
+    <a href="05-extensive.html">05 示量と示強</a>
+    <a href="06-heat-capacity.html">06 熱容量</a>
+    <a href="07-entropy.html" aria-current="page">07 エントロピー</a>
+    <a href="08-heat-engines.html">08 熱機関</a>
+    <button id="btn-proj" title="文字を大きくする">投影モード</button>
+  </nav>
+</div></header>
+
+<main class="layout">
+  <div class="col">
+    <section class="card">
+      <h2><span class="tag">ミクロ</span>断熱容器の中の気体 <span class="hint" id="mode-hint"></span></h2>
+      <div class="canvas-wrap"><canvas id="sim"></canvas></div>
+      <div class="legend">
+        <span><span class="sw adi"></span>断熱壁</span>
+        <span><span class="sw dia"></span>透熱壁</span>
+        <span id="lg-species"><span class="dot p1"></span>気体 A　<span class="dot p2"></span>気体 B</span>
+        <span id="lg-speed" hidden>遅い<span class="grad"></span>速い</span>
+      </div>
+      <div class="readouts" id="ro-count">
+        <div class="stat ext"><span class="k">粒子数 <i>N</i></span><span class="v" id="r-N"></span></div>
+        <div class="stat"><span class="k">左半分にいる数 <i>n</i></span><span class="v" id="r-nL"></span></div>
+        <div class="stat"><span class="k">ln <i>W</i>（いまの数え方）</span><span class="v" id="r-S"></span></div>
+        <div class="stat"><span class="k">理論の Δ<i>S</i></span><span class="v" id="r-Sth"></span></div>
+        <div class="stat"><span class="k">全部が左に戻る確率</span><span class="v" id="r-prob"></span></div>
+      </div>
+      <div class="readouts" id="ro-heat" hidden>
+        <div class="stat int"><span class="k">左の温度 <i>T</i>₁</span><span class="v" id="r-T1"></span></div>
+        <div class="stat int"><span class="k">右の温度 <i>T</i>₂</span><span class="v" id="r-T2"></span></div>
+        <div class="stat"><span class="k">左へ入った熱 <i>Q</i>₁</span><span class="v" id="r-Q1"></span></div>
+        <div class="stat"><span class="k">右へ入った熱 <i>Q</i>₂</span><span class="v" id="r-Q2"></span></div>
+        <div class="stat"><span class="k">Δ<i>S</i>（全体）</span><span class="v" id="r-dS"></span></div>
+        <div class="stat"><span class="k">理論の Δ<i>S</i>（平衡後）</span><span class="v" id="r-dSth"></span></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2><span class="tag">マクロ</span>エントロピーの時間変化</h2>
+      <div class="canvas-wrap"><canvas id="plotS"></canvas></div>
+      <div id="wrap-binom" style="margin-top:6px">
+        <h2 style="margin-top:8px">左半分にいる数 <i>n</i> ごとの「場合の数」の割合 <span class="hint">黒い点＝いまの状態</span></h2>
+        <div class="canvas-wrap"><canvas id="plotB"></canvas></div>
+      </div>
+      <div id="wrap-temp" hidden>
+        <div class="canvas-wrap"><canvas id="plotT"></canvas></div>
+      </div>
+    </section>
+  </div>
+
+  <div class="col">
+    <section class="card ctrl">
+      <h2>操作パネル</h2>
+      <div class="btns">
+        <button id="btn-play" class="primary"></button>
+        <button id="btn-reset">はじめから</button>
+      </div>
+      <div class="row"><label for="speed">再生速度</label><input type="range" id="speed" min="-0.7" max="1.6" step="0.05" value="0"><output id="speed-val"></output></div>
+
+      <div class="group-title">実験</div>
+      <div class="seg" id="mode"><button data-value="exp" aria-pressed="true">自由膨張</button><button data-value="mix">混合</button><button data-value="heat">熱の移動</button></div>
+      <div class="row" id="row-N"><label for="N">粒子数 <i>N</i></label><input type="range" id="N" min="0" max="7" step="1" value="5"><output id="N-val"></output></div>
+      <div class="btns">
+        <button id="btn-open">仕切りを外す</button>
+        <button id="btn-rev" title="すべての粒子の速度の向きを逆にする">速度を反転（時間を逆回し）</button>
+      </div>
+      <div id="opt-mix">
+        <label class="check"><input type="checkbox" id="c-same">A と B を区別しない（同じ気体とみなす）</label>
+      </div>
+
+      <div class="group-title">表示</div>
+      <div>
+        <label class="check"><input type="checkbox" id="c-speed">色＝速さ</label>
+        <label class="check"><input type="checkbox" id="c-trace">1粒子を追跡</label>
+      </div>
+    </section>
+
+    <section class="card notes">
+      <h2>ねらい</h2>
+      <p>断熱容器の中でひとりでに起こる変化（自由膨張・混合・熱の移動）は、逆向きにはひとりでに起こらない。この「一方向性」を表す状態量が <b>エントロピー</b> <i>S</i>。孤立した系では <span class="math">ΔS ≥ 0</span>（<b>熱力学第二法則</b>）。</p>
+      <h3>やってみよう</h3>
+      <ol>
+        <li>「自由膨張」で仕切りを外す。粒子は右へ広がり、左に戻ってこない。ln <i>W</i> は理論の Δ<i>S</i> = <i>N</i> ln 2 の近くで落ち着く。</li>
+        <li><i>N</i> = 4 や 10 にして同じことをする。全部が左に戻る瞬間が見えるかも。<i>N</i> が大きいと？（右下の「確率」を見る）</li>
+        <li>仕切りを外してすぐに「速度を反転」すると、粒子は左に戻っていく。しばらく待ってから反転すると？</li>
+        <li>「混合」：A と B が混ざって戻らない。「区別しない」にすると、同じ気体どうしの「混合」では Δ<i>S</i> ≈ 0。</li>
+        <li>「熱の移動」：温度の違う2つの気体を透熱壁で接触させる。熱は高温側から低温側へ流れ、全体の <i>S</i> は増える。</li>
+      </ol>
+      <div class="q"><b>問い</b>　粒子どうしの衝突も壁での反射も、時間を逆にしても成り立つ力学の法則に従っている。それなのに、なぜ「元に戻る」変化が見られないのだろう？</div>
+      <div class="q"><b>問い</b>　「熱の移動」で、低温側が受け取る熱 <i>Q</i>₂ と高温側が失う熱 −<i>Q</i>₁ はほぼ同じ大きさ。それなのに全体のエントロピー <i>Q</i>₂/<i>T</i>₂ + <i>Q</i>₁/<i>T</i>₁ が正になるのはなぜ？</div>
+      <details><summary>エントロピーの数え方（ボルツマンの式）</summary>
+        <p>容器を左右半分に分け、「左に <i>n</i> 個」というマクロな状態に対応する粒子の分け方の数を <span class="math">W = C(N, n) = N!/(n!(N−n)!)</span> とすると、<span class="math">S = k ln W</span>。</p>
+        <p>はじめは全部が左（<i>W</i> = 1, <i>S</i> = 0）。いちばん場合の数が多いのは <i>n</i> ≈ <i>N</i>/2 で、<span class="math">ln C(N, N/2) ≈ N ln 2</span>。これは熱力学で求めた自由膨張のエントロピー変化 <span class="math">ΔS = Nk ln(V₂/V₁) = Nk ln 2</span> と一致する（<i>N</i> が大きいほどよく合う）。</p>
+        <p>全部が左に戻る確率は <span class="math">(1/2)<sup>N</sup></span>。<i>N</i> = 200 なら 10<sup>−60</sup> 程度で、宇宙の年齢のあいだ待っても起こらない。</p>
+      </details>
+      <details><summary>熱の移動のエントロピー（2次元理想気体）</summary>
+        <p>体積一定なら <span class="math">dS = dQ/T</span>、<span class="math">C<sub>V</sub> = Nk</span> なので <span class="math">S = Nk ln T + 定数</span>。左右の気体と仕切り壁（熱容量 <i>C</i><sub>w</sub>）の和 <span class="math">S = N₁ ln T₁ + N₂ ln T₂ + C<sub>w</sub> ln T<sub>w</sub></span> を表示しています。粒子数が有限なので温度はゆらぎ、<i>S</i> も小さくゆらぎます。</p>
+      </details>
+    </section>
+  </div>
+</main>
+
+<script type="module">
+import { Gas, ADIABATIC, DIATHERMAL } from '../assets/js/engine.js';
+import { lnChoose, binomHalf } from '../assets/js/entropy.js';
+import { SimView } from '../assets/js/render.js';
+import { TimePlot, XYPlot, SERIES } from '../assets/js/plot.js';
+import { $, fmt, fmtSigned, bindRange, bindCheck, segmented, Loop, bindPlayPause, setupCommon, bindSpeed } from '../assets/js/ui.js';
+
+setupCommon();
+const H = 60, X = 100, NS = [4, 10, 20, 50, 100, 200, 300, 400];
+const TH = 1.6, TC = 0.4;
+let gas, view, simRate = 0.1, frame = 0, mode = 'exp', N = 200, same = false, opened = false;
+let sm = null;   // 熱の移動：表示用に少しならした温度
+
+const plotS = new TimePlot($('plotS'), { height: 220, ylabel: 'S（k 単位）', yZero: true, window: 600, series: [] });
+const plotB = new XYPlot($('plotB'), { height: 200, xmin: 0, xmax: 200, ymin: 0, ymax: null, xlabel: 'n（左半分の粒子数）', ylabel: '割合', xd: 0, yd: 4 });
+const plotT = new TimePlot($('plotT'), { height: 180, ylabel: '温度 T', yZero: true, window: 600,
+  series: [{ key: 'T1', label: '左 T₁（高温側）', color: '#d6453d' }, { key: 'T2', label: '右 T₂（低温側）', color: SERIES[0] }] });
+
+function setSeries() {
+  if (mode === 'heat') plotS.opt.series = [
+    { key: 'S', label: '全体の ΔS', color: SERIES[3] },
+    { key: 'S1', label: '左の ΔS₁', color: '#d6453d', dash: [6, 4] },
+    { key: 'S2', label: '右の ΔS₂', color: SERIES[0], dash: [6, 4] },
+    { key: 'th', label: '理論（平衡後）', color: '#77756f', dash: [2, 3] }];
+  else plotS.opt.series = [
+    { key: 'S', label: 'ln W（ボルツマンのエントロピー）', color: SERIES[3] },
+    { key: 'th', label: mode === 'exp' ? '熱力学の ΔS = N ln 2' : (same ? '同じ気体なら ΔS = 0' : '混合の ΔS = N ln 2'), color: '#77756f', dash: [6, 4] }];
+}
+
+function build() {
+  opened = false; sm = null;
+  gas = new Gas({ H, X, Xmin: X, Xmax: X, seed: (Math.random() * 1e9) | 0 });
+  gas.setVPartition(X / 2, ADIABATIC);
+  if (mode === 'exp') gas.addParticles(N, 1, { x0: 0, x1: X / 2, y0: 0, y1: H }, 0);
+  else if (mode === 'mix') {
+    gas.addParticles(N / 2, 1, { x0: 0, x1: X / 2, y0: 0, y1: H }, 0);
+    gas.addParticles(N / 2, 1, { x0: X / 2, x1: X, y0: 0, y1: H }, 1);
+  } else {
+    gas.addParticles(N / 2, TH, { x0: 0, x1: X / 2, y0: 0, y1: H }, 0);
+    gas.addParticles(N / 2, TC, { x0: X / 2, x1: X, y0: 0, y1: H }, 0);
+    gas.vpart.Tw = (TH + TC) / 2;
+  }
+  gas.resetLedger();
+  if (view) view.g = gas; else view = new SimView($('sim'), gas, { pistonRod: false, Tref: 1, drawScale: 2.8 });
+  if (mode === 'heat') $('c-speed').checked = true;   // 熱の移動は色＝速さで見る
+  view.opt.colorMode = $('c-speed').checked ? 'speed' : 'species';
+  $('lg-speed').hidden = !$('c-speed').checked;
+  gas.tracerOn = $('c-trace').checked;
+  const heat = mode === 'heat';
+  $('btn-open').textContent = heat ? '透熱壁にする（接触させる）' : '仕切りを外す';
+  $('btn-open').disabled = false;
+  $('btn-rev').hidden = heat;
+  $('opt-mix').hidden = mode !== 'mix';
+  $('ro-count').hidden = heat; $('ro-heat').hidden = !heat;
+  $('wrap-binom').hidden = heat; $('wrap-temp').hidden = !heat;
+  $('lg-species').hidden = mode !== 'mix';
+  $('mode-hint').textContent = mode === 'exp' ? '— 左半分に気体、右半分は真空'
+    : mode === 'mix' ? '— 左に気体 A、右に気体 B（同じ温度・同じ圧力）'
+    : `— 左は高温（T = ${TH}）、右は低温（T = ${TC}）。いまは断熱壁で仕切られている`;
+  setSeries();
+  plotS.reset(); plotT.reset();
+  plotB.opt.xmax = mode === 'mix' ? N / 2 : N;
+}
+
+// 左半分にいる粒子の数（種類ごと）
+function countLeft() {
+  let a = 0, b = 0;
+  for (let i = 0; i < gas.N; i++) if (gas.x[i] < X / 2) { if (gas.species[i] === 0) a++; else b++; }
+  return [a, b];
+}
+
+/** ln W と、その理論上の最大値（平衡後の値） */
+function lnW() {
+  const [a, b] = countLeft();
+  if (mode === 'exp') return { S: lnChoose(N, a), th: N * Math.LN2, n: a };
+  if (same) {
+    // 区別しない：左に n = a+b 個、はじめは n = N/2（左右に N/2 ずつ）
+    const n = a + b;
+    return { S: lnChoose(N, n) - lnChoose(N, N / 2), th: 0, n, a, b };
+  }
+  // A は右へ、B は左へ広がる：A が左に a 個、B が左に b 個
+  return { S: lnChoose(N / 2, a) + lnChoose(N / 2, b), th: N * Math.LN2, n: a + b, a, b };
+}
+
+function heatS() {
+  const r1 = gas.regionStats(0), r2 = gas.regionStats(gas.vpart ? 1 : 0);
+  const k = 0.05;
+  if (!sm) sm = { T1: r1.T, T2: r2.T, Tw: gas.vpart.Tw };
+  sm.T1 += k * (r1.T - sm.T1); sm.T2 += k * (r2.T - sm.T2); sm.Tw += k * (gas.vpart.Tw - sm.Tw);
+  const n = N / 2, Cw = gas.vpart.Cw;
+  const S1 = n * Math.log(sm.T1 / TH), S2 = n * Math.log(sm.T2 / TC), Sw = Cw * Math.log(sm.Tw / ((TH + TC) / 2));
+  const Tf = (n * TH + n * TC + Cw * (TH + TC) / 2) / (2 * n + Cw);
+  const th = n * Math.log(Tf / TH) + n * Math.log(Tf / TC) + Cw * Math.log(Tf / ((TH + TC) / 2));
+  return { S1, S2, S: S1 + S2 + Sw, th, r1, r2 };
+}
+
+segmented('mode', (v) => { mode = v; build(); }, false);
+bindRange('N', (v) => { N = NS[v]; build(); }, (v) => String(NS[v]), true);
+bindSpeed('speed', (v) => { simRate = v; });
+bindCheck('c-speed', (on) => { if (view) view.opt.colorMode = on ? 'speed' : 'species'; $('lg-speed').hidden = !on; });
+bindCheck('c-trace', (on) => { if (gas) { gas.tracerOn = on; gas.tracer = []; } });
+bindCheck('c-same', (on) => { same = on; setSeries(); plotS.reset(); });
+$('btn-reset').addEventListener('click', build);
+$('btn-open').addEventListener('click', () => {
+  if (opened) return;
+  opened = true;
+  if (mode === 'heat') gas.setVPartition(X / 2, DIATHERMAL); else gas.setVPartition(null);
+  $('btn-open').disabled = true;
+});
+$('btn-rev').addEventListener('click', () => {
+  for (let i = 0; i < gas.N; i++) { gas.vx[i] = -gas.vx[i]; gas.vy[i] = -gas.vy[i]; }
+});
+
+const loop = new Loop((paused) => {
+  if (!paused) {
+    gas.advance(simRate);
+    frame++;
+    $('r-N').textContent = gas.N;
+    if (mode === 'heat') {
+      const h = heatS();
+      $('r-T1').textContent = fmt(h.r1.T, 3); $('r-T2').textContent = fmt(h.r2.T, 3);
+      $('r-Q1').textContent = fmtSigned(h.r1.Q, 1); $('r-Q2').textContent = fmtSigned(h.r2.Q, 1);
+      $('r-dS').textContent = fmtSigned(h.S, 2); $('r-dSth').textContent = fmtSigned(h.th, 2);
+      plotS.push(gas.time, { S: h.S, S1: h.S1, S2: h.S2, th: h.th });
+      plotT.push(gas.time, { T1: sm.T1, T2: sm.T2 });
+      if (frame % 2 === 0) { plotS.draw(); plotT.draw(); }
+    } else {
+      const w = lnW();
+      $('r-nL').textContent = mode === 'mix' ? `A ${w.a} / B ${w.b}` : String(w.n);
+      $('r-S').textContent = fmt(w.S, 1);
+      $('r-Sth').textContent = fmt(w.th, 1);
+      const p = Math.pow(0.5, N);   // 混合なら「A が全部左・B が全部右」に戻る確率
+      $('r-prob').textContent = p > 1e-4 ? p.toFixed(4) : `10^${Math.log10(p).toFixed(0)}`;
+      plotS.push(gas.time, { S: w.S, th: w.th });
+      if (frame % 2 === 0) {
+        plotS.draw();
+        const M = mode === 'mix' ? N / 2 : N, x = mode === 'mix' ? w.a : w.n;
+        plotB.refs = [{ label: mode === 'mix' ? `C(${M}, n)/2^${M}（気体 A）` : `C(${M}, n)/2^${M}`, color: SERIES[0], fn: (k) => binomHalf(M, k) }];
+        plotB.opt.ymax = binomHalf(M, M / 2) * 1.25;
+        plotB.marker = [x, binomHalf(M, x)];
+        plotB.draw();
+      }
+    }
+  }
+  view.draw();
+});
+bindPlayPause('btn-play', loop);
+</script>
+</body>
+</html>

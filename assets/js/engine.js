@@ -61,7 +61,10 @@ export class Gas {
     this.Tbath = 1.0;
 
     // ピストン（操作1）
-    this.piston = { target: this.X, speed: 0.05, u: 0 };
+    //   mode 'position' : 目標位置 target へ一定の速さ speed で動かす（人が動かす）
+    //   mode 'force'    : 質量 M のピストンに外から一定の圧力 Pext がかかる（おもりを載せたピストン＝定圧）
+    //                     gamma はピストンの外側の摩擦（既定 0。正にすると、ピストンのゆらぎを通して気体のエネルギーが外へ逃げる）
+    this.piston = { target: this.X, speed: 0.05, u: 0, mode: 'position', M: 40, Pext: 0, gamma: 0 };
 
     // 撹拌翼（操作2）
     this.stirrer = { on: false, present: false, omega: 0.08, theta: 0, cx: 30, cy: 30, L: 20 };
@@ -299,7 +302,7 @@ export class Gas {
         const w = this.vx[i] * this.vx[i] + this.vy[i] * this.vy[i];
         if (w > v2) v2 = w;
       }
-      let vmax = Math.sqrt(v2) + Math.abs(this.piston.speed);
+      let vmax = Math.sqrt(v2) + (this.piston.mode === 'force' ? Math.abs(this.piston.u) : Math.abs(this.piston.speed));
       if (this.stirrer.present && this.stirrer.on) vmax += Math.abs(this.stirrer.omega) * this.stirrer.L / 2;
       const h = Math.min(this.dt, remain, (0.5 * this.r) / Math.max(vmax, 1e-9));
       this._substep(h);
@@ -315,14 +318,24 @@ export class Gas {
     let lo = this.Xmin;
     if (this.vpart) lo = Math.max(lo, this.vpart.x + 4 * r);
     if (this.stirrer.present) lo = Math.max(lo, this.stirrer.cx + this.stirrer.L / 2 + 3);
-    const tgt = Math.min(this.Xmax, Math.max(lo, pst.target));
-    const diff = tgt - this.X;
-    const stepMax = pst.speed * dt;
     let u;
-    if (Math.abs(diff) <= stepMax) u = diff / dt; else u = Math.sign(diff) * pst.speed;
-    this.X += u * dt;
+    if (pst.mode === 'force') {
+      // 外からの力 Pext·H（左向き）と摩擦で加速。可動範囲の端では止まる
+      u = pst.u + (dt * (-pst.Pext * H - pst.gamma * pst.u)) / pst.M;
+      let x1 = this.X + u * dt;
+      if (x1 < lo) { x1 = lo; u = 0; } else if (x1 > this.Xmax) { x1 = this.Xmax; u = 0; }
+      this.X = x1;
+      pst.target = x1;
+    } else {
+      const tgt = Math.min(this.Xmax, Math.max(lo, pst.target));
+      const diff = tgt - this.X;
+      const stepMax = pst.speed * dt;
+      if (Math.abs(diff) <= stepMax) u = diff / dt; else u = Math.sign(diff) * pst.speed;
+      this.X += u * dt;
+    }
     pst.u = u;
     const X = this.X;
+    const Mp = pst.mode === 'force' ? pst.M : Infinity;
 
     // --- 撹拌翼の回転 ---
     const st = this.stirrer;
@@ -380,10 +393,16 @@ export class Gas {
       if (this.x[i] > X - r) {
         const v0 = this.vx[i];
         if (v0 > u) {
-          // 質量無限大の動く壁との弾性衝突: v' = 2u - v
-          const v1 = 2 * u - v0;
+          // 動く壁との弾性衝突。質量無限大なら v' = 2u - v、質量 M なら運動量も保存
+          let v1;
+          if (Mp === Infinity) v1 = 2 * u - v0;
+          else {
+            v1 = ((1 - Mp) * v0 + 2 * Mp * u) / (1 + Mp);
+            u = ((Mp - 1) * u + 2 * v0) / (1 + Mp);
+            pst.u = u;
+          }
           this.vx[i] = v1;
-          const dE = 0.5 * (v1 * v1 - v0 * v0);   // = 2u(u - v0)
+          const dE = 0.5 * (v1 * v1 - v0 * v0);   // 質量無限大なら = 2u(u - v0)
           this.ledger.Wpiston += dE;
           this.ledger.Wreg[this.region[i]] += dE;
           const imp = v0 - v1;
