@@ -40,25 +40,25 @@
       <h2><span class="tag">マクロ</span>1層大気モデルの放射（全球平均、W m⁻²） <span class="hint">矢印の太さは量に比例。大気は太陽光を通し、地表からの赤外放射を割合 ε だけ吸収する</span></h2>
       <div class="canvas-wrap"><canvas id="diag"></canvas></div>
       <div class="readouts wrap">
-        <div class="stat"><span class="k">吸収する太陽放射 Φ<sub>abs</sub> = (1−α)<i>S</i>₀/4</span><span class="v" id="r-abs">–</span></div>
+        <div class="stat"><span class="k">吸収する太陽放射 <i>J</i><sub>abs</sub> = (1−α)<i>S</i>₀/4</span><span class="v" id="r-abs">–</span></div>
         <div class="stat"><span class="k">有効放射温度 <i>T</i><sub>e</sub></span><span class="v" id="r-Te">–</span></div>
         <div class="stat int"><span class="k">地表の温度 <i>T</i><sub>s</sub>（いま）</span><span class="v" id="r-Ts">–</span></div>
         <div class="stat"><span class="k">定常状態の <i>T</i><sub>s</sub> = <i>T</i><sub>e</sub>(1 − ε/2)<sup>−1/4</sup></span><span class="v" id="r-Tseq">–</span></div>
-        <div class="stat"><span class="k">大気上端の収支 Φ<sub>abs</sub> − Φ<sub>out</sub></span><span class="v" id="r-imb">–</span></div>
+        <div class="stat"><span class="k">大気上端の収支 <i>J</i><sub>abs</sub> − <i>J</i><sub>out</sub></span><span class="v" id="r-imb">–</span></div>
       </div>
       <p class="q" id="r-dir" style="margin-top:8px"></p>
       <div class="canvas-wrap"><canvas id="plotT"></canvas></div>
     </section>
 
     <section class="card">
-      <h2><span class="tag">マクロ</span>CO₂ の放射強制力とフィードバック <span class="hint">線形応答 <i>C<sub>A</sub></i> dΔ<i>T</i>/d<i>t</i> = ΔΦ − (<i>B</i> − <i>f</i>)Δ<i>T</i></span></h2>
+      <h2><span class="tag">マクロ</span>CO₂ の放射強制力とフィードバック <span class="hint">線形応答 <i>C<sub>A</sub></i> dΔ<i>T</i>/d<i>t</i> = Δ<i>J</i> − (<i>B</i> − <i>f</i>)Δ<i>T</i></span></h2>
       <div class="canvas-wrap"><canvas id="plotR"></canvas></div>
       <div class="readouts wrap">
-        <div class="stat"><span class="k">強制力 ΔΦ = 5.35 ln(<i>C</i>/<i>C</i>₀)</span><span class="v" id="r-F">–</span></div>
+        <div class="stat"><span class="k">強制力 Δ<i>J</i> = 5.35 ln(<i>C</i>/<i>C</i>₀)</span><span class="v" id="r-F">–</span></div>
         <div class="stat"><span class="k">復元係数 <i>B</i><sub>s</sub> = 4(1−ε/2)σ<i>T</i><sub>s</sub>³</span><span class="v" id="r-B">–</span></div>
-        <div class="stat int"><span class="k">最終的な昇温 ΔΦ/(<i>B</i> − <i>f</i>)</span><span class="v" id="r-dT">–</span></div>
+        <div class="stat int"><span class="k">最終的な昇温 Δ<i>J</i>/(<i>B</i> − <i>f</i>)</span><span class="v" id="r-dT">–</span></div>
         <div class="stat"><span class="k">時定数 <i>C<sub>A</sub></i>/(<i>B</i> − <i>f</i>)</span><span class="v" id="r-tau">–</span></div>
-        <div class="stat"><span class="k">比較：黒体なら ΔΦ/4σ<i>T</i><sub>e</sub>³</span><span class="v" id="r-bb">–</span></div>
+        <div class="stat"><span class="k">比較：黒体なら Δ<i>J</i>/4σ<i>T</i><sub>e</sub>³</span><span class="v" id="r-bb">–</span></div>
       </div>
     </section>
   </div>
@@ -84,23 +84,23 @@
 
     <section class="card notes">
       <h2>ねらい</h2>
-      <p>地球全体を一つの系とみると、第一法則は「熱容量 × 温度の変化の速さ ＝ 入ってくるエネルギー − 出ていくエネルギー」<span class="math">C<sub>A</sub> dT/dt = Φ<sub>in</sub> − Φ<sub>out</sub></span>。温度の変化の向きは、この収支の符号で決まる。入るのは吸収した太陽放射、出るのは宇宙への赤外放射（温度の4乗に比例：ステファン＝ボルツマン則）。</p>
+      <p>地球全体を一つの系とみると、第一法則は「熱容量 × 温度の変化の速さ ＝ 入ってくるエネルギー − 出ていくエネルギー」<span class="math">C<sub>A</sub> dT/dt = J<sub>in</sub> − J<sub>out</sub></span>。温度の変化の向きは、この収支の符号で決まる。入るのは吸収した太陽放射、出るのは宇宙への赤外放射（温度の4乗に比例：ステファン＝ボルツマン則）。</p>
       <p>大気が地表の赤外放射を吸収すると（ε）、宇宙へ出る放射が減り、地表はより高い温度で新しい収支を満たす（温室効果）。収支が合ったところが定常状態。これは平衡ではなく、太陽から入って宇宙へ出るエネルギーの流れが続いている状態。</p>
       <h3>やってみよう</h3>
       <ol>
         <li>ε = 0 にする。地表温度は <i>T</i><sub>e</sub> ≈ 255 K に近づく。ε = 0.8 に戻すと？ ε = 1 では？</li>
         <li>途中で ε を上げる。大気上端の収支が正（入る方が多い）になり、地表が暖まって収支が 0 に戻る。その間の温度変化の速さは何で決まる？</li>
         <li>混合層の深さ（熱容量）を変える。最終的な温度は変わる？ 到達するまでの時間は？</li>
-        <li>下のグラフ：CO₂ 倍増（<i>C</i>/<i>C</i>₀ = 2）で ΔΦ ≈ 3.7 W m⁻²。フィードバック <i>f</i> を大きくすると、最終的な昇温と時定数はどうなる？ <i>f</i> が <i>B</i> を超えるとどうなる？</li>
+        <li>下のグラフ：CO₂ 倍増（<i>C</i>/<i>C</i>₀ = 2）で Δ<i>J</i> ≈ 3.7 W m⁻²。フィードバック <i>f</i> を大きくすると、最終的な昇温と時定数はどうなる？ <i>f</i> が <i>B</i> を超えるとどうなる？</li>
       </ol>
       <div class="q"><b>問い</b>　冷たい大気から暖かい地表へ下向きの放射が届いている。「冷たい方から暖かい方へ熱が流れているので第二法則に反する」と言えるだろうか？ 地表と大気の間の<b>正味</b>の放射のやりとりの向きを、図の数字で確かめよう。</div>
       <div class="q"><b>問い</b>　宇宙へ出る放射が同じ（定常状態）でも、地表温度は ε によって違う。なぜだろう？ 地表・大気・地球全体のどこを境界にしても、収支が合っていることを確かめよう。</div>
       <div class="q"><b>問い</b>　正のフィードバック（<i>f</i> &gt; 0）があっても、<i>f</i> &lt; <i>B</i> なら温度は無限には上がらない。少し余分に暖まったとき、正味の収支はどちらへ戻す向きになる？</div>
       <details><summary>式のまとめ</summary>
-        <p>吸収する太陽放射 <span class="math">Φ<sub>abs</sub> = (1−α)S₀/4</span>（1/4 は地球の断面積と表面積の比）。有効放射温度 <span class="math">σT<sub>e</sub>⁴ = Φ<sub>abs</sub></span>。</p>
-        <p>1層モデル：大気の収支 <span class="math">εσT<sub>s</sub>⁴ = 2εσT<sub>a</sub>⁴</span>、大気上端の収支 <span class="math">Φ<sub>abs</sub> = (1−ε)σT<sub>s</sub>⁴ + εσT<sub>a</sub>⁴</span> から <span class="math">T<sub>s</sub> = T<sub>e</sub>(1 − ε/2)<sup>−1/4</sup></span>。</p>
-        <p>時間変化：大気はすばやく放射平衡になる（<span class="math">T<sub>a</sub>⁴ = T<sub>s</sub>⁴/2</span>）として、地表の温度を <span class="math">C<sub>A</sub> dT<sub>s</sub>/dt = Φ<sub>abs</sub> − (1 − ε/2)σT<sub>s</sub>⁴</span> で進めています。定常状態のまわりで一次近似すると、復元係数 <span class="math">B<sub>s</sub> = 4(1 − ε/2)σT<sub>s</sub>³</span>、時定数 <span class="math">τ = C<sub>A</sub>/B</span>。</p>
-        <p>CO₂ の強制力 <span class="math">ΔΦ = 5.35 ln(C/C₀)</span> W m⁻² は、吸収スペクトルを含む放射計算から得た近似式で、熱力学の法則から導いたものではない。フィードバック <i>f</i>（水蒸気など）の値も放射計算などから別に与える。この教材の Φ は面積あたりのエネルギーの流れ（自由エネルギー <i>F</i> と区別するため Φ と書く）。</p>
+        <p>吸収する太陽放射 <span class="math">J<sub>abs</sub> = (1−α)S₀/4</span>（1/4 は地球の断面積と表面積の比）。有効放射温度 <span class="math">σT<sub>e</sub>⁴ = J<sub>abs</sub></span>。</p>
+        <p>1層モデル：大気の収支 <span class="math">εσT<sub>s</sub>⁴ = 2εσT<sub>a</sub>⁴</span>、大気上端の収支 <span class="math">J<sub>abs</sub> = (1−ε)σT<sub>s</sub>⁴ + εσT<sub>a</sub>⁴</span> から <span class="math">T<sub>s</sub> = T<sub>e</sub>(1 − ε/2)<sup>−1/4</sup></span>。</p>
+        <p>時間変化：大気はすばやく放射平衡になる（<span class="math">T<sub>a</sub>⁴ = T<sub>s</sub>⁴/2</span>）として、地表の温度を <span class="math">C<sub>A</sub> dT<sub>s</sub>/dt = J<sub>abs</sub> − (1 − ε/2)σT<sub>s</sub>⁴</span> で進めています。定常状態のまわりで一次近似すると、復元係数 <span class="math">B<sub>s</sub> = 4(1 − ε/2)σT<sub>s</sub>³</span>、時定数 <span class="math">τ = C<sub>A</sub>/B</span>。</p>
+        <p>CO₂ の強制力 <span class="math">ΔJ = 5.35 ln(C/C₀)</span> W m⁻² は、吸収スペクトルを含む放射計算から得た近似式で、熱力学の法則から導いたものではない。フィードバック <i>f</i>（水蒸気など）の値も放射計算などから別に与える。この教材の <i>J</i> は面積あたりのエネルギーの流れ（自由エネルギー <i>F</i> と区別するため <i>J</i> と書く）。</p>
       </details>
     </section>
   </div>

@@ -43,7 +43,7 @@
         <div class="stat int"><span class="k">地表温度（対流あり）</span><span class="v" id="r-Ts">–</span></div>
         <div class="stat"><span class="k">地表温度（放射だけ）</span><span class="v" id="r-Tr">–</span></div>
         <div class="stat"><span class="k">宇宙への放射 OLR（対流あり）</span><span class="v" id="r-olr">–</span></div>
-        <div class="stat"><span class="k">大気上端の収支 Φ<sub>abs</sub> − OLR</span><span class="v" id="r-imb">–</span></div>
+        <div class="stat"><span class="k">大気上端の収支 <i>J</i><sub>abs</sub> − OLR</span><span class="v" id="r-imb">–</span></div>
         <div class="stat"><span class="k">対流が届く高さ（圏界面）</span><span class="v" id="r-trop">–</span></div>
         <div class="stat"><span class="k">経過日数</span><span class="v" id="r-day">0</span></div>
       </div>
@@ -66,7 +66,7 @@
       <div class="row"><label for="speed">時間の進み（日/コマ）</label><input type="range" id="speed" min="-0.5" max="1.3" step="0.05" value="0.3"><output id="speed-val"></output></div>
       <div class="group-title">条件（途中で変えてよい）</div>
       <div class="row"><label for="tau">赤外の光学的厚さ τ<sub>s</sub></label><input type="range" id="tau" min="0.3" max="4" step="0.1" value="1.6"><output id="tau-val"></output></div>
-      <div class="row"><label for="phi">吸収する太陽放射 Φ<sub>abs</sub>（W m⁻²）</label><input type="range" id="phi" min="200" max="280" step="1" value="240"><output id="phi-val"></output></div>
+      <div class="row"><label for="phi">吸収する太陽放射 <i>J</i><sub>abs</sub>（W m⁻²）</label><input type="range" id="phi" min="200" max="280" step="1" value="240"><output id="phi-val"></output></div>
       <div class="row"><label for="gc">限界減率 Γ<sub>crit</sub>（K/km）</label><input type="range" id="gc" min="4" max="9.8" step="0.1" value="6.5"><output id="gc-val"></output></div>
       <p class="hint" style="margin:0">τ<sub>s</sub> を増やすのは、赤外を吸収する気体（水蒸気・CO₂）を増やすことに相当する（灰色近似）。Γ<sub>crit</sub> = 9.8 は乾燥断熱減率、6.5 は水蒸気の凝結を含む対流の代表値。</p>
     </section>
@@ -77,7 +77,7 @@
       <p>平衡と呼ばれるが、熱力学的な平衡ではなく定常状態。太陽からのエネルギーが地表に入り、対流と放射で上へ運ばれ、宇宙へ出ていく流れが続いている。</p>
       <h3>やってみよう</h3>
       <ol>
-        <li>再生して、二つの分布が定常状態に落ち着くまで待つ。放射だけの地表温度は対流ありより何 K 高い？ どちらも大気上端では Φ<sub>abs</sub> = OLR になっている。</li>
+        <li>再生して、二つの分布が定常状態に落ち着くまで待つ。放射だけの地表温度は対流ありより何 K 高い？ どちらも大気上端では <i>J</i><sub>abs</sub> = OLR になっている。</li>
         <li>下の加熱率の図：対流圏では放射で冷え（負）、対流で温まる（正）。成層圏（対流が届かない上空）では両方とも 0。</li>
         <li>τ<sub>s</sub> を増やす（温室効果を強める）。地表は暖まるが、上空はどうなる？ 圏界面の高さは？</li>
         <li>Γ<sub>crit</sub> を 9.8（乾燥）にすると地表温度は？ 6.5 より大きい？小さい？</li>
@@ -86,8 +86,8 @@
       <div class="q"><b>問い</b>　対流がある層では放射の収支は 0 ではない。それでも温度が変わらないのはなぜ？ 局所の収支と、大気上端での地球全体の収支を区別しよう。</div>
       <div class="q"><b>問い</b>　放射だけの大気は地表付近で減率が大きすぎた。14 の判定（温位が上ほど低い）で、この大気は安定か不安定か？</div>
       <details><summary>モデルの中身（教育用の灰色大気）</summary>
-        <p>層の境界の上向き・下向きの長波を下から・上から順に求める（8.1 節の式）：<span class="math">U<sub>i</sub> = t<sub>i</sub>U<sub>i−1</sub> + (1 − t<sub>i</sub>)σT<sub>i</sub>⁴</span>、<span class="math">D<sub>i−1</sub> = t<sub>i</sub>D<sub>i</sub> + (1 − t<sub>i</sub>)σT<sub>i</sub>⁴</span>、地表は <span class="math">U₀ = σT<sub>s</sub>⁴</span>、宇宙からは <span class="math">D = 0</span>。層の透過率は <span class="math">t = exp(−1.66Δτ)</span>、光学的厚さは下層に多く <span class="math">τ(p) = τ<sub>s</sub>(p/p<sub>s</sub>)²</span>。</p>
-        <p>各層の温度は <span class="math">(c<sub>p</sub>Δp/g) dT/dt = 流入 − 流出</span>（式 8.2）で 6 時間ずつ進める。太陽放射はすべて地表が吸収する（簡単のため）。対流ありの気柱では、毎回の更新のあと、地表と層の気温減率が Γ<sub>crit</sub> を超えた部分を、熱容量で重みをつけた合計エネルギーを保ったまま Γ<sub>crit</sub> の直線にそろえる。層の高さは静水圧平衡 <span class="math">dz = (R<sub>d</sub>T/g) d ln p</span> から求める。</p>
+        <p>層の境界の上向き・下向きの長波を下から・上から順に求める（8.1 節の式）：<span class="math">U<sub>i</sub> = t<sub>i</sub>U<sub>i−1</sub> + (1 − t<sub>i</sub>)σT<sub>i</sub>⁴</span>、<span class="math">D<sub>i−1</sub> = t<sub>i</sub>D<sub>i</sub> + (1 − t<sub>i</sub>)σT<sub>i</sub>⁴</span>、地表は <span class="math">U₀ = σT<sub>s</sub>⁴</span>、宇宙からは <span class="math">D = 0</span>。層の透過率は <span class="math">t = exp(−1.66Δτ)</span>、光学的厚さは下層に多く <span class="math">τ(P) = τ<sub>s</sub>(P/P<sub>s</sub>)²</span>。</p>
+        <p>各層の温度は <span class="math">(c<sub>p</sub>ΔP/g) dT/dt = 流入 − 流出</span>（式 8.2）で 6 時間ずつ進める。太陽放射はすべて地表が吸収する（簡単のため）。対流ありの気柱では、毎回の更新のあと、地表と層の気温減率が Γ<sub>crit</sub> を超えた部分を、熱容量で重みをつけた合計エネルギーを保ったまま Γ<sub>crit</sub> の直線にそろえる。層の高さは静水圧平衡 <span class="math">dz = (R<sub>d</sub>T/g) d ln P</span> から求める。</p>
         <p>これは放射対流平衡の考え方を見るための教育モデルで、1967年の眞鍋・ウェザラルドのモデル（波長ごとの吸収、水蒸気量を相対湿度一定で決める、など）を再現するものではない。灰色大気なので、上空の温度などの細かい形は現実と合わない。</p>
       </details>
     </section>

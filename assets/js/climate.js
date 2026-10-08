@@ -1,7 +1,7 @@
 // =============================================================
 //  climate.js ― 応用ページ（14〜17）のマクロなモデル（DOM 非依存）
 //    粒子ではなく、収支の式を解く。実際の大気（3次元の空気）の値を SI 単位で使う。
-//    放射の流れ（面積あたり、W m⁻²）は Φ と書く（自由エネルギー F と区別するため）。
+//    放射の流れ（面積あたり、W m⁻²）は J と書く（自由エネルギー F と区別するため）。
 // =============================================================
 export const SIGMA = 5.6704e-8;   // W m⁻² K⁻⁴
 export const G = 9.81;            // m s⁻²
@@ -14,7 +14,7 @@ export const GAMMA_D = (G / CP) * 1000;   // 乾燥断熱減率 K km⁻¹（≈ 
 // ---------------- 第5章：静水圧平衡・温位・安定性 ----------------
 /**
  * 気温が高さとともに一定の割合 Γ（K km⁻¹）で下がる大気の、高さ z（km）での温度と圧力。
- * 静水圧平衡 dp/dz = −ρg と状態方程式 p = ρ R_d T から。Γ = 0 なら等温大気（指数関数）。
+ * 静水圧平衡 dP/dz = −ρg と状態方程式 P = ρ R_d T から。Γ = 0 なら等温大気（指数関数）。
  */
 export function lapseProfile(z, Ts, ps, gamma) {
   const T = Ts - gamma * z;
@@ -22,17 +22,17 @@ export function lapseProfile(z, Ts, ps, gamma) {
   return { T, p: ps * Math.pow(T / Ts, (G * 1000) / (RD * gamma)) };
 }
 
-/** 温位 θ = T (p₀/p)^{R_d/c_p} */
+/** 温位 θ = T (P₀/P)^{R_d/c_p} */
 export function potentialTemp(T, p, p0 = 1000) { return T * Math.pow(p0 / p, RD / CP); }
 
 /** 浮力振動数の2乗 N² = (g/T)(Γ_d − Γ_env)（s⁻²）。負なら不安定 */
 export function bruntN2(T, gammaEnv) { return (G / T) * ((GAMMA_D - gammaEnv) / 1000); }
 
 // ---------------- 第6・7章：放射収支・1層モデル・温度応答 ----------------
-/** 全球平均の吸収太陽放射 Φ_abs = (1 − α) S₀ / 4 */
+/** 全球平均の吸収太陽放射 J_abs = (1 − α) S₀ / 4 */
 export function absorbedSolar(S0, albedo) { return ((1 - albedo) * S0) / 4; }
 
-/** 有効放射温度 T_e = (Φ_abs/σ)^{1/4} */
+/** 有効放射温度 T_e = (J_abs/σ)^{1/4} */
 export function effectiveTemp(phiAbs) { return Math.pow(phiAbs / SIGMA, 0.25); }
 
 /** 1層灰色大気（赤外の吸収率 ε）の定常状態：T_s = T_e (1 − ε/2)^{−1/4}、T_a⁴ = T_s⁴/2 */
@@ -47,10 +47,10 @@ export function oneLayer(phiAbs, eps) {
 /** 1層モデルでの地表温度の復元係数 B_s = 4(1 − ε/2) σ T_s³（W m⁻² K⁻¹） */
 export function restoringB(eps, Ts) { return 4 * (1 - eps / 2) * SIGMA * Ts ** 3; }
 
-/** CO₂ の放射強制力の近似式 ΔΦ = 5.35 ln(C/C₀)（W m⁻²） */
+/** CO₂ の放射強制力の近似式 ΔJ = 5.35 ln(C/C₀)（W m⁻²） */
 export function co2Forcing(ratio) { return 5.35 * Math.log(ratio); }
 
-/** 線形応答 C_A dΔT/dt = ΔΦ − (B − f)ΔT の解（ΔT(0) = 0） */
+/** 線形応答 C_A dΔT/dt = ΔJ − (B − f)ΔT の解（ΔT(0) = 0） */
 export function linearResponse(t, dPhi, B, f, CA) {
   const k = B - f;
   if (k <= 0) return NaN;
@@ -118,8 +118,8 @@ export function convectiveAdjust(T, C, z, gammaCrit) {
 
 /**
  * 1本の気柱（放射対流モデル、第8章）。等しい質量の N 層（下から上へ）と地表。
- *   長波：灰色大気。光学的厚さ τ(p) = τ_s (p/p_s)^2（水蒸気のように下層に多い）、層の透過率 t = exp(−1.66 Δτ)
- *   短波：吸収する太陽放射 Φ_abs をすべて地表が吸収する（簡単のため）
+ *   長波：灰色大気。光学的厚さ τ(P) = τ_s (P/P_s)^2（水蒸気のように下層に多い）、層の透過率 t = exp(−1.66 Δτ)
+ *   短波：吸収する太陽放射 J_abs をすべて地表が吸収する（簡単のため）
  *   温度の更新：各層 C_i dT_i/dt = 流入 − 流出（式 8.2）。対流ありなら、その後に限界減率への対流調整（エネルギー保存）
  *   層の高さは静水圧平衡（dz = (R_d T/g) d ln p）から毎回求める
  */

@@ -390,7 +390,7 @@ const f = (v, d = 3) => Number(v).toFixed(d);
   let fc, fr;
   for (let k = 0; k < 6000; k++) { fc = col.step(21600); fr = rad.step(21600); }
   const zc = col.heights(), top = col.T.length - 1;
-  check('放射対流平衡: 大気上端で Φ_abs = OLR、成層圏は放射平衡', Math.abs(fc.olr - 240) < 0.05 && Math.abs(fc.heat[top]) < 0.01, `OLR=${f(fc.olr, 2)} T_s=${f(col.Ts, 1)}`);
+  check('放射対流平衡: 大気上端で J_abs = OLR、成層圏は放射平衡', Math.abs(fc.olr - 240) < 0.05 && Math.abs(fc.heat[top]) < 0.01, `OLR=${f(fc.olr, 2)} T_s=${f(col.Ts, 1)}`);
   check('放射対流平衡: 地表付近の減率 = 6.5 K/km、放射平衡だけより地表が冷たい', Math.abs((col.T[0] - col.T[1]) / (zc[2] - zc[1]) - 6.5) < 0.05 && rad.Ts > col.Ts + 10, `放射平衡のみ T_s=${f(rad.Ts, 1)}`);
   const N2 = CL.bruntN2(288, 6.5);
   check('浮力振動数: Γ_env < Γ_d で N² > 0、周期 ≈ 10 分', N2 > 0 && Math.abs(2 * Math.PI / Math.sqrt(N2) / 60 - 9.8) < 1.5, `周期=${f(2 * Math.PI / Math.sqrt(N2) / 60, 1)} 分`);

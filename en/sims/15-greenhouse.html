@@ -40,25 +40,25 @@
       <h2><span class="tag">Macro</span>Radiation in the one-layer atmosphere model (global mean, W m⁻²) <span class="hint">Arrow widths are proportional to the amounts. The atmosphere lets sunlight through and absorbs a fraction ε of the infrared radiation from the surface</span></h2>
       <div class="canvas-wrap"><canvas id="diag"></canvas></div>
       <div class="readouts wrap">
-        <div class="stat"><span class="k">Absorbed solar radiation Φ<sub>abs</sub> = (1−α)<i>S</i>₀/4</span><span class="v" id="r-abs">–</span></div>
+        <div class="stat"><span class="k">Absorbed solar radiation <i>J</i><sub>abs</sub> = (1−α)<i>S</i>₀/4</span><span class="v" id="r-abs">–</span></div>
         <div class="stat"><span class="k">Effective radiating temperature <i>T</i><sub>e</sub></span><span class="v" id="r-Te">–</span></div>
         <div class="stat int"><span class="k">Surface temperature <i>T</i><sub>s</sub> (now)</span><span class="v" id="r-Ts">–</span></div>
         <div class="stat"><span class="k">Steady-state <i>T</i><sub>s</sub> = <i>T</i><sub>e</sub>(1 − ε/2)<sup>−1/4</sup></span><span class="v" id="r-Tseq">–</span></div>
-        <div class="stat"><span class="k">Top-of-atmosphere budget Φ<sub>abs</sub> − Φ<sub>out</sub></span><span class="v" id="r-imb">–</span></div>
+        <div class="stat"><span class="k">Top-of-atmosphere budget <i>J</i><sub>abs</sub> − <i>J</i><sub>out</sub></span><span class="v" id="r-imb">–</span></div>
       </div>
       <p class="q" id="r-dir" style="margin-top:8px"></p>
       <div class="canvas-wrap"><canvas id="plotT"></canvas></div>
     </section>
 
     <section class="card">
-      <h2><span class="tag">Macro</span>CO₂ radiative forcing and feedbacks <span class="hint">Linear response <i>C<sub>A</sub></i> dΔ<i>T</i>/d<i>t</i> = ΔΦ − (<i>B</i> − <i>f</i>)Δ<i>T</i></span></h2>
+      <h2><span class="tag">Macro</span>CO₂ radiative forcing and feedbacks <span class="hint">Linear response <i>C<sub>A</sub></i> dΔ<i>T</i>/d<i>t</i> = Δ<i>J</i> − (<i>B</i> − <i>f</i>)Δ<i>T</i></span></h2>
       <div class="canvas-wrap"><canvas id="plotR"></canvas></div>
       <div class="readouts wrap">
-        <div class="stat"><span class="k">Forcing ΔΦ = 5.35 ln(<i>C</i>/<i>C</i>₀)</span><span class="v" id="r-F">–</span></div>
+        <div class="stat"><span class="k">Forcing Δ<i>J</i> = 5.35 ln(<i>C</i>/<i>C</i>₀)</span><span class="v" id="r-F">–</span></div>
         <div class="stat"><span class="k">Restoring coefficient <i>B</i><sub>s</sub> = 4(1−ε/2)σ<i>T</i><sub>s</sub>³</span><span class="v" id="r-B">–</span></div>
-        <div class="stat int"><span class="k">Final warming ΔΦ/(<i>B</i> − <i>f</i>)</span><span class="v" id="r-dT">–</span></div>
+        <div class="stat int"><span class="k">Final warming Δ<i>J</i>/(<i>B</i> − <i>f</i>)</span><span class="v" id="r-dT">–</span></div>
         <div class="stat"><span class="k">Time constant <i>C<sub>A</sub></i>/(<i>B</i> − <i>f</i>)</span><span class="v" id="r-tau">–</span></div>
-        <div class="stat"><span class="k">Compare: for a black body ΔΦ/4σ<i>T</i><sub>e</sub>³</span><span class="v" id="r-bb">–</span></div>
+        <div class="stat"><span class="k">Compare: for a black body Δ<i>J</i>/4σ<i>T</i><sub>e</sub>³</span><span class="v" id="r-bb">–</span></div>
       </div>
     </section>
   </div>
@@ -84,23 +84,23 @@
 
     <section class="card notes">
       <h2>Goal</h2>
-      <p>Treating the whole Earth as one system, the first law reads "heat capacity × rate of temperature change = energy coming in − energy going out", <span class="math">C<sub>A</sub> dT/dt = Φ<sub>in</sub> − Φ<sub>out</sub></span>. The sign of this budget decides which way the temperature changes. What comes in is absorbed sunlight; what goes out is infrared radiation to space (proportional to the fourth power of temperature: the Stefan–Boltzmann law).</p>
+      <p>Treating the whole Earth as one system, the first law reads "heat capacity × rate of temperature change = energy coming in − energy going out", <span class="math">C<sub>A</sub> dT/dt = J<sub>in</sub> − J<sub>out</sub></span>. The sign of this budget decides which way the temperature changes. What comes in is absorbed sunlight; what goes out is infrared radiation to space (proportional to the fourth power of temperature: the Stefan–Boltzmann law).</p>
       <p>When the atmosphere absorbs the surface's infrared radiation (ε), less radiation escapes to space, and the surface satisfies a new budget at a higher temperature (the greenhouse effect). Where the budget balances is a steady state. It is not equilibrium: energy keeps flowing in from the Sun and out to space.</p>
       <h3>Try it</h3>
       <ol>
         <li>Set ε = 0. The surface temperature approaches <i>T</i><sub>e</sub> ≈ 255 K. What happens when you go back to ε = 0.8? And with ε = 1?</li>
         <li>Raise ε while running. The top-of-atmosphere budget becomes positive (more comes in), the surface warms, and the budget returns to 0. What sets how fast the temperature changes meanwhile?</li>
         <li>Change the mixed-layer depth (heat capacity). Does the final temperature change? The time to get there?</li>
-        <li>Lower plot: doubling CO₂ (<i>C</i>/<i>C</i>₀ = 2) gives ΔΦ ≈ 3.7 W m⁻². As you increase the feedback <i>f</i>, what happens to the final warming and the time constant? What happens if <i>f</i> exceeds <i>B</i>?</li>
+        <li>Lower plot: doubling CO₂ (<i>C</i>/<i>C</i>₀ = 2) gives Δ<i>J</i> ≈ 3.7 W m⁻². As you increase the feedback <i>f</i>, what happens to the final warming and the time constant? What happens if <i>f</i> exceeds <i>B</i>?</li>
       </ol>
       <div class="q"><b>Question</b> Downward radiation from the cold atmosphere reaches the warm surface. Can we say "heat flows from cold to warm, so the second law is violated"? Check the direction of the <b>net</b> radiative exchange between surface and atmosphere with the numbers in the diagram.</div>
       <div class="q"><b>Question</b> Even with the same radiation leaving to space (a steady state), the surface temperature depends on ε. Why? Check that the budget balances whether you draw the boundary around the surface, the atmosphere, or the whole Earth.</div>
       <div class="q"><b>Question</b> Even with a positive feedback (<i>f</i> &gt; 0), the temperature does not rise without bound as long as <i>f</i> &lt; <i>B</i>. If it warms a little too much, which way does the net budget push it back?</div>
       <details><summary>Summary of formulas</summary>
-        <p>Absorbed solar radiation <span class="math">Φ<sub>abs</sub> = (1−α)S₀/4</span> (the 1/4 is the ratio of the Earth's cross-section to its surface area). Effective radiating temperature <span class="math">σT<sub>e</sub>⁴ = Φ<sub>abs</sub></span>.</p>
-        <p>One-layer model: from the atmosphere budget <span class="math">εσT<sub>s</sub>⁴ = 2εσT<sub>a</sub>⁴</span> and the top-of-atmosphere budget <span class="math">Φ<sub>abs</sub> = (1−ε)σT<sub>s</sub>⁴ + εσT<sub>a</sub>⁴</span>, <span class="math">T<sub>s</sub> = T<sub>e</sub>(1 − ε/2)<sup>−1/4</sup></span>.</p>
-        <p>Time evolution: assuming the atmosphere reaches radiative equilibrium quickly (<span class="math">T<sub>a</sub>⁴ = T<sub>s</sub>⁴/2</span>), the surface temperature is advanced with <span class="math">C<sub>A</sub> dT<sub>s</sub>/dt = Φ<sub>abs</sub> − (1 − ε/2)σT<sub>s</sub>⁴</span>. Linearizing around the steady state gives the restoring coefficient <span class="math">B<sub>s</sub> = 4(1 − ε/2)σT<sub>s</sub>³</span> and time constant <span class="math">τ = C<sub>A</sub>/B</span>.</p>
-        <p>The CO₂ forcing <span class="math">ΔΦ = 5.35 ln(C/C₀)</span> W m⁻² is an approximation obtained from radiative calculations including absorption spectra, not derived from the laws of thermodynamics. The feedback <i>f</i> (water vapor etc.) is also given separately from radiative calculations. Φ in this material is energy flow per unit area (written Φ to distinguish it from the free energy <i>F</i>).</p>
+        <p>Absorbed solar radiation <span class="math">J<sub>abs</sub> = (1−α)S₀/4</span> (the 1/4 is the ratio of the Earth's cross-section to its surface area). Effective radiating temperature <span class="math">σT<sub>e</sub>⁴ = J<sub>abs</sub></span>.</p>
+        <p>One-layer model: from the atmosphere budget <span class="math">εσT<sub>s</sub>⁴ = 2εσT<sub>a</sub>⁴</span> and the top-of-atmosphere budget <span class="math">J<sub>abs</sub> = (1−ε)σT<sub>s</sub>⁴ + εσT<sub>a</sub>⁴</span>, <span class="math">T<sub>s</sub> = T<sub>e</sub>(1 − ε/2)<sup>−1/4</sup></span>.</p>
+        <p>Time evolution: assuming the atmosphere reaches radiative equilibrium quickly (<span class="math">T<sub>a</sub>⁴ = T<sub>s</sub>⁴/2</span>), the surface temperature is advanced with <span class="math">C<sub>A</sub> dT<sub>s</sub>/dt = J<sub>abs</sub> − (1 − ε/2)σT<sub>s</sub>⁴</span>. Linearizing around the steady state gives the restoring coefficient <span class="math">B<sub>s</sub> = 4(1 − ε/2)σT<sub>s</sub>³</span> and time constant <span class="math">τ = C<sub>A</sub>/B</span>.</p>
+        <p>The CO₂ forcing <span class="math">ΔJ = 5.35 ln(C/C₀)</span> W m⁻² is an approximation obtained from radiative calculations including absorption spectra, not derived from the laws of thermodynamics. The feedback <i>f</i> (water vapor etc.) is also given separately from radiative calculations. <i>J</i> in this material is energy flow per unit area (written <i>J</i> to distinguish it from the free energy <i>F</i>).</p>
       </details>
     </section>
   </div>
