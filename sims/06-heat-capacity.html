@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>06 熱容量の測定 | 熱力学シミュレーション</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+<header class="site-header"><div class="inner">
+  <h1>06 熱容量の測定</h1><span class="sub">熱 Q を加えて温度変化 ΔT を測る ― C = Q/ΔT。定積と定圧で違うのはなぜ？</span>
+  <nav>
+    <a href="../index.html">目次</a>
+    <a href="01-operations.html">01 壁と操作</a>
+    <a href="02-equilibrium.html">02 平衡への緩和</a>
+    <a href="03-processes.html">03 準静的と不可逆</a>
+    <a href="04-isothermal.html">04 等温過程の収支</a>
+    <a href="05-extensive.html">05 示量と示強</a>
+    <a href="06-heat-capacity.html" aria-current="page">06 熱容量</a>
+    <a href="07-entropy.html">07 エントロピー</a>
+    <a href="08-heat-engines.html">08 熱機関</a>
+    <button id="btn-proj" title="文字を大きくする">投影モード</button>
+  </nav>
+</div></header>
+
+<main class="layout">
+  <div class="col">
+    <section class="card">
+      <h2><span class="tag">ミクロ</span>熱源に触れさせて温める <span class="hint" id="mode-hint"></span></h2>
+      <div class="canvas-wrap"><canvas id="sim"></canvas></div>
+      <div class="legend">
+        <span><span class="sw adi"></span>断熱壁</span>
+        <span><span class="sw dia"></span>透熱壁（熱源と接触中だけ）</span>
+        <span><span class="dot hot"></span>熱源から粒子へエネルギーが入った衝突</span>
+        <span><span class="dot cold"></span>粒子から熱源へエネルギーが出た衝突</span>
+        <span id="lg-speed" hidden>遅い<span class="grad"></span>速い</span>
+      </div>
+      <div class="readouts">
+        <div class="stat ext"><span class="k">粒子数 <i>N</i></span><span class="v" id="r-N"></span></div>
+        <div class="stat ext"><span class="k">体積 <i>V</i></span><span class="v" id="r-V"></span></div>
+        <div class="stat int"><span class="k">温度 <i>T</i></span><span class="v" id="r-T"></span></div>
+        <div class="stat int"><span class="k">圧力 <i>NkT</i>/<i>V</i></span><span class="v" id="r-P"></span></div>
+        <div class="stat"><span class="k">熱 <i>Q</i>（累計）</span><span class="v" id="r-Q"></span></div>
+        <div class="stat"><span class="k">仕事 <i>W</i>（累計）</span><span class="v" id="r-W"></span></div>
+      </div>
+      <div class="phase">
+        <span>段階：<b id="r-phase">―</b></span>
+        <div class="prog"><div id="r-prog"></div></div>
+      </div>
+      <p class="hint" style="margin:4px 0 0">「測定する」を押すと、新しい気体（<i>T</i> = 1）で、加熱前の <i>T</i> を測る → 熱源に接触 → 熱源から離す → 加熱後の <i>T</i> を測る、を自動で行います（この間は自動で早送り）。</p>
+    </section>
+
+    <section class="card">
+      <h2><span class="tag">マクロ</span>測定結果：1粒子あたりの熱 <i>Q</i>/<i>N</i> と温度変化 Δ<i>T</i></h2>
+      <div class="canvas-wrap"><canvas id="plotQ"></canvas></div>
+      <div class="table-wrap" style="margin-top:8px">
+        <table class="tbl" id="tbl">
+          <thead><tr><th>#</th><th>条件</th><th><i>N</i></th><th>熱源 <i>T</i></th><th><i>Q</i></th><th>Δ<i>T</i></th><th><i>C</i> = <i>Q</i>/Δ<i>T</i></th><th><i>C</i>/<i>N</i></th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <p class="hint" id="tbl-note" hidden>※ 測定中にピストンが可動範囲の端に達したため、途中から定圧ではなくなっています。</p>
+      <p class="hint" id="tbl-empty">まだ測定していません。右の「測定する」を押してください。</p>
+    </section>
+
+    <section class="card">
+      <h2>時間変化</h2>
+      <div class="canvas-wrap"><canvas id="plotT"></canvas></div>
+    </section>
+  </div>
+
+  <div class="col">
+    <section class="card ctrl">
+      <h2>操作パネル</h2>
+      <div class="btns">
+        <button id="btn-play" class="primary"></button>
+        <button id="btn-reset">はじめから</button>
+        <button id="btn-measure">測定する</button>
+      </div>
+      <div class="row"><label for="speed">再生速度</label><input type="range" id="speed" min="-0.7" max="1.6" step="0.05" value="0.3"><output id="speed-val"></output></div>
+
+      <div class="group-title">条件</div>
+      <div class="seg" id="mode"><button data-value="V" aria-pressed="true">定積（ピストン固定）</button><button data-value="P">定圧（おもりを載せたピストン）</button></div>
+      <div class="row"><label for="N">粒子数 <i>N</i></label><input type="range" id="N" min="100" max="400" step="50" value="300"><output id="N-val"></output></div>
+      <div class="row"><label for="Tb">熱源の温度</label><input type="range" id="Tb" min="0.5" max="3" step="0.1" value="2"><output id="Tb-val"></output></div>
+      <p class="hint" style="margin:0">はじめの気体の温度は <i>T</i> = 1。熱源の温度を 1 より低くすると「冷やす」実験になります。条件を変えたら「はじめから」。</p>
+
+      <div class="group-title">表示</div>
+      <div>
+        <label class="check"><input type="checkbox" id="c-heat" checked>熱のやりとり</label>
+        <label class="check"><input type="checkbox" id="c-speed">色＝速さ</label>
+      </div>
+      <div class="btns"><button id="btn-clear">結果の表を消す</button></div>
+    </section>
+
+    <section class="card notes">
+      <h2>ねらい</h2>
+      <p>物体の温度を 1 だけ上げるのに必要な熱を <b>熱容量</b> <span class="math">C = Q/ΔT</span> という。同じ気体でも、<b>体積を一定</b>にして温めるか、<b>圧力を一定</b>にして温めるかで値が違う。その理由を、ピストンがする仕事から考える。</p>
+      <h3>やってみよう</h3>
+      <ol>
+        <li>「定積」で測定。表の <i>C</i>/<i>N</i> はいくつ？ 熱源の温度を変えて何回か測り、グラフの点がどの直線に乗るか見る。</li>
+        <li><i>N</i> を変えて測る。<i>C</i> は <i>N</i> に比例する（示量変数）が、<i>C</i>/<i>N</i> は変わらない。</li>
+        <li>「定圧」に切り替えて測定。ピストンが外へ動き、気体が外へ仕事をする（<i>W</i> &lt; 0）。<i>C</i>/<i>N</i> はいくつになる？</li>
+        <li>熱源の温度を 1 より低くして「冷やす」測定もしてみよう（<i>Q</i> &lt; 0, Δ<i>T</i> &lt; 0）。</li>
+      </ol>
+      <div class="q"><b>問い</b>　定圧で温めると、定積のときより多くの熱が必要になる。余分な熱はどこへ行った？ 第一法則 Δ<i>U</i> = <i>Q</i> + <i>W</i> で説明してみよう。</div>
+      <div class="q"><b>問い</b>　熱源の温度まで上がりきる前に熱源から離しても、<i>C</i> は正しく求まる。なぜ？</div>
+      <div class="q"><b>問い</b>　同じ測定を何回か繰り返すと、<i>C</i>/<i>N</i> は少しずつばらつく（特に定圧で <i>N</i> が小さいとき）。何がゆらいでいるのだろう？</div>
+      <details><summary>理論値（2次元単原子理想気体）</summary>
+        <p><span class="math">U = NkT</span> なので、定積では <span class="math">Q = ΔU</span>、<span class="math">C<sub>V</sub> = Nk</span>（<i>C</i>/<i>N</i> = 1）。</p>
+        <p>定圧では気体が外へ仕事 <span class="math">PΔV = NkΔT</span> をするので <span class="math">Q = ΔU + PΔV</span>、<span class="math">C<sub>P</sub> = 2Nk</span>（<i>C</i>/<i>N</i> = 2）。<span class="math">C<sub>P</sub> − C<sub>V</sub> = Nk</span>（マイヤーの関係）、<span class="math">γ = C<sub>P</sub>/C<sub>V</sub> = 2</span>。</p>
+        <p>3次元の単原子理想気体なら <span class="math">C<sub>V</sub> = (3/2)Nk</span>、<span class="math">C<sub>P</sub> = (5/2)Nk</span>。違いは1粒子あたりの自由度の数（2次元は 2、3次元は 3）。</p>
+        <p>このシミュレーションでは温度を <span class="math">T = U/N</span> で決めているので、定積の <i>C</i>/<i>N</i> はちょうど 1 になります。定圧ではピストンのゆらぎ（気体とおもりの間のエネルギーのやりとり）のため数％ばらつきます。定圧で冷やすと体積が小さくなり、粒子の大きさの効果（理想気体からのずれ）で <i>C</i>/<i>N</i> が 2 より少し小さく出ます。</p>
+      </details>
+    </section>
+  </div>
+</main>
+
+<script type="module">
+import { Gas } from '../assets/js/engine.js';
+import { HeatCapacityRun } from '../assets/js/experiments.js';
+import { SimView } from '../assets/js/render.js';
+import { TimePlot, XYPlot, SERIES } from '../assets/js/plot.js';
+import { $, fmt, fmtSigned, bindRange, bindCheck, segmented, Loop, bindPlayPause, setupCommon, bindSpeed } from '../assets/js/ui.js';
+
+setupCommon();
+const H = 60, X0 = 45, T0 = 1;   // 定圧で熱源の温度 3 まで温めてもピストンが端に届かない大きさ
+let gas, view, run = null, simRate = 0.1, frame = 0, mode = 'V', N = 300, Tb = 2;
+const results = [];
+
+const plotT = new TimePlot($('plotT'), { height: 170, ylabel: '温度 T', yZero: true, window: 1500,
+  series: [{ key: 'T', label: '気体の温度 T', color: SERIES[0] }, { key: 'Tb', label: '接触中の熱源の温度', color: '#d6453d', dash: [6, 4] }] });
+const plotQ = new XYPlot($('plotQ'), { height: 260, xmin: -0.8, xmax: 2.6, ymin: -1.8, ymax: 6.5, xlabel: 'ΔT', ylabel: 'Q/N', xd: 2, yd: 2 });
+plotQ.refs = [
+  { label: '定積の理論 Q/N = ΔT', color: SERIES[0], dash: [6, 4], fn: (x) => x },
+  { label: '定圧の理論 Q/N = 2ΔT', color: SERIES[1], dash: [6, 4], fn: (x) => 2 * x },
+];
+
+function build() {
+  run = null;
+  gas = new Gas({ H, X: X0, Xmin: 12, Xmax: 170, seed: (Math.random() * 1e9) | 0 });
+  gas.addParticles(N, T0, { x0: 0, x1: X0, y0: 0, y1: H });
+  if (mode === 'P') Object.assign(gas.piston, { mode: 'force', Pext: gas.kinetic() / (gas.X * H), u: 0 });
+  gas.Tbath = Tb;
+  if (view) view.g = gas; else view = new SimView($('sim'), gas, { bathPad: 13, Tref: T0, drawScale: 2.8 });
+  view.opt.showHeat = $('c-heat').checked;
+  view.opt.colorMode = $('c-speed').checked ? 'speed' : 'species';
+  $('mode-hint').textContent = mode === 'V' ? '— 定積：ピストンは動かない' : `— 定圧：外から一定の圧力 P = ${gas.piston.Pext.toFixed(4)} でピストンを押している（赤い矢印）`;
+  plotT.reset();
+  $('r-phase').textContent = '―'; $('r-prog').style.width = '0';
+  $('btn-measure').disabled = false;
+}
+
+function drawResults() {
+  const tb = $('tbl').querySelector('tbody');
+  tb.innerHTML = results.map((r, k) => `<tr><td>${k + 1}</td><td style="text-align:left">${r.mode === 'V' ? '定積' : '定圧'}</td><td>${r.N}</td><td>${fmt(r.Tb, 1)}</td><td>${fmtSigned(r.Q, 1)}</td><td>${fmtSigned(r.dT, 3)}</td><td>${fmt(r.C, 1)}</td><td><b>${fmt(r.c, 2)}</b>${r.hitLimit ? ' ※' : ''}</td></tr>`).join('');
+  $('tbl-note').hidden = !results.some((r) => r.hitLimit);
+  $('tbl-empty').hidden = results.length > 0;
+  const pts = (m) => results.filter((r) => r.mode === m).map((r) => [r.dT, r.Q / r.N]);
+  plotQ.paths = [];
+  for (const [m, color, label] of [['V', SERIES[0], '定積の測定'], ['P', SERIES[1], '定圧の測定']]) {
+    pts(m).forEach((p, k) => plotQ.paths.push({ label: k === 0 ? label : '', color, pts: [p], ends: true }));
+  }
+  plotQ.draw();
+}
+
+segmented('mode', (v) => { mode = v; build(); }, false);
+bindRange('N', (v) => { N = v; }, (v) => v.toFixed(0), false);
+bindRange('Tb', (v) => { Tb = v; if (gas && !run) gas.Tbath = v; }, (v) => v.toFixed(1), false);
+bindSpeed('speed', (v) => { simRate = v; });
+bindCheck('c-heat', (on) => { if (view) view.opt.showHeat = on; });
+bindCheck('c-speed', (on) => { if (view) view.opt.colorMode = on ? 'speed' : 'species'; $('lg-speed').hidden = !on; });
+$('btn-reset').addEventListener('click', build);
+$('btn-measure').addEventListener('click', () => {
+  if (run && run.phase !== 'done') return;
+  build();   // 毎回、温度 1 の新しい気体で測る
+  run = new HeatCapacityRun(gas, { mode, Tb });
+  $('btn-measure').disabled = true;
+});
+$('btn-clear').addEventListener('click', () => { results.length = 0; drawResults(); });
+build();
+drawResults();
+
+const loop = new Loop((paused) => {
+  if (!paused) {
+    const busy = run && run.phase !== 'done';
+    gas.advance(busy ? Math.max(simRate, 3) : simRate);   // 測定中は自動で早送り
+    gas.measure();
+    frame++;
+    if (run) {
+      run.update();
+      $('r-phase').textContent = run.label;
+      $('r-prog').style.width = (100 * run.progress).toFixed(1) + '%';
+      if (run.phase === 'done' && run.result && !run.recorded) {
+        run.recorded = true; results.push(run.result); drawResults();
+        $('btn-measure').disabled = false;
+      }
+    }
+    const s = gas.stats();
+    $('r-N').textContent = s.N;
+    $('r-V').textContent = fmt(s.V, 0);
+    $('r-T').textContent = fmt(s.T, 3);
+    $('r-P').textContent = fmt(s.Pkin, 4);
+    $('r-Q').textContent = fmtSigned(s.Q, 1);
+    $('r-W').textContent = fmtSigned(s.W, 1);
+    plotT.push(gas.time, { T: s.T, Tb: gas.bath.left ? gas.Tbath : NaN });
+    if (frame % 2 === 0) plotT.draw();
+  }
+  view.draw();
+});
+bindPlayPause('btn-play', loop);
+</script>
+</body>
+</html>

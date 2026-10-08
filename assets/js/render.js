@@ -283,9 +283,16 @@ export class SimView {
       ctx.moveTo(this.X(g.X + this.pt), this.Y(yRod));
       ctx.lineTo(this.X(g.Xmax + this.pt + 9), this.Y(yRod));
       ctx.stroke();
+      if (g.piston.mode === 'force') {
+        // おもりを載せたピストン：外から一定の圧力で押されている
+        const xa = g.X + this.pt + 1.5, L = 6 * s, X0 = this.X(xa), Y0 = this.Y(yRod) - 4.5 * s;
+        ctx.strokeStyle = COLORS.hot; ctx.fillStyle = COLORS.hot; ctx.lineWidth = 2.5 * dpr;
+        ctx.beginPath(); ctx.moveTo(X0 + L, Y0); ctx.lineTo(X0 + 6 * dpr, Y0); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(X0, Y0); ctx.lineTo(X0 + 7 * dpr, Y0 - 5 * dpr); ctx.lineTo(X0 + 7 * dpr, Y0 + 5 * dpr); ctx.closePath(); ctx.fill();
+      }
       // 動いているとき矢印
       const u = g.piston.u;
-      if (Math.abs(u) > 1e-6) {
+      if (Math.abs(u) > 1e-6 && g.piston.mode !== 'force') {
         const xa = g.Xmax + this.pt + 6, dir = Math.sign(u);
         const L = 3 * s;
         const X0 = this.X(xa), Y0 = this.Y(yRod) - 3.2 * s;

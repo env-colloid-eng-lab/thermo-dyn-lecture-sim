@@ -19,7 +19,7 @@ export function bindRange(id, fn, show = (v) => v, fire = true) {
   const el = $(id), out = $(id + '-val');
   const h = () => { const v = parseFloat(el.value); if (out) out.textContent = show(v); fn(v); };
   el.addEventListener('input', h);
-  if (fire) h();
+  if (fire) h(); else if (out) out.textContent = show(parseFloat(el.value));
   return { el, set(v) { el.value = v; if (out) out.textContent = show(parseFloat(el.value)); } };
 }
 

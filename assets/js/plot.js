@@ -174,7 +174,7 @@ export class XYPlot extends Base {
   /**
    * opt: xmin,xmax,ymin,ymax（ymaxはnullで自動）
    * refs: [{label,color,dash,fn}]  参照曲線 y = fn(x)
-   * paths: [{label,color,pts:[[x,y]],fill:bool,dot:bool}]
+   * paths: [{label,color,pts:[[x,y]],fill:bool,closed:bool,ends:bool}]
    */
   constructor(canvas, opt) {
     super(canvas, Object.assign({ xmin: 0, xmax: 1, ymin: 0, ymax: null }, opt));
@@ -194,6 +194,14 @@ export class XYPlot extends Base {
     ctx.save();
     ctx.beginPath(); ctx.rect(this.m.l, this.m.t, this.c.width - this.m.l - this.m.r, this.c.height - this.m.t - this.m.b); ctx.clip();
     // 面積の塗り
+    for (const p of this.paths) {
+      // closed: 閉じた曲線の内側を塗る（サイクルが囲む面積 = 正味の仕事）
+      if (!p.closed || p.pts.length < 3) continue;
+      ctx.beginPath();
+      p.pts.forEach(([x, y], k) => { if (k === 0) ctx.moveTo(sx(x), sy(y)); else ctx.lineTo(sx(x), sy(y)); });
+      ctx.closePath();
+      ctx.fillStyle = p.fillColor || 'rgba(235,104,52,0.15)'; ctx.fill();
+    }
     for (const p of this.paths) {
       if (!p.fill || p.pts.length < 2) continue;
       ctx.beginPath();
@@ -240,7 +248,7 @@ export class XYPlot extends Base {
       const x = o.xmin + ((this.hover.x - l) / (this.c.width - l - r)) * (o.xmax - o.xmin);
       const y = o.ymin + ((this.c.height - b - this.hover.y) / (this.c.height - t - b)) * (ymax - o.ymin);
       if (x >= o.xmin && x <= o.xmax && y >= o.ymin && y <= ymax) {
-        const txt = `${o.xlabel.split(' ')[0]} = ${x.toFixed(0)},  ${o.ylabel.split(' ')[0]} = ${y.toFixed(4)}`;
+        const txt = `${o.xlabel.split(' ')[0]} = ${x.toFixed(o.xd ?? 0)},  ${o.ylabel.split(' ')[0]} = ${y.toFixed(o.yd ?? 4)}`;
         ctx.font = `${this.fs}px sans-serif`;
         const w = ctx.measureText(txt).width + 12 * this.dpr;
         ctx.fillStyle = 'rgba(255,255,255,0.95)'; ctx.fillRect(l + 6 * this.dpr, t + 4 * this.dpr, w, this.fs + 8 * this.dpr);

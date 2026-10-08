@@ -50,11 +50,13 @@ npm run serve                      # http://localhost:8000/ で表示を確認
 
 ## ファイル構成
 
-- `index.html` 目次 / `sims/01〜05-*.html` 各シミュレーション
+- `index.html` 目次 / `sims/01〜08-*.html` 各シミュレーション
 - `assets/js/engine.js` 分子動力学（`Gas` クラス：壁・熱源・ピストン・撹拌翼・仕切り・圧力測定・帳簿）
+  - ピストンは `piston.mode` が `'position'`（目標位置へ一定の速さ）か `'force'`（質量 `M`、外圧 `Pext` の定圧ピストン）
   - `gas.advance(t)` で時間 t だけ進める（速い粒子がいると自動で刻みを細かくする）
 - `assets/js/render.js` 描画（`SimView`）、`plot.js` グラフ（`TimePlot` / `XYPlot` / `HistPlot`）、`ui.js` UI 部品
   - 再生速度は `bindSpeed()`（対数スライダー、×1 = 1フレームで時間 0.1）
+- `assets/js/experiments.js`（熱容量の測定手順）、`entropy.js`（場合の数）、`cycles.js`（サイクルの自動運転）：DOM に依存しない。ページとテストの両方から使う
 - `tests/physics-test.mjs` 物理テスト、`tests/smoke-browser.mjs` ブラウザ操作テスト
 
 ## 表示・教育上の方針
@@ -66,7 +68,4 @@ npm run serve                      # http://localhost:8000/ で表示を確認
 
 ## 今後の候補（未着手）
 
-- エントロピーと第二法則（混合・自由膨張の不可逆性）
-- 熱機関・カルノーサイクル（P–V 図上のサイクルと効率）
-- 熱容量の測定（Q と ΔT から C を求める）
 - 3次元版（U = 3/2 NkT）への切り替え表示、英語版
