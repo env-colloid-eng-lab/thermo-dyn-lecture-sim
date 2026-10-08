@@ -312,7 +312,8 @@ const loop = new Loop((paused) => {
     // T–S 図の温度は少しならす（粒子数が少ないと N ln T のゆらぎが大きく見えるため）/ smooth T a little for the T–S plot
     Tsm = Tsm == null ? U / N : Tsm + (1 - Math.exp(-simRate / 40)) * (U / N - Tsm);   // 時定数 40 / time constant 40
     if (run.k >= 0) { cur.push([V, U / V]); curTS.push([Sgas(V, Tsm), Tsm]); }
-    if (cur.length > 3000) { cur.splice(0, cur.length - 3000); curTS.splice(0, curTS.length - 3000); }
+    // thin out every other point when there are too many (keeps the whole cycle, so the area stays correct)
+    if (cur.length > 3000) { cur = cur.filter((_, k) => k % 2 === 0); curTS = curTS.filter((_, k) => k % 2 === 0); }
     if (run.cycles.length > nBefore) {
       const c = run.cycles[run.cycles.length - 1];
       prev = cur; cur = [[V, U / V]];

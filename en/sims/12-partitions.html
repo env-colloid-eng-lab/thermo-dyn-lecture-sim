@@ -67,7 +67,7 @@
           <tbody>
             <tr><td>Energy d<i>U</i>₁: 1/<i>T</i>₁ − 1/<i>T</i>₂</td><td id="c-U"></td><td id="a-U"></td><td id="s-U"></td></tr>
             <tr><td>Volume d<i>V</i>₁: <i>P</i>₁/<i>T</i>₁ − <i>P</i>₂/<i>T</i>₂</td><td id="c-V"></td><td id="a-V"></td><td id="s-V"></td></tr>
-            <tr><td>Particles d<i>N</i>₁: μ₁/<i>T</i>₁ − μ₂/<i>T</i>₂</td><td id="c-N"></td><td id="a-N"></td><td id="s-N"></td></tr>
+            <tr><td>Particles d<i>N</i>₁: −(μ₁/<i>T</i>₁ − μ₂/<i>T</i>₂)</td><td id="c-N"></td><td id="a-N"></td><td id="s-N"></td></tr>
           </tbody>
         </table>
       </div>
@@ -238,7 +238,7 @@ const loop = new Loop((paused) => {
     $('n1').textContent = fmt(sm.n1, 4); $('n2').textContent = fmt(sm.n2, 4);
     $('T1').textContent = fmt(sm.T1, 3); $('T2').textContent = fmt(sm.T2, 3);
     $('P1').textContent = fmt(P1, 4); $('P2').textContent = fmt(P2, 4);
-    const cU = 1 / sm.T1 - 1 / sm.T2, cV = P1 / sm.T1 - P2 / sm.T2, cN = Math.log(sm.n1 / sm.T1) - Math.log(sm.n2 / sm.T2);
+    const cU = 1 / sm.T1 - 1 / sm.T2, cV = P1 / sm.T1 - P2 / sm.T2, cN = -(Math.log(sm.n1 / sm.T1) - Math.log(sm.n2 / sm.T2));   // coefficient of dN₁: −(μ₁/T₁ − μ₂/T₂)
     $('c-U').textContent = fmtSigned(cU, 3); $('c-V').textContent = fmtSigned(cV, 4); $('c-N').textContent = fmtSigned(cN, 3);
     const al = MODES[mode].allow;
     $('s-U').textContent = status(al.U, cU / ((1 / sm.T1 + 1 / sm.T2) / 2));

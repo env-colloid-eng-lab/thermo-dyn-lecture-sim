@@ -673,7 +673,7 @@ export class Gas {
     const L = this.ledger;
     return {
       N, V, U, T, Upot,
-      Pkin: N ? K / V : 0,        // 状態方程式 P = NkT/V（2D: = U/V）
+      Pkin: N ? K / V : 0,        // 状態方程式 P = NkT/V（2D: 運動エネルギー K = NkT なので K/V。段差の位置エネルギーは含めない）
       Pwall: this.P.all,           // 壁全体が受ける力から測った圧力
       Ppiston: this.P.piston,      // ピストンが受ける力から測った圧力
       W: L.Wpiston + L.Wstir + L.Wfield + L.Wpart,
