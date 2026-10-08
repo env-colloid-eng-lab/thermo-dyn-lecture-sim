@@ -59,6 +59,19 @@
       <div class="canvas-wrap" style="margin-top:6px"><canvas id="plotU"></canvas></div>
     </section>
     <section class="card">
+      <h2><span class="tag">マクロ</span>変化の向きを決めるもの：全体のエントロピー <span class="hint" id="s-hint"></span></h2>
+      <p class="hint" style="margin:0 0 4px">外側は断熱壁なので <span class="math">U₁ + U₂</span> は一定。<i>U</i>₁ を決めれば <i>U</i>₂ も決まり、全体のエントロピーは <i>U</i>₁ だけの関数 <span class="math">S(U₁) = S₁(U₁) + S₂(U_tot − U₁)</span> になる。</p>
+      <div class="canvas-wrap"><canvas id="plotSU"></canvas></div>
+      <div class="readouts">
+        <div class="stat int"><span class="k">傾き ∂<i>S</i>₁/∂<i>U</i>₁ = 1/<i>T</i>₁</span><span class="v" id="r-b1">–</span></div>
+        <div class="stat int"><span class="k">傾き ∂<i>S</i>₂/∂<i>U</i>₂ = 1/<i>T</i>₂</span><span class="v" id="r-b2">–</span></div>
+        <div class="stat"><span class="k">d<i>S</i>/d<i>U</i>₁ = 1/<i>T</i>₁ − 1/<i>T</i>₂</span><span class="v" id="r-dSdU">–</span></div>
+        <div class="stat"><span class="k">全体の Δ<i>S</i>（<i>k</i> 単位）</span><span class="v" id="r-dS">–</span></div>
+      </div>
+      <p class="q" id="r-dir" style="margin-top:8px"></p>
+      <div class="canvas-wrap" style="margin-top:6px"><canvas id="plotS"></canvas></div>
+    </section>
+    <section class="card">
       <h2><span class="tag">ミクロ↔マクロ</span>それぞれの速さの分布</h2>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:8px">
         <div class="canvas-wrap"><canvas id="h1"></canvas></div>
@@ -97,16 +110,24 @@
     <section class="card notes">
       <h2>ねらい</h2>
       <p>温度の違う二つの流体を <b>透熱壁</b> で接触させて放置すると、やがてマクロな変化のない状態（<b>平衡状態</b>）に落ち着く。講義の「コーヒーと部屋」の例をミクロに見ます。</p>
+      <p>エネルギー保存だけでは、エネルギーが 1→2 と 2→1 のどちらへ移るかは決まらない。向きを決めるのは <b>第二法則（エントロピー原理）</b>：孤立した複合系の内部の拘束（ここでは断熱壁）を外すと、全体のエントロピー <span class="math">S₁ + S₂</span> が増える向きに変化が進み、最大になったところが平衡状態になる。</p>
       <h3>やってみよう</h3>
       <ol>
-        <li>断熱壁のまま待つ。<i>T</i>₁, <i>T</i>₂ は変わる？</li>
+        <li>断熱壁のまま待つ。<i>T</i>₁, <i>T</i>₂ は変わる？　<i>S</i>(<i>U</i>₁) の図の黒い点は動く？（断熱壁はエネルギーのやりとりを禁じる「拘束」）</li>
         <li>「透熱壁」に替える。どちらからどちらへエネルギーが移る？　壁のところで粒子の速さはどう変わる？（「色＝速さ」が見やすい）</li>
-        <li>十分に待つ。<i>T</i>₁ と <i>T</i>₂ はどうなる？　<i>U</i>₁ と <i>U</i>₂ は等しくなる？（<i>N</i>₁ ≠ <i>N</i>₂ にして試す）</li>
+        <li>黒い点が <i>S</i>(<i>U</i>₁) の曲線をのぼっていくことを確かめる。点はどこで止まる？　そこで 1/<i>T</i>₁ と 1/<i>T</i>₂ はどうなっている？</li>
+        <li>十分に待つ。<i>T</i>₁ と <i>T</i>₂ はどうなる？　<i>U</i>₁ と <i>U</i>₂ は等しくなる？（<i>N</i>₁ ≠ <i>N</i>₂ にして試す。曲線の頂上の位置も変わる）</li>
         <li>平衡に達したあとも粒子は動き続けている。グラフの細かい揺らぎは何？</li>
         <li>最後に「取り除く」。二つの流体が混ざる。ここから元の状態に戻るまで待つことはできる？</li>
       </ol>
       <div class="q"><b>問い</b>　平衡状態では <i>T</i>₁ = <i>T</i>₂ になりましたが、<i>U</i>₁ = <i>U</i>₂ とは限りません。平衡で等しくなるのは「示強変数」と「示量変数」のどちら？（→ 05 で確かめる）</div>
       <div class="q"><b>問い</b>　粒子数を 40 個まで減らすと揺らぎはどうなる？　熱力学が「マクロな物質」を対象にするのはなぜ？</div>
+      <div class="q"><b>問い</b>　<i>S</i>(<i>U</i>) の傾き 1/<i>T</i> が大きいのは、高温側と低温側のどちら？　傾きが大きい側にエネルギーを渡すと全体の <i>S</i> が増えることから、「熱は高温側から低温側へ流れる」を説明してみよう。</div>
+      <details><summary>エントロピーの曲線（2次元理想気体）</summary>
+        <p>体積と粒子数が一定の 2次元理想気体では <span class="math">S = Nk ln U + （V, N だけで決まる定数）</span>。<i>U</i> で微分すると <span class="math">∂S/∂U = Nk/U = 1/T</span>（<span class="math">U = NkT</span>）。この「エントロピーの傾きが 1/<i>T</i>」を熱力学的な温度の定義として使う。</p>
+        <p>全体のエントロピーを <i>U</i>₁ で微分すると <span class="math">dS/dU₁ = 1/T₁ − 1/T₂</span>。<i>T</i>₁ &gt; <i>T</i>₂ なら負なので、<i>U</i>₁ が減る向き（1 から 2 へエネルギーが移る向き）に <i>S</i> が増える。頂上 <span class="math">dS/dU₁ = 0</span> が <span class="math">T₁ = T₂</span>。曲線は上に凸（凹関数）なので、頂上はただ一つで、そこが安定な平衡になる。</p>
+        <p>図の Δ<i>S</i> は、はじめの状態からの変化 <span class="math">ΔS = N₁ ln(U₁/U₁⁰) + N₂ ln(U₂/U₂⁰)</span>（<i>k</i> = 1）。曲線は、いまの気体のエネルギーの合計 <span class="math">U₁ + U₂</span> で描いています（仕切り壁が一時的に蓄える分だけ、この合計はわずかに変わる）。粒子数が有限なので、点は平衡のまわりで少しゆらぎます。</p>
+      </details>
       <details><summary>モデルについて</summary>
         <p>透熱壁は「小さな熱容量をもつ壁」として模型化しています。粒子が壁に当たると、壁の温度 <i>T</i><sub>w</sub> のマクスウェル分布に従う速度で跳ね返り、そのぶん壁のエネルギーが増減します。両側の粒子が同じ壁とエネルギーをやりとりするので、壁を通して左右の流体の間で熱が移動します（気体＋壁の全エネルギーは厳密に保存）。</p>
       </details>
@@ -117,16 +138,20 @@
 <script type="module">
 import { Gas, ADIABATIC, DIATHERMAL, mb2d } from '../assets/js/engine.js';
 import { SimView } from '../assets/js/render.js';
-import { TimePlot, HistPlot, SERIES } from '../assets/js/plot.js';
+import { TimePlot, XYPlot, HistPlot, SERIES } from '../assets/js/plot.js';
 import { $, fmt, fmtSigned, bindRange, bindCheck, segmented, Loop, bindPlayPause, setupCommon, bindSpeed } from '../assets/js/ui.js';
 
 setupCommon();
 let gas, view, simRate = 0.1, frame = 0, partMode = 'adiabatic';
 let U0 = [0, 0];
+let sValid = true, sN = [0, 0], sTrail = [], sm = null, sUt = 0;   // エントロピーの図：有効か・粒子数・経路・ならした温度
 const plotT = new TimePlot($('plotT'), { height: 170, ylabel: '温度 T', yZero: true, window: 600,
   series: [{ key: 'T1', label: '流体1の温度 T₁', color: SERIES[0] }, { key: 'T2', label: '流体2の温度 T₂', color: SERIES[1] }] });
 const plotU = new TimePlot($('plotU'), { height: 170, ylabel: '内部エネルギー U', yZero: true, window: 600,
   series: [{ key: 'U1', label: 'U₁', color: SERIES[0] }, { key: 'U2', label: 'U₂', color: SERIES[1] }, { key: 'Us', label: 'U₁+U₂', color: SERIES[3], dash: [6, 4] }] });
+const plotSU = new XYPlot($('plotSU'), { height: 250, xmin: 0, xmax: 1, ymin: -1, ymax: 1, xlabel: 'U₁ （左の内部エネルギー）', ylabel: 'ΔS （k 単位）', xd: 1, yd: 1 });
+const plotS = new TimePlot($('plotS'), { height: 170, ylabel: 'ΔS（k 単位）', yZero: true, window: 600,
+  series: [{ key: 'S1', label: 'ΔS₁（左）', color: SERIES[0], dash: [6, 4] }, { key: 'S2', label: 'ΔS₂（右）', color: SERIES[1], dash: [6, 4] }, { key: 'S', label: '全体 ΔS₁ + ΔS₂', color: SERIES[3] }] });
 const h1 = new HistPlot($('h1'), { height: 160, title: '流体1', label: '流体1の速さ' });
 const h2 = new HistPlot($('h2'), { height: 160, title: '流体2', label: '流体2の速さ', barColor: 'rgba(120,120,120,0.45)' });
 
@@ -138,13 +163,60 @@ function build() {
   gas.vpart.Tw = (+$('T1in').value + +$('T2in').value) / 2;
   gas.vpart.Cw = 20;
   gas.resetLedger();
-  U0 = groups().map((g) => g.U);
+  const g0 = groups();
+  U0 = g0.map((g) => g.U);
+  setupEntropy(g0);
   if (view) view.g = gas; else view = new SimView($('sim'), gas, { pistonRod: false, Tref: 1.2, drawScale: 2.8 });
   view.opt.colorMode = $('c-speed').checked ? 'speed' : 'species';
   view.opt.arrows = $('c-arrow').checked;
   view.opt.showHeat = $('c-heat').checked;
   partSeg?.select('adiabatic', false); partMode = 'adiabatic'; hint();
-  plotT.reset(); plotU.reset();
+  plotT.reset(); plotU.reset(); plotS.reset();
+}
+
+/** 2次元理想気体（体積一定）: S = N ln U + 定数。はじめの状態からの変化 ΔS（k = 1） */
+const dS1 = (u) => sN[0] * Math.log(u / U0[0]);
+const dS2 = (u) => sN[1] * Math.log(u / U0[1]);
+
+/** 全体のエントロピーを U₁ の関数として描く準備（外側は断熱なので U₁ + U₂ = 一定） */
+function setupEntropy(g0) {
+  sValid = true; sTrail = []; sm = null;
+  sN = [g0[0].N, g0[1].N];
+  const Ut = U0[0] + U0[1];
+  sUt = Ut;
+  const uStar = (Ut * sN[0]) / (sN[0] + sN[1]);          // 頂上：T₁ = T₂
+  const Smax = dS1(uStar) + dS2(Ut - uStar);
+  const span = Math.max(Smax, 20);
+  Object.assign(plotSU.opt, { xmax: Ut, ymin: -0.8 * span, ymax: Smax + 0.35 * span });
+  const lo = plotSU.opt.ymin - 1e3;   // 端（U → 0）で −∞ にならないように
+  plotSU.refs = [
+    { label: '全体 S₁ + S₂', color: SERIES[3], fn: (u) => Math.max(lo, dS1(u) + dS2(sUt - u)) },
+    { label: 'S₁（左）', color: SERIES[0], dash: [6, 4], fn: (u) => Math.max(lo, dS1(u)) },
+    { label: 'S₂（右）', color: SERIES[1], dash: [6, 4], fn: (u) => Math.max(lo, dS2(sUt - u)) },
+  ];
+  plotSU.peak = [uStar, Smax];
+  plotSU.paths = []; plotSU.marker = [U0[0], 0];
+  plotSU.draw();
+}
+
+/** 変化の向きの説明 */
+function showDirection(T1, T2) {
+  const el = $('r-dir');
+  if (!sValid) {
+    el.innerHTML = '仕切りを取り除いたので、粒子が行き来して体積も変わる。この図（体積一定の二室）はここまで。「準備し直す」で戻せます。';
+    return;
+  }
+  const b1 = 1 / T1, b2 = 1 / T2, d = b1 - b2;
+  if (partMode === 'adiabatic') {
+    el.innerHTML = '<b>断熱壁</b>：エネルギーのやりとりが禁じられている（拘束）ので <i>U</i>₁ は変われず、点は動かない。' +
+      (Math.abs(d) > 0.03 * (b1 + b2) ? '拘束を外せば <i>S</i> が増える向きがあるのに、変化が起こらない状態。' : '');
+  } else if (Math.abs(d) < 0.03 * (b1 + b2)) {
+    el.innerHTML = '<b>ほぼ頂上</b>：1/<i>T</i>₁ ≈ 1/<i>T</i>₂。どちらへエネルギーを移しても <i>S</i> はもう増えない → 平衡状態（残っているのはゆらぎ）。';
+  } else if (d < 0) {
+    el.innerHTML = '<b>d<i>S</i>/d<i>U</i>₁ &lt; 0</b>：<i>U</i>₁ を減らす向き＝<b>左（高温）から右（低温）へ</b>エネルギーが移る向きで、全体の <i>S</i> が増える。実際の熱の流れもこの向き。';
+  } else {
+    el.innerHTML = '<b>d<i>S</i>/d<i>U</i>₁ &gt; 0</b>：<i>U</i>₁ を増やす向き＝<b>右（高温）から左（低温）へ</b>エネルギーが移る向きで、全体の <i>S</i> が増える。実際の熱の流れもこの向き。';
+  }
 }
 
 /** 仕切りがあれば部分系ごと、取り除いたら流体の種類ごとに集計 */
@@ -162,13 +234,14 @@ function hint() {
   const t = { adiabatic: '断熱壁：左右の間でエネルギーは移動しない。', diathermal: '透熱壁：壁を通してエネルギー（熱）が移動できる。', none: '仕切りなし：粒子そのものが行き来して混ざる。' };
   $('part-hint').textContent = t[partMode];
   $('grp-hint').textContent = gas?.vpart ? '' : '（仕切りを取り除いたので、流体の種類ごとに集計）';
+  $('s-hint').textContent = sValid ? '' : '（仕切りを取り除いたので停止中）';
   $('n1').textContent = gas?.vpart ? '部分系1（左）' : '流体1（青）';
   $('n2').textContent = gas?.vpart ? '部分系2（右）' : '流体2（白）';
 }
 
 const partSeg = segmented('part', (v) => {
   partMode = v;
-  if (v === 'none') gas.setVPartition(null);
+  if (v === 'none') { gas.setVPartition(null); sValid = false; }
   else gas.setVPartition(50, v === 'adiabatic' ? ADIABATIC : DIATHERMAL);
   hint();
 }, false);
@@ -195,7 +268,30 @@ const loop = new Loop((paused) => {
     $('U1').textContent = fmt(g[0].U, 1); $('U2').textContent = fmt(g[1].U, 1); $('Us').textContent = fmt(Us, 1);
     $('Q1').textContent = fmtSigned(g[0].U - U0[0], 1); $('Q2').textContent = fmtSigned(g[1].U - U0[1], 1);
     $('Qs').textContent = fmtSigned(Us - U0[0] - U0[1], 1);
-    if (frame % 2 === 0) { plotT.draw(); plotU.draw(); }
+    if (sValid) {
+      const k = 0.05;   // 表示用に少しならした温度（向きの判定がゆらぎでちらつかないように）
+      if (!sm) sm = { T1: g[0].T, T2: g[1].T };
+      sm.T1 += k * (g[0].T - sm.T1); sm.T2 += k * (g[1].T - sm.T2);
+      const S1 = dS1(g[0].U), S2 = dS2(g[1].U);
+      sUt = g[0].U + g[1].U;   // 仕切り壁が蓄える分だけわずかに変わる / changes slightly by what the wall stores
+      const uStar = (sUt * sN[0]) / (sN[0] + sN[1]);
+      plotSU.peak = [uStar, dS1(uStar) + dS2(sUt - uStar)];
+      plotS.push(gas.time, { S1, S2, S: S1 + S2 });
+      plotSU.marker = [g[0].U, S1 + S2];
+      if (frame % 4 === 0) { sTrail.push([g[0].U, S1 + S2]); if (sTrail.length > 400) sTrail.shift(); }
+      $('r-b1').textContent = fmt(1 / sm.T1, 3); $('r-b2').textContent = fmt(1 / sm.T2, 3);
+      $('r-dSdU').textContent = fmtSigned(1 / sm.T1 - 1 / sm.T2, 3);
+      $('r-dS').textContent = fmtSigned(S1 + S2, 1);
+    }
+    if (frame % 2 === 0) {
+      plotT.draw(); plotU.draw();
+      if (sValid) {
+        plotSU.paths = [{ label: '頂上（T₁ = T₂）', color: '#77756f', pts: [plotSU.peak], ends: true },
+          { label: 'これまでの経路', color: SERIES[2], pts: sTrail, width: 1.5 }];
+        plotSU.draw(); plotS.draw();
+      }
+      if (sm) showDirection(sm.T1, sm.T2);
+    }
     if (frame % 8 === 0) {
       const vmax = 3.6 * Math.sqrt(Math.max(g[0].T, g[1].T, 0.5));
       const pick = (k) => (i) => (gas.vpart ? gas.region[i] : gas.species[i]) === k;

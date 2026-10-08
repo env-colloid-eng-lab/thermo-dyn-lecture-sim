@@ -59,6 +59,19 @@
       <div class="canvas-wrap" style="margin-top:6px"><canvas id="plotU"></canvas></div>
     </section>
     <section class="card">
+      <h2><span class="tag">Macro</span>What decides the direction of change: the total entropy <span class="hint" id="s-hint"></span></h2>
+      <p class="hint" style="margin:0 0 4px">The outer walls are adiabatic, so <span class="math">U₁ + U₂</span> is constant. Once <i>U</i>₁ is fixed, <i>U</i>₂ is fixed too, and the total entropy is a function of <i>U</i>₁ alone: <span class="math">S(U₁) = S₁(U₁) + S₂(U_tot − U₁)</span>.</p>
+      <div class="canvas-wrap"><canvas id="plotSU"></canvas></div>
+      <div class="readouts">
+        <div class="stat int"><span class="k">Slope ∂<i>S</i>₁/∂<i>U</i>₁ = 1/<i>T</i>₁</span><span class="v" id="r-b1">–</span></div>
+        <div class="stat int"><span class="k">Slope ∂<i>S</i>₂/∂<i>U</i>₂ = 1/<i>T</i>₂</span><span class="v" id="r-b2">–</span></div>
+        <div class="stat"><span class="k">d<i>S</i>/d<i>U</i>₁ = 1/<i>T</i>₁ − 1/<i>T</i>₂</span><span class="v" id="r-dSdU">–</span></div>
+        <div class="stat"><span class="k">Total Δ<i>S</i> (in units of <i>k</i>)</span><span class="v" id="r-dS">–</span></div>
+      </div>
+      <p class="q" id="r-dir" style="margin-top:8px"></p>
+      <div class="canvas-wrap" style="margin-top:6px"><canvas id="plotS"></canvas></div>
+    </section>
+    <section class="card">
       <h2><span class="tag">Micro↔Macro</span>Speed distribution of each fluid</h2>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:8px">
         <div class="canvas-wrap"><canvas id="h1"></canvas></div>
@@ -97,16 +110,24 @@
     <section class="card notes">
       <h2>Goal</h2>
       <p>If two fluids at different temperatures are put in contact through a <b>diathermal wall</b> and left alone, they eventually settle into a state with no macroscopic change (an <b>equilibrium state</b>). We look at the lecture's "coffee and room" example microscopically.</p>
+      <p>Energy conservation alone does not decide whether energy moves 1→2 or 2→1. The direction is decided by the <b>second law (the entropy principle)</b>: when an internal constraint of an isolated composite system (here, the adiabatic wall) is removed, the change proceeds in the direction in which the total entropy <span class="math">S₁ + S₂</span> increases, and the state where it is maximal is the equilibrium state.</p>
       <h3>Try it</h3>
       <ol>
-        <li>Wait with the adiabatic wall in place. Do <i>T</i>₁ and <i>T</i>₂ change?</li>
+        <li>Wait with the adiabatic wall in place. Do <i>T</i>₁ and <i>T</i>₂ change? Does the black dot in the <i>S</i>(<i>U</i>₁) plot move? (The adiabatic wall is a "constraint" that forbids exchanging energy.)</li>
         <li>Switch to "Diathermal wall". Which way does the energy move? How does the particle speed change at the wall? ("Color = speed" makes this easy to see.)</li>
-        <li>Wait long enough. What happens to <i>T</i>₁ and <i>T</i>₂? Do <i>U</i>₁ and <i>U</i>₂ become equal? (Try it with <i>N</i>₁ ≠ <i>N</i>₂.)</li>
+        <li>Check that the black dot climbs the <i>S</i>(<i>U</i>₁) curve. Where does it stop? What are 1/<i>T</i>₁ and 1/<i>T</i>₂ there?</li>
+        <li>Wait long enough. What happens to <i>T</i>₁ and <i>T</i>₂? Do <i>U</i>₁ and <i>U</i>₂ become equal? (Try it with <i>N</i>₁ ≠ <i>N</i>₂. The position of the top of the curve changes too.)</li>
         <li>Even after reaching equilibrium, the particles keep moving. What are the small fluctuations in the graphs?</li>
         <li>Finally, "Remove" the partition. The two fluids mix. Can you wait until they return to the original state?</li>
       </ol>
       <div class="q"><b>Question</b> In equilibrium <i>T</i>₁ = <i>T</i>₂, but not necessarily <i>U</i>₁ = <i>U</i>₂. Which kind of variable becomes equal in equilibrium: "intensive variables" or "extensive variables"? (→ check this in 05)</div>
       <div class="q"><b>Question</b> What happens to the fluctuations if you reduce the number of particles to 40? Why does thermodynamics deal with "macroscopic matter"?</div>
+      <div class="q"><b>Question</b> Is the slope 1/<i>T</i> of <i>S</i>(<i>U</i>) larger on the hot side or on the cold side? Using the fact that giving energy to the side with the larger slope increases the total <i>S</i>, explain why "heat flows from hot to cold".</div>
+      <details><summary>The entropy curve (2D ideal gas)</summary>
+        <p>For a 2D ideal gas with fixed volume and particle number, <span class="math">S = Nk ln U + (a constant set by V and N)</span>. Differentiating with respect to <i>U</i> gives <span class="math">∂S/∂U = Nk/U = 1/T</span> (<span class="math">U = NkT</span>). This "slope of the entropy is 1/<i>T</i>" is used as the definition of thermodynamic temperature.</p>
+        <p>Differentiating the total entropy with respect to <i>U</i>₁ gives <span class="math">dS/dU₁ = 1/T₁ − 1/T₂</span>. If <i>T</i>₁ &gt; <i>T</i>₂ it is negative, so <i>S</i> increases in the direction where <i>U</i>₁ decreases (energy moves from 1 to 2). The top, <span class="math">dS/dU₁ = 0</span>, is <span class="math">T₁ = T₂</span>. The curve is concave (bulges upward), so there is only one top, and it is the stable equilibrium.</p>
+        <p>The Δ<i>S</i> in the plot is the change from the initial state, <span class="math">ΔS = N₁ ln(U₁/U₁⁰) + N₂ ln(U₂/U₂⁰)</span> (<i>k</i> = 1). The curve is drawn with the current total gas energy <span class="math">U₁ + U₂</span> (this total changes slightly by what the partition wall temporarily stores). Because the number of particles is finite, the dot fluctuates a little around equilibrium.</p>
+      </details>
       <details><summary>About the model</summary>
         <p>The diathermal wall is modeled as "a wall with a small heat capacity". When a particle hits the wall, it bounces back with a velocity drawn from the Maxwell distribution at the wall temperature <i>T</i><sub>w</sub>, and the wall's energy changes by the same amount. Particles on both sides exchange energy with the same wall, so heat flows between the left and right fluids through the wall (the total energy of gas + wall is conserved exactly).</p>
       </details>
@@ -117,16 +138,20 @@
 <script type="module">
 import { Gas, ADIABATIC, DIATHERMAL, mb2d } from '../../assets/js/engine.js';
 import { SimView } from '../../assets/js/render.js';
-import { TimePlot, HistPlot, SERIES } from '../../assets/js/plot.js';
+import { TimePlot, XYPlot, HistPlot, SERIES } from '../../assets/js/plot.js';
 import { $, fmt, fmtSigned, bindRange, bindCheck, segmented, Loop, bindPlayPause, setupCommon, bindSpeed } from '../../assets/js/ui.js';
 
 setupCommon();
 let gas, view, simRate = 0.1, frame = 0, partMode = 'adiabatic';
 let U0 = [0, 0];
+let sValid = true, sN = [0, 0], sTrail = [], sm = null, sUt = 0;   // entropy plot: valid?, particle numbers, path, smoothed temperatures
 const plotT = new TimePlot($('plotT'), { height: 170, ylabel: 'Temperature T', yZero: true, window: 600,
   series: [{ key: 'T1', label: 'Temperature of fluid 1, T₁', color: SERIES[0] }, { key: 'T2', label: 'Temperature of fluid 2, T₂', color: SERIES[1] }] });
 const plotU = new TimePlot($('plotU'), { height: 170, ylabel: 'Internal energy U', yZero: true, window: 600,
   series: [{ key: 'U1', label: 'U₁', color: SERIES[0] }, { key: 'U2', label: 'U₂', color: SERIES[1] }, { key: 'Us', label: 'U₁+U₂', color: SERIES[3], dash: [6, 4] }] });
+const plotSU = new XYPlot($('plotSU'), { height: 250, xmin: 0, xmax: 1, ymin: -1, ymax: 1, xlabel: 'U₁ (internal energy of the left)', ylabel: 'ΔS (units of k)', xd: 1, yd: 1 });
+const plotS = new TimePlot($('plotS'), { height: 170, ylabel: 'ΔS (units of k)', yZero: true, window: 600,
+  series: [{ key: 'S1', label: 'ΔS₁ (left)', color: SERIES[0], dash: [6, 4] }, { key: 'S2', label: 'ΔS₂ (right)', color: SERIES[1], dash: [6, 4] }, { key: 'S', label: 'Total ΔS₁ + ΔS₂', color: SERIES[3] }] });
 const h1 = new HistPlot($('h1'), { height: 160, title: 'Fluid 1', label: 'Speed of fluid 1' });
 const h2 = new HistPlot($('h2'), { height: 160, title: 'Fluid 2', label: 'Speed of fluid 2', barColor: 'rgba(120,120,120,0.45)' });
 
@@ -138,13 +163,60 @@ function build() {
   gas.vpart.Tw = (+$('T1in').value + +$('T2in').value) / 2;
   gas.vpart.Cw = 20;
   gas.resetLedger();
-  U0 = groups().map((g) => g.U);
+  const g0 = groups();
+  U0 = g0.map((g) => g.U);
+  setupEntropy(g0);
   if (view) view.g = gas; else view = new SimView($('sim'), gas, { pistonRod: false, Tref: 1.2, drawScale: 2.8 });
   view.opt.colorMode = $('c-speed').checked ? 'speed' : 'species';
   view.opt.arrows = $('c-arrow').checked;
   view.opt.showHeat = $('c-heat').checked;
   partSeg?.select('adiabatic', false); partMode = 'adiabatic'; hint();
-  plotT.reset(); plotU.reset();
+  plotT.reset(); plotU.reset(); plotS.reset();
+}
+
+/** 2D ideal gas (fixed volume): S = N ln U + const. Change from the initial state ΔS (k = 1) */
+const dS1 = (u) => sN[0] * Math.log(u / U0[0]);
+const dS2 = (u) => sN[1] * Math.log(u / U0[1]);
+
+/** Draw the total entropy as a function of U₁ (outer walls adiabatic, so U₁ + U₂ = const) */
+function setupEntropy(g0) {
+  sValid = true; sTrail = []; sm = null;
+  sN = [g0[0].N, g0[1].N];
+  const Ut = U0[0] + U0[1];
+  sUt = Ut;
+  const uStar = (Ut * sN[0]) / (sN[0] + sN[1]);          // top: T₁ = T₂
+  const Smax = dS1(uStar) + dS2(Ut - uStar);
+  const span = Math.max(Smax, 20);
+  Object.assign(plotSU.opt, { xmax: Ut, ymin: -0.8 * span, ymax: Smax + 0.35 * span });
+  const lo = plotSU.opt.ymin - 1e3;   // avoid −∞ at the ends (U → 0)
+  plotSU.refs = [
+    { label: 'Total S₁ + S₂', color: SERIES[3], fn: (u) => Math.max(lo, dS1(u) + dS2(sUt - u)) },
+    { label: 'S₁ (left)', color: SERIES[0], dash: [6, 4], fn: (u) => Math.max(lo, dS1(u)) },
+    { label: 'S₂ (right)', color: SERIES[1], dash: [6, 4], fn: (u) => Math.max(lo, dS2(sUt - u)) },
+  ];
+  plotSU.peak = [uStar, Smax];
+  plotSU.paths = []; plotSU.marker = [U0[0], 0];
+  plotSU.draw();
+}
+
+/** Explain the direction of change */
+function showDirection(T1, T2) {
+  const el = $('r-dir');
+  if (!sValid) {
+    el.innerHTML = 'The partition has been removed, so particles move across and the volumes change too. This plot (two chambers at fixed volume) stops here. "Reset" brings it back.';
+    return;
+  }
+  const b1 = 1 / T1, b2 = 1 / T2, d = b1 - b2;
+  if (partMode === 'adiabatic') {
+    el.innerHTML = '<b>Adiabatic wall</b>: exchanging energy is forbidden (a constraint), so <i>U</i>₁ cannot change and the dot does not move.' +
+      (Math.abs(d) > 0.03 * (b1 + b2) ? ' There is a direction in which <i>S</i> would increase if the constraint were removed, yet no change happens.' : '');
+  } else if (Math.abs(d) < 0.03 * (b1 + b2)) {
+    el.innerHTML = '<b>Almost at the top</b>: 1/<i>T</i>₁ ≈ 1/<i>T</i>₂. Moving energy either way no longer increases <i>S</i> → equilibrium (what remains are fluctuations).';
+  } else if (d < 0) {
+    el.innerHTML = '<b>d<i>S</i>/d<i>U</i>₁ &lt; 0</b>: the total <i>S</i> increases in the direction where <i>U</i>₁ decreases, i.e. energy moves <b>from the left (hot) to the right (cold)</b>. The actual heat flow is in this direction too.';
+  } else {
+    el.innerHTML = '<b>d<i>S</i>/d<i>U</i>₁ &gt; 0</b>: the total <i>S</i> increases in the direction where <i>U</i>₁ increases, i.e. energy moves <b>from the right (hot) to the left (cold)</b>. The actual heat flow is in this direction too.';
+  }
 }
 
 /** Totals per subsystem while the partition is in place; per fluid species once it is removed */
@@ -162,13 +234,14 @@ function hint() {
   const t = { adiabatic: 'Adiabatic wall: no energy moves between left and right.', diathermal: 'Diathermal wall: energy (heat) can move through the wall.', none: 'No partition: the particles themselves move across and mix.' };
   $('part-hint').textContent = t[partMode];
   $('grp-hint').textContent = gas?.vpart ? '' : '(partition removed, so totals are per fluid species)';
+  $('s-hint').textContent = sValid ? '' : '(stopped because the partition was removed)';
   $('n1').textContent = gas?.vpart ? 'Subsystem 1 (left)' : 'Fluid 1 (blue)';
   $('n2').textContent = gas?.vpart ? 'Subsystem 2 (right)' : 'Fluid 2 (white)';
 }
 
 const partSeg = segmented('part', (v) => {
   partMode = v;
-  if (v === 'none') gas.setVPartition(null);
+  if (v === 'none') { gas.setVPartition(null); sValid = false; }
   else gas.setVPartition(50, v === 'adiabatic' ? ADIABATIC : DIATHERMAL);
   hint();
 }, false);
@@ -195,7 +268,30 @@ const loop = new Loop((paused) => {
     $('U1').textContent = fmt(g[0].U, 1); $('U2').textContent = fmt(g[1].U, 1); $('Us').textContent = fmt(Us, 1);
     $('Q1').textContent = fmtSigned(g[0].U - U0[0], 1); $('Q2').textContent = fmtSigned(g[1].U - U0[1], 1);
     $('Qs').textContent = fmtSigned(Us - U0[0] - U0[1], 1);
-    if (frame % 2 === 0) { plotT.draw(); plotU.draw(); }
+    if (sValid) {
+      const k = 0.05;   // slightly smoothed temperatures for display (so the direction does not flicker with fluctuations)
+      if (!sm) sm = { T1: g[0].T, T2: g[1].T };
+      sm.T1 += k * (g[0].T - sm.T1); sm.T2 += k * (g[1].T - sm.T2);
+      const S1 = dS1(g[0].U), S2 = dS2(g[1].U);
+      sUt = g[0].U + g[1].U;   // 仕切り壁が蓄える分だけわずかに変わる / changes slightly by what the wall stores
+      const uStar = (sUt * sN[0]) / (sN[0] + sN[1]);
+      plotSU.peak = [uStar, dS1(uStar) + dS2(sUt - uStar)];
+      plotS.push(gas.time, { S1, S2, S: S1 + S2 });
+      plotSU.marker = [g[0].U, S1 + S2];
+      if (frame % 4 === 0) { sTrail.push([g[0].U, S1 + S2]); if (sTrail.length > 400) sTrail.shift(); }
+      $('r-b1').textContent = fmt(1 / sm.T1, 3); $('r-b2').textContent = fmt(1 / sm.T2, 3);
+      $('r-dSdU').textContent = fmtSigned(1 / sm.T1 - 1 / sm.T2, 3);
+      $('r-dS').textContent = fmtSigned(S1 + S2, 1);
+    }
+    if (frame % 2 === 0) {
+      plotT.draw(); plotU.draw();
+      if (sValid) {
+        plotSU.paths = [{ label: 'Top (T₁ = T₂)', color: '#77756f', pts: [plotSU.peak], ends: true },
+          { label: 'Path so far', color: SERIES[2], pts: sTrail, width: 1.5 }];
+        plotSU.draw(); plotS.draw();
+      }
+      if (sm) showDirection(sm.T1, sm.T2);
+    }
     if (frame % 8 === 0) {
       const vmax = 3.6 * Math.sqrt(Math.max(g[0].T, g[1].T, 0.5));
       const pick = (k) => (i) => (gas.vpart ? gas.region[i] : gas.species[i]) === k;
