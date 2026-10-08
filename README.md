@@ -60,7 +60,16 @@ python3 -m http.server 8000
 npm test     # = node tests/physics-test.mjs
 ```
 
-GitHub に push すると `.github/workflows/test.yml` で自動実行されます。
+GitHub に push すると `.github/workflows/test.yml` で自動実行されます（物理テストとブラウザテストの両方）。
+
+ブラウザでの操作テスト（全ページの全ボタン・スライダーを操作し、JS エラー・NaN 表示・スマホ幅での横スクロールを検出。スクリーンショットを `tests/screenshots/` に保存）：
+
+```bash
+npm install && npx playwright install chromium   # 初回のみ（テスト専用。公開ページは npm パッケージを使いません）
+npm run test:browser
+```
+
+改良するときの約束（物理モデル・符号の約束・確認手順・ブランチ運用）は `CONTRIBUTING.md` にまとめてあります。人が作業するときも、Claude Code などの AI ツールで作業するときも共通です（`CLAUDE.md`・`AGENTS.md` はそこを参照しています）。
 
 ## ファイル構成
 
@@ -73,6 +82,7 @@ assets/js/plot.js          時系列・P–V 図・ヒストグラム（外部�
 assets/js/ui.js            スライダー等の UI ヘルパー
 assets/css/style.css       共通スタイル
 tests/physics-test.mjs     物理テスト
+tests/smoke-browser.mjs    ブラウザ操作テスト（Playwright）
 ```
 
 ### 新しいシミュレーションを追加するには
