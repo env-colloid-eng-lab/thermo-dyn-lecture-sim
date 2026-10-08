@@ -212,7 +212,7 @@ export class Gas {
   setVPartition(x, type = ADIABATIC) {
     if (x == null) { this.vpart = null; this._updateRegions(); return; }
     const old = this.vpart;
-    this.vpart = { x, type, Tw: old?.Tw ?? this._meanT(), Cw: 30, pass: old?.pass ?? 0,
+    this.vpart = { x, type, Tw: old?.Tw ?? this._meanT(), Cw: old?.Cw ?? 30, pass: old?.pass ?? 0,
       movable: old?.movable ?? false, M: old?.M ?? 30, u: old?.u ?? 0 };
     for (let i = 0; i < this.N; i++) this.px[i] = this.x[i];
     this._updateRegions();
@@ -220,7 +220,7 @@ export class Gas {
   setHPartition(y, type = ADIABATIC) {
     if (y == null) { this.hpart = null; this._updateRegions(); return; }
     const old = this.hpart;
-    this.hpart = { y, type, Tw: old?.Tw ?? this._meanT(), Cw: 30 };
+    this.hpart = { y, type, Tw: old?.Tw ?? this._meanT(), Cw: old?.Cw ?? 30 };
     for (let i = 0; i < this.N; i++) this.py[i] = this.y[i];
     this._updateRegions();
   }
