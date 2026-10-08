@@ -62,6 +62,15 @@ npm test     # = node tests/physics-test.mjs
 
 GitHub に push すると `.github/workflows/test.yml` で自動実行されます。
 
+ブラウザでの操作テスト（全ページの全ボタン・スライダーを操作し、JS エラー・NaN 表示・スマホ幅での横スクロールを検出。スクリーンショットを `tests/screenshots/` に保存）：
+
+```bash
+npm i -D playwright && npx playwright install chromium   # 初回のみ
+npm run test:browser
+```
+
+Claude Code で改良するときの約束は `CLAUDE.md` にまとめてあります。
+
 ## ファイル構成
 
 ```

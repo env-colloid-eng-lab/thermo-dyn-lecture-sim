@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "test": "node tests/physics-test.mjs",
-    "serve": "python3 -m http.server 8000"
+    "serve": "python3 -m http.server 8000",
+    "test:browser": "node tests/smoke-browser.mjs --shots"
   },
   "license": "MIT"
 }
