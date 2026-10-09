@@ -238,7 +238,8 @@ reset();
 
 let frame = 0;
 const loop = new Loop((paused) => {
-  if (!paused) { sample(); frame++; if (frame % 2 === 0) update(); }
+  if (!paused) { sample(); frame++; }
+  if (frame % 2 === 0 || paused) update();
   draw();
 });
 bindPlayPause('btn-play', loop);

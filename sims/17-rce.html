@@ -161,6 +161,7 @@ const loop = new Loop((paused) => {
     frame++;
     plotS.push(rce.t / 86400, { c: rce.Ts, r: rad.Ts });
   }
+  if (paused) last = rce.fluxes();   // 停止中に τ を変えても収支を今の状態で表示する
   if (frame % 2 === 0 || paused) { update(last); plotS.draw(); }
 });
 bindPlayPause('btn-play', loop);
