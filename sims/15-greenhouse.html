@@ -114,7 +114,7 @@ import { $, fmt, fmtSigned, bindRange, Loop, bindPlayPause, setupCommon } from '
 setupCommon();
 const YEAR = 365.25 * 86400, CW = 4.2e6;
 let S0 = 1361, alb = 0.3, eps = 0.8, h = 10, co2 = 2, fb = 0, yrPerSec = 0.3;
-let Ts = 0, t = 0;
+let Ts = 0, t = 0, tPushed = -1;   // tPushed：最後にグラフへ記録した時刻（一時停止中に同じ点を重ねないため）
 
 const phiAbs = () => absorbedSolar(S0, alb);
 const CA = () => CW * h;
@@ -122,7 +122,7 @@ const plotT = new TimePlot($('plotT'), { height: 190, ylabel: '温度（K）', w
   series: [{ key: 'Ts', label: '地表 T_s', color: '#d6453d' }, { key: 'eq', label: '定常状態の T_s', color: '#77756f', dash: [6, 4] }, { key: 'Te', label: 'T_e', color: SERIES[0], dash: [2, 3] }] });
 const plotR = new XYPlot($('plotR'), { height: 230, xmin: 0, xmax: 5, ymin: 0, ymax: 3, xlabel: '時間 （年）', ylabel: 'ΔT_s （K）', xd: 2, yd: 2 });
 
-function reset() { Ts = oneLayer(phiAbs(), eps).Ts; t = 0; plotT.reset(); }
+function reset() { Ts = oneLayer(phiAbs(), eps).Ts; t = 0; tPushed = -1; plotT.reset(); }
 
 /** 地表温度を dt 秒進める（大気はすばやく放射平衡：T_a⁴ = T_s⁴/2） */
 function step(dt) {
@@ -189,7 +189,7 @@ function update() {
     : imb > 0 ? '<b>入る方が多い</b>：地球にエネルギーがたまり、地表の温度が上がっていく。'
       : '<b>出る方が多い</b>：地球からエネルギーが減り、地表の温度が下がっていく。') +
     ` 地表と大気の間の正味の放射は、暖かい地表から冷たい大気へ ${fmt(net, 0)} W m⁻²（下向きの放射より、地表が大気へ渡す放射の方が多い）。`;
-  plotT.push(t / YEAR, { Ts, eq: eq.Ts, Te });
+  if (t !== tPushed) { plotT.push(t / YEAR, { Ts, eq: eq.Ts, Te }); tPushed = t; }
   // CO₂ とフィードバック
   const dF = co2Forcing(co2), B = restoringB(eps, eq.Ts), k = B - fb, CAv = CA();
   $('r-F').textContent = `${fmt(dF, 2)} W m⁻²`; $('r-B').textContent = `${fmt(B, 2)} W m⁻² K⁻¹`;

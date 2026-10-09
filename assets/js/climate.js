@@ -162,6 +162,6 @@ export class Column {
       this.convHeat = q.map((e, i) => (e / C[i] / dt) * 86400);   // K/day
     } else this.convHeat.fill(0);
     this.t += dt;
-    return f;
+    return this.fluxes();   // 更新後の状態の収支
   }
 }

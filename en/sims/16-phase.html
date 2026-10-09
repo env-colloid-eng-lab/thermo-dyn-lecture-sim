@@ -112,7 +112,7 @@ import { $, fmt, fmtSigned, bindRange, segmented, Loop, bindPlayPause, setupComm
 setupCommon();
 // stochastic model: box width 1, height 1, water surface at YL; molecules fly straight at a fixed speed v(T) and bounce off walls
 const YL = 0.18, TREF = 293, NREF = 120, V0 = 0.35, MAXN = 600;
-let T = 293, lid = 'closed', mol = [], splash = [], time = 0, evap = 0, cond = 0, rates = { e: 0, c: 0 }, eSm = 0, last = { t: 0, e: 0, c: 0 };
+let T = 293, lid = 'closed', mol = [], splash = [], time = 0, evap = 0, cond = 0, rates = { e: 0, c: 0 }, eSm = 0, last = { t: 0, e: 0, c: 0 }, tPushed = -1;
 
 const speed = () => V0 * Math.sqrt(T / TREF);
 // rate at which one molecule hits the surface (2D, random direction, fixed speed: ⟨downward speed⟩ = v/π)
@@ -132,7 +132,7 @@ function addMol(n, y0) {
     mol.push({ x: Math.random(), y: y0 ?? YL + (1 - YL) * Math.random(), a });
   }
 }
-function reset() { mol = []; splash = []; time = 0; evap = 0; cond = 0; eSm = 0; rates = { e: 0, c: 0 }; last = { t: 0, e: 0, c: 0 }; plotN.reset(); }
+function reset() { mol = []; splash = []; time = 0; tPushed = -1; evap = 0; cond = 0; eSm = 0; rates = { e: 0, c: 0 }; last = { t: 0, e: 0, c: 0 }; plotN.reset(); }
 
 function step(dt) {
   const v = speed();
@@ -210,7 +210,7 @@ function update() {
   if (Math.abs(H - 1) < 0.06) el.innerHTML = '<b>Saturated (phase equilibrium)</b>: μ<sub>vapor</sub> ≈ μ<sub>liquid</sub>. Leaving and entering balance, with no net transfer (within fluctuations).';
   else if (H < 1) el.innerHTML = '<b>Unsaturated</b>: μ<sub>vapor</sub> &lt; μ<sub>liquid</sub> (Δμ &lt; 0). Moving water from liquid to vapor lowers <i>G</i>, so there is <b>net evaporation</b>.';
   else el.innerHTML = '<b>Supersaturated</b>: μ<sub>vapor</sub> &gt; μ<sub>liquid</sub> (Δμ &gt; 0). Moving water from vapor to liquid lowers <i>G</i>, so there is <b>net condensation</b>.';
-  plotN.push(time, { e: eRaw, es, sm: e });
+  if (time !== tPushed) { plotN.push(time, { e: eRaw, es, sm: e }); tPushed = time; }
   // the e_s(T) curve
   const Td = e > 0 ? dewPoint(e) : NaN;
   $('r-Td').textContent = Number.isFinite(Td) ? `${fmt(Td, 1)} K` : '–';

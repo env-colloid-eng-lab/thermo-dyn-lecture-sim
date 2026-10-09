@@ -114,7 +114,7 @@ import { $, fmt, fmtSigned, bindRange, Loop, bindPlayPause, setupCommon } from '
 setupCommon();
 const YEAR = 365.25 * 86400, CW = 4.2e6;
 let S0 = 1361, alb = 0.3, eps = 0.8, h = 10, co2 = 2, fb = 0, yrPerSec = 0.3;
-let Ts = 0, t = 0;
+let Ts = 0, t = 0, tPushed = -1;   // tPushed: last time recorded on the plot (avoid duplicate points while paused)
 
 const phiAbs = () => absorbedSolar(S0, alb);
 const CA = () => CW * h;
@@ -122,7 +122,7 @@ const plotT = new TimePlot($('plotT'), { height: 190, ylabel: 'temperature (K)',
   series: [{ key: 'Ts', label: 'surface T_s', color: '#d6453d' }, { key: 'eq', label: 'steady-state T_s', color: '#77756f', dash: [6, 4] }, { key: 'Te', label: 'T_e', color: SERIES[0], dash: [2, 3] }] });
 const plotR = new XYPlot($('plotR'), { height: 230, xmin: 0, xmax: 5, ymin: 0, ymax: 3, xlabel: 'time (years)', ylabel: 'ΔT_s （K）', xd: 2, yd: 2 });
 
-function reset() { Ts = oneLayer(phiAbs(), eps).Ts; t = 0; plotT.reset(); }
+function reset() { Ts = oneLayer(phiAbs(), eps).Ts; t = 0; tPushed = -1; plotT.reset(); }
 
 /** Advance the surface temperature by dt seconds (the atmosphere is in fast radiative equilibrium: T_a⁴ = T_s⁴/2) */
 function step(dt) {
@@ -189,7 +189,7 @@ function update() {
     : imb > 0 ? '<b>More comes in</b>: energy accumulates on Earth and the surface temperature rises.'
       : '<b>More goes out</b>: Earth loses energy and the surface temperature falls.') +
     ` The net radiation between surface and atmosphere is ${fmt(net, 0)} W m⁻² from the warm surface to the cold atmosphere (the surface gives the atmosphere more than the downward radiation returns).`;
-  plotT.push(t / YEAR, { Ts, eq: eq.Ts, Te });
+  if (t !== tPushed) { plotT.push(t / YEAR, { Ts, eq: eq.Ts, Te }); tPushed = t; }
   // CO₂ and feedbacks
   const dF = co2Forcing(co2), B = restoringB(eps, eq.Ts), k = B - fb, CAv = CA();
   $('r-F').textContent = `${fmt(dF, 2)} W m⁻²`; $('r-B').textContent = `${fmt(B, 2)} W m⁻² K⁻¹`;

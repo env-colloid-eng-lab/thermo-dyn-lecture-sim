@@ -392,6 +392,8 @@ const f = (v, d = 3) => Number(v).toFixed(d);
   const zc = col.heights(), top = col.T.length - 1;
   check('放射対流平衡: 大気上端で J_abs = OLR、成層圏は放射平衡', Math.abs(fc.olr - 240) < 0.05 && Math.abs(fc.heat[top]) < 0.01, `OLR=${f(fc.olr, 2)} T_s=${f(col.Ts, 1)}`);
   check('放射対流平衡: 地表付近の減率 = 6.5 K/km、放射平衡だけより地表が冷たい', Math.abs((col.T[0] - col.T[1]) / (zc[2] - zc[1]) - 6.5) < 0.05 && rad.Ts > col.Ts + 10, `放射平衡のみ T_s=${f(rad.Ts, 1)}`);
+  const c1 = new CL.Column({ tauS: 1.6 }), r1 = c1.step(21600);
+  check('気柱モデル: step() は更新後の状態の収支を返す', Math.abs(r1.olr - c1.fluxes().olr) < 1e-9, `OLR=${f(r1.olr, 2)}`);
   const N2 = CL.bruntN2(288, 6.5);
   check('浮力振動数: Γ_env < Γ_d で N² > 0、周期 ≈ 10 分', N2 > 0 && Math.abs(2 * Math.PI / Math.sqrt(N2) / 60 - 9.8) < 1.5, `周期=${f(2 * Math.PI / Math.sqrt(N2) / 60, 1)} 分`);
   const a = CL.lapseProfile(5, 288.15, 1000, CL.GAMMA_D), th = CL.potentialTemp(a.T, a.p);
