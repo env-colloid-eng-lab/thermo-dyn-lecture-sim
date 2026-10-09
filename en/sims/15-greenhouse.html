@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>15 Radiation budget and the greenhouse effect | Thermodynamics Simulations</title>
+<link rel="icon" href="../../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body>
+<header class="site-header"><div class="inner">
+  <h1>15 Radiation budget and the greenhouse effect</h1><span class="sub">Application: the first law as a budget per unit time ― one-layer atmosphere, temperature response, CO₂ and feedbacks</span>
+  <nav>
+    <a href="../index.html">Contents</a>
+    <a href="01-operations.html">01 Walls & operations</a>
+    <a href="02-equilibrium.html">02 Relaxation to equilibrium</a>
+    <a href="03-processes.html">03 Quasi-static vs. irreversible</a>
+    <a href="04-isothermal.html">04 Isothermal energy balance</a>
+    <a href="05-extensive.html">05 Extensive & intensive</a>
+    <a href="06-heat-capacity.html">06 Heat capacity</a>
+    <a href="07-entropy.html">07 Entropy</a>
+    <a href="08-heat-engines.html">08 Heat engines</a>
+    <a href="09-osmosis.html">09 Osmotic pressure</a>
+    <a href="10-max-work.html">10 Reversible vs. irreversible</a>
+    <a href="11-sedimentation.html">11 Sedimentation</a>
+    <a href="12-partitions.html">12 Partitions & equilibrium</a>
+    <a href="13-chain.html">13 Chain elasticity</a>
+    <a href="14-stability.html">14 Atmospheric stability</a>
+    <a href="15-greenhouse.html" aria-current="page">15 Radiation & greenhouse</a>
+    <a href="16-phase.html">16 Phase equilibrium & vapor</a>
+    <a href="17-rce.html">17 Radiative-convective eq.</a>
+    <a href="../../sims/15-greenhouse.html" lang="ja" hreflang="ja">日本語</a>
+    <button id="btn-proj" title="Enlarge text">Projector mode</button>
+  </nav>
+</div></header>
+
+<main class="layout">
+  <div class="col">
+    <section class="card">
+      <h2><span class="tag">Macro</span>Radiation in the one-layer atmosphere model (global mean, W m⁻²) <span class="hint">Arrow widths are proportional to the amounts. The atmosphere lets sunlight through and absorbs a fraction ε of the infrared radiation from the surface</span></h2>
+      <div class="canvas-wrap"><canvas id="diag"></canvas></div>
+      <div class="readouts wrap">
+        <div class="stat"><span class="k">Absorbed solar radiation <i>J</i><sub>abs</sub> = (1−α)<i>S</i>₀/4</span><span class="v" id="r-abs">–</span></div>
+        <div class="stat"><span class="k">Effective radiating temperature <i>T</i><sub>e</sub></span><span class="v" id="r-Te">–</span></div>
+        <div class="stat int"><span class="k">Surface temperature <i>T</i><sub>s</sub> (now)</span><span class="v" id="r-Ts">–</span></div>
+        <div class="stat"><span class="k">Steady-state <i>T</i><sub>s</sub> = <i>T</i><sub>e</sub>(1 − ε/2)<sup>−1/4</sup></span><span class="v" id="r-Tseq">–</span></div>
+        <div class="stat"><span class="k">Top-of-atmosphere budget <i>J</i><sub>abs</sub> − <i>J</i><sub>out</sub></span><span class="v" id="r-imb">–</span></div>
+      </div>
+      <p class="q" id="r-dir" style="margin-top:8px"></p>
+      <div class="canvas-wrap"><canvas id="plotT"></canvas></div>
+    </section>
+
+    <section class="card">
+      <h2><span class="tag">Macro</span>CO₂ radiative forcing and feedbacks <span class="hint">Linear response <i>C<sub>A</sub></i> dΔ<i>T</i>/d<i>t</i> = Δ<i>J</i> − (<i>B</i> − <i>f</i>)Δ<i>T</i></span></h2>
+      <div class="canvas-wrap"><canvas id="plotR"></canvas></div>
+      <div class="readouts wrap">
+        <div class="stat"><span class="k">Forcing Δ<i>J</i> = 5.35 ln(<i>C</i>/<i>C</i>₀)</span><span class="v" id="r-F">–</span></div>
+        <div class="stat"><span class="k">Restoring coefficient <i>B</i><sub>s</sub> = 4(1−ε/2)σ<i>T</i><sub>s</sub>³</span><span class="v" id="r-B">–</span></div>
+        <div class="stat int"><span class="k">Final warming Δ<i>J</i>/(<i>B</i> − <i>f</i>)</span><span class="v" id="r-dT">–</span></div>
+        <div class="stat"><span class="k">Time constant <i>C<sub>A</sub></i>/(<i>B</i> − <i>f</i>)</span><span class="v" id="r-tau">–</span></div>
+        <div class="stat"><span class="k">Compare: for a black body Δ<i>J</i>/4σ<i>T</i><sub>e</sub>³</span><span class="v" id="r-bb">–</span></div>
+      </div>
+    </section>
+  </div>
+
+  <div class="col">
+    <section class="card ctrl">
+      <h2>Controls</h2>
+      <div class="btns">
+        <button id="btn-play" class="primary"></button>
+        <button id="btn-reset">Start from steady state</button>
+      </div>
+      <div class="row"><label for="speed">Time speed (years/s)</label><input type="range" id="speed" min="-1.5" max="0.7" step="0.05" value="-0.5"><output id="speed-val"></output></div>
+      <div class="group-title">Radiation settings (may be changed while running)</div>
+      <div class="row"><label for="S0">Solar constant <i>S</i>₀ (W m⁻²)</label><input type="range" id="S0" min="1200" max="1500" step="5" value="1361"><output id="S0-val"></output></div>
+      <div class="row"><label for="alb">Albedo α</label><input type="range" id="alb" min="0.1" max="0.6" step="0.01" value="0.3"><output id="alb-val"></output></div>
+      <div class="row"><label for="eps">Infrared absorptivity ε</label><input type="range" id="eps" min="0" max="1" step="0.01" value="0.8"><output id="eps-val"></output></div>
+      <div class="row"><label for="h">Ocean mixed-layer depth (m)</label><input type="range" id="h" min="5" max="200" step="5" value="10"><output id="h-val"></output></div>
+      <p class="hint" style="margin:0">Effective heat capacity <i>C<sub>A</sub></i> = 4.2×10⁶ J m⁻³ K⁻¹ × depth (heat capacity of water).</p>
+      <div class="group-title">CO₂ and feedbacks (lower plot)</div>
+      <div class="row"><label for="co2">CO₂ concentration ratio <i>C</i>/<i>C</i>₀</label><input type="range" id="co2" min="1" max="4" step="0.1" value="2"><output id="co2-val"></output></div>
+      <div class="row"><label for="fb">Feedback <i>f</i> (W m⁻² K⁻¹)</label><input type="range" id="fb" min="0" max="3" step="0.1" value="0"><output id="fb-val"></output></div>
+    </section>
+
+    <section class="card notes">
+      <h2>Goal</h2>
+      <p>Treating the whole Earth as one system, the first law reads "heat capacity × rate of temperature change = energy coming in − energy going out", <span class="math">C<sub>A</sub> dT/dt = J<sub>in</sub> − J<sub>out</sub></span>. The sign of this budget decides which way the temperature changes. What comes in is absorbed sunlight; what goes out is infrared radiation to space (proportional to the fourth power of temperature: the Stefan–Boltzmann law).</p>
+      <p>When the atmosphere absorbs the surface's infrared radiation (ε), less radiation escapes to space, and the surface satisfies a new budget at a higher temperature (the greenhouse effect). Where the budget balances is a steady state. It is not equilibrium: energy keeps flowing in from the Sun and out to space.</p>
+      <h3>Try it</h3>
+      <ol>
+        <li>Set ε = 0. The surface temperature approaches <i>T</i><sub>e</sub> ≈ 255 K. What happens when you go back to ε = 0.8? And with ε = 1?</li>
+        <li>Raise ε while running. The top-of-atmosphere budget becomes positive (more comes in), the surface warms, and the budget returns to 0. What sets how fast the temperature changes meanwhile?</li>
+        <li>Change the mixed-layer depth (heat capacity). Does the final temperature change? The time to get there?</li>
+        <li>Lower plot: doubling CO₂ (<i>C</i>/<i>C</i>₀ = 2) gives Δ<i>J</i> ≈ 3.7 W m⁻². As you increase the feedback <i>f</i>, what happens to the final warming and the time constant? What happens if <i>f</i> exceeds <i>B</i>?</li>
+      </ol>
+      <div class="q"><b>Question</b> Downward radiation from the cold atmosphere reaches the warm surface. Can we say "heat flows from cold to warm, so the second law is violated"? Check the direction of the <b>net</b> radiative exchange between surface and atmosphere with the numbers in the diagram.</div>
+      <div class="q"><b>Question</b> Even with the same radiation leaving to space (a steady state), the surface temperature depends on ε. Why? Check that the budget balances whether you draw the boundary around the surface, the atmosphere, or the whole Earth.</div>
+      <div class="q"><b>Question</b> Even with a positive feedback (<i>f</i> &gt; 0), the temperature does not rise without bound as long as <i>f</i> &lt; <i>B</i>. If it warms a little too much, which way does the net budget push it back?</div>
+      <details><summary>Summary of formulas</summary>
+        <p>Absorbed solar radiation <span class="math">J<sub>abs</sub> = (1−α)S₀/4</span> (the 1/4 is the ratio of the Earth's cross-section to its surface area). Effective radiating temperature <span class="math">σT<sub>e</sub>⁴ = J<sub>abs</sub></span>.</p>
+        <p>One-layer model: from the atmosphere budget <span class="math">εσT<sub>s</sub>⁴ = 2εσT<sub>a</sub>⁴</span> and the top-of-atmosphere budget <span class="math">J<sub>abs</sub> = (1−ε)σT<sub>s</sub>⁴ + εσT<sub>a</sub>⁴</span>, <span class="math">T<sub>s</sub> = T<sub>e</sub>(1 − ε/2)<sup>−1/4</sup></span>.</p>
+        <p>Time evolution: assuming the atmosphere reaches radiative equilibrium quickly (<span class="math">T<sub>a</sub>⁴ = T<sub>s</sub>⁴/2</span>), the surface temperature is advanced with <span class="math">C<sub>A</sub> dT<sub>s</sub>/dt = J<sub>abs</sub> − (1 − ε/2)σT<sub>s</sub>⁴</span>. Linearizing around the steady state gives the restoring coefficient <span class="math">B<sub>s</sub> = 4(1 − ε/2)σT<sub>s</sub>³</span> and time constant <span class="math">τ = C<sub>A</sub>/B</span>.</p>
+        <p>The CO₂ forcing <span class="math">ΔJ = 5.35 ln(C/C₀)</span> W m⁻² is an approximation obtained from radiative calculations including absorption spectra, not derived from the laws of thermodynamics. The feedback <i>f</i> (water vapor etc.) is also given separately from radiative calculations. <i>J</i> in this material is energy flow per unit area (written <i>J</i> to distinguish it from the free energy <i>F</i>).</p>
+      </details>
+    </section>
+  </div>
+</main>
+
+<script type="module">
+import { SIGMA, absorbedSolar, effectiveTemp, oneLayer, restoringB, co2Forcing, linearResponse } from '../../assets/js/climate.js';
+import { XYPlot, TimePlot, SERIES } from '../../assets/js/plot.js';
+import { $, fmt, fmtSigned, bindRange, Loop, bindPlayPause, setupCommon } from '../../assets/js/ui.js';
+
+setupCommon();
+const YEAR = 365.25 * 86400, CW = 4.2e6;
+let S0 = 1361, alb = 0.3, eps = 0.8, h = 10, co2 = 2, fb = 0, yrPerSec = 0.3;
+let Ts = 0, t = 0, tPushed = -1;   // tPushed: last time recorded on the plot (avoid duplicate points while paused)
+
+const phiAbs = () => absorbedSolar(S0, alb);
+const CA = () => CW * h;
+const plotT = new TimePlot($('plotT'), { height: 190, ylabel: 'temperature (K)', window: 10, xlabel: 'time t (years)',
+  series: [{ key: 'Ts', label: 'surface T_s', color: '#d6453d' }, { key: 'eq', label: 'steady-state T_s', color: '#77756f', dash: [6, 4] }, { key: 'Te', label: 'T_e', color: SERIES[0], dash: [2, 3] }] });
+const plotR = new XYPlot($('plotR'), { height: 230, xmin: 0, xmax: 5, ymin: 0, ymax: 3, xlabel: 'time (years)', ylabel: 'ΔT_s （K）', xd: 2, yd: 2 });
+
+function reset() { Ts = oneLayer(phiAbs(), eps).Ts; t = 0; tPushed = -1; plotT.reset(); }
+
+/** Advance the surface temperature by dt seconds (the atmosphere is in fast radiative equilibrium: T_a⁴ = T_s⁴/2) */
+function step(dt) {
+  const B = restoringB(eps, Ts) + 1e-9, n = Math.max(1, Math.ceil(dt / (0.05 * CA() / B)));
+  for (let k = 0; k < n; k++) Ts += ((phiAbs() - (1 - eps / 2) * SIGMA * Ts ** 4) * (dt / n)) / CA();
+  t += dt;
+}
+
+// --- radiation diagram ---
+const cv = $('diag');
+let dpr = 1;
+function resize() {
+  dpr = window.devicePixelRatio || 1;
+  const w = cv.parentElement.clientWidth || 600, hh = Math.round(Math.min(340, Math.max(260, w * 0.45)));
+  cv.style.width = w + 'px'; cv.style.height = hh + 'px'; cv.width = Math.round(w * dpr); cv.height = Math.round(hh * dpr);
+}
+if (typeof ResizeObserver !== 'undefined') new ResizeObserver(() => { resize(); drawDiag(); }).observe(cv.parentElement);
+resize();
+
+function arrow(ctx, x, y0, y1, phi, color, label, side = 1, ly = null) {
+  const W = Math.max(2, (phi / 400) * 22) * dpr, dir = Math.sign(y1 - y0), head = 9 * dpr;
+  ctx.fillStyle = color; ctx.strokeStyle = color;
+  ctx.fillRect(x - W / 2, Math.min(y0, y1 - dir * head), W, Math.abs(y1 - dir * head - y0));
+  ctx.beginPath(); ctx.moveTo(x - W / 2 - 5 * dpr, y1 - dir * head); ctx.lineTo(x + W / 2 + 5 * dpr, y1 - dir * head); ctx.lineTo(x, y1); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#1f1f1f'; ctx.font = `${(cv.width / dpr < 560 ? 11 : 12) * dpr}px sans-serif`; ctx.textBaseline = 'middle';
+  ctx.textAlign = side > 0 ? 'left' : 'right';
+  const lines = label.split('\n');
+  const yc = ly ?? (y0 + y1) / 2;
+  lines.forEach((l, k) => ctx.fillText(l, x + side * (W / 2 + 8 * dpr), yc + (k - (lines.length - 1) / 2) * 15 * dpr));
+}
+
+function drawDiag() {
+  const ctx = cv.getContext('2d'), W = cv.width, H = cv.height;
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.fillStyle = '#f2f4fa'; ctx.fillRect(0, 0, W, H);                                   // space
+  const yA0 = H * 0.36, yA1 = H * 0.52, yS = H * 0.84;
+  ctx.fillStyle = 'rgba(218,227,243,0.95)'; ctx.fillRect(0, yA0, W, yA1 - yA0);          // atmospheric layer
+  ctx.fillStyle = '#d9cfb8'; ctx.fillRect(0, yS, W, H - yS);                               // surface
+  const Ta = Ts * Math.pow(0.5, 0.25), up = SIGMA * Ts ** 4, atm = eps * SIGMA * Ta ** 4, abs = phiAbs();
+  const compact = W / dpr < 560;   // shorter labels on narrow screens
+  ctx.fillStyle = '#1f1f1f'; ctx.font = `${(compact ? 11 : 13) * dpr}px sans-serif`; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+  ctx.fillText('Space', 8 * dpr, 6 * dpr);
+  ctx.fillText(`Atmosphere T_a = ${fmt(Ta, 1)} K`, 8 * dpr, yA0 + 4 * dpr);
+  ctx.fillText(`Surface T_s = ${fmt(Ts, 1)} K`, 8 * dpr, yS + 6 * dpr);
+  const xs = (compact ? [0.42, 0.58, 0.74, 0.92] : [0.3, 0.5, 0.68, 0.9]).map((f) => f * W);
+  const L = compact
+    ? ['Sun', 'Surface', 'Through', 'Atm.', 'Atm.']
+    : ['Sun', 'Surface σT_s⁴', 'Passes through', 'Atm. εσT_a⁴', 'Atm. εσT_a⁴'];
+  arrow(ctx, xs[0], 4 * dpr, yS, abs, '#f0a32b', `${L[0]}\n${fmt(abs, 0)}`, -1, yA0 * 0.55);
+  arrow(ctx, xs[1], yS, yA1, up, '#d6453d', `${L[1]}\n${fmt(up, 0)}`, 1);
+  arrow(ctx, xs[1], yA0, 4 * dpr, (1 - eps) * up, '#e8877f', `${L[2]}\n${fmt((1 - eps) * up, 0)}`, 1);
+  arrow(ctx, xs[2], yA0, 4 * dpr, atm, '#8a5bd6', `${L[3]}\n${fmt(atm, 0)}`, 1);
+  arrow(ctx, xs[3], yA1, yS, atm, '#8a5bd6', `${L[4]}\n${fmt(atm, 0)}`, -1);
+}
+
+function update() {
+  const abs = phiAbs(), Te = effectiveTemp(abs), eq = oneLayer(abs, eps), Ta = Ts * Math.pow(0.5, 0.25);
+  const out = (1 - eps / 2) * SIGMA * Ts ** 4, imb = abs - out;
+  $('r-abs').textContent = fmt(abs, 1); $('r-Te').textContent = `${fmt(Te, 1)} K`;
+  $('r-Ts').textContent = `${fmt(Ts, 1)} K`; $('r-Tseq').textContent = `${fmt(eq.Ts, 1)} K`;
+  $('r-imb').textContent = `${fmtSigned(imb, 2)} W m⁻²`;
+  const net = SIGMA * Ts ** 4 * eps - eps * SIGMA * Ta ** 4;   // net surface → atmosphere (absorbed from the surface − received from the atmosphere)
+  $('r-dir').innerHTML = (Math.abs(imb) < 0.05 ? '<b>Steady state</b>: incoming and outgoing radiation balance, and the temperature does not change.'
+    : imb > 0 ? '<b>More comes in</b>: energy accumulates on Earth and the surface temperature rises.'
+      : '<b>More goes out</b>: Earth loses energy and the surface temperature falls.') +
+    ` The net radiation between surface and atmosphere is ${fmt(net, 0)} W m⁻² from the warm surface to the cold atmosphere (the surface gives the atmosphere more than the downward radiation returns).`;
+  if (t !== tPushed) { plotT.push(t / YEAR, { Ts, eq: eq.Ts, Te }); tPushed = t; }
+  // CO₂ and feedbacks
+  const dF = co2Forcing(co2), B = restoringB(eps, eq.Ts), k = B - fb, CAv = CA();
+  $('r-F').textContent = `${fmt(dF, 2)} W m⁻²`; $('r-B').textContent = `${fmt(B, 2)} W m⁻² K⁻¹`;
+  $('r-dT').textContent = k > 0 ? `${fmt(dF / k, 2)} K` : 'undefined (runaway)';
+  $('r-tau').textContent = k > 0 ? `${fmt(CAv / k / YEAR, 2)} years` : '–';
+  $('r-bb').textContent = `${fmt(dF / (4 * SIGMA * effectiveTemp(abs) ** 3), 2)} K`;
+  const tmax = k > 0 ? Math.min(500, Math.max(1, (5 * CAv) / Math.min(B, k) / YEAR)) : 5;   // the slower time scale
+  Object.assign(plotR.opt, { xmax: tmax, ymax: k > 0 ? Math.max(1, (dF / k) * 1.3, (dF / B) * 1.3) : 5 });
+  plotR.refs = [{ label: 'f = 0 (no feedback)', color: '#77756f', dash: [6, 4], fn: (y) => linearResponse(y * YEAR, dF, B, 0, CAv) }];
+  if (k > 0) plotR.refs.push({ label: `f = ${fmt(fb, 1)}`, color: '#d6453d', fn: (y) => linearResponse(y * YEAR, dF, B, fb, CAv) });
+  plotR.draw();
+}
+
+bindRange('S0', (v) => { S0 = v; }, (v) => v.toFixed(0), false);
+bindRange('alb', (v) => { alb = v; }, (v) => v.toFixed(2), false);
+bindRange('eps', (v) => { eps = v; }, (v) => v.toFixed(2), false);
+bindRange('h', (v) => { h = v; }, (v) => v.toFixed(0), false);
+bindRange('co2', (v) => { co2 = v; }, (v) => v.toFixed(1), false);
+bindRange('fb', (v) => { fb = v; }, (v) => v.toFixed(1), false);
+bindRange('speed', (v) => { yrPerSec = Math.pow(10, v); }, (v) => (Math.pow(10, v) < 1 ? Math.pow(10, v).toFixed(2) : Math.pow(10, v).toFixed(1)));
+$('btn-reset').addEventListener('click', reset);
+reset();
+
+let frame = 0;
+const loop = new Loop((paused) => {
+  if (!paused) { step((yrPerSec * YEAR) / 60); frame++; }
+  if (frame % 2 === 0 || paused) { update(); plotT.draw(); drawDiag(); }
+});
+bindPlayPause('btn-play', loop);
+</script>
+</body>
+</html>

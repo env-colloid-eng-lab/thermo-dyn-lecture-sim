@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>17 放射対流平衡 | 熱力学シミュレーション</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+<header class="site-header"><div class="inner">
+  <h1>17 放射対流平衡</h1><span class="sub">応用：層ごとの収支を解いて気温の高さ分布を求める ― 灰色大気の放射と、エネルギーを保存する対流調整（眞鍋モデルの考え方）</span>
+  <nav>
+    <a href="../index.html">目次</a>
+    <a href="01-operations.html">01 壁と操作</a>
+    <a href="02-equilibrium.html">02 平衡への緩和</a>
+    <a href="03-processes.html">03 準静的と不可逆</a>
+    <a href="04-isothermal.html">04 等温過程の収支</a>
+    <a href="05-extensive.html">05 示量と示強</a>
+    <a href="06-heat-capacity.html">06 熱容量</a>
+    <a href="07-entropy.html">07 エントロピー</a>
+    <a href="08-heat-engines.html">08 熱機関</a>
+    <a href="09-osmosis.html">09 浸透圧</a>
+    <a href="10-max-work.html">10 可逆と不可逆</a>
+    <a href="11-sedimentation.html">11 沈降平衡</a>
+    <a href="12-partitions.html">12 仕切りと平衡条件</a>
+    <a href="13-chain.html">13 鎖の弾性</a>
+    <a href="14-stability.html">14 大気の安定性</a>
+    <a href="15-greenhouse.html">15 放射収支と温室効果</a>
+    <a href="16-phase.html">16 相平衡と水蒸気</a>
+    <a href="17-rce.html" aria-current="page">17 放射対流平衡</a>
+    <a href="../en/sims/17-rce.html" lang="en" hreflang="en">English</a>
+    <button id="btn-proj" title="文字を大きくする">投影モード</button>
+  </nav>
+</div></header>
+
+<main class="layout">
+  <div class="col">
+    <section class="card">
+      <h2><span class="tag">マクロ</span>気温の高さ分布 <span class="hint">等しい質量の 20 層＋地表。はじめはすべて 250 K。同じ条件で「対流あり」と「放射だけ」を同時に計算</span></h2>
+      <div class="canvas-wrap"><canvas id="plotT"></canvas></div>
+      <div class="readouts wrap">
+        <div class="stat int"><span class="k">地表温度（対流あり）</span><span class="v" id="r-Ts">–</span></div>
+        <div class="stat"><span class="k">地表温度（放射だけ）</span><span class="v" id="r-Tr">–</span></div>
+        <div class="stat"><span class="k">宇宙への放射 OLR（対流あり）</span><span class="v" id="r-olr">–</span></div>
+        <div class="stat"><span class="k">大気上端の収支 <i>J</i><sub>abs</sub> − OLR</span><span class="v" id="r-imb">–</span></div>
+        <div class="stat"><span class="k">対流が届く高さ（圏界面）</span><span class="v" id="r-trop">–</span></div>
+        <div class="stat"><span class="k">経過日数</span><span class="v" id="r-day">0</span></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2><span class="tag">マクロ</span>層ごとの加熱率（対流あり） <span class="hint">放射による加熱と対流による加熱。定常状態では両者の和が 0</span></h2>
+      <div class="canvas-wrap"><canvas id="plotH"></canvas></div>
+      <div class="canvas-wrap" style="margin-top:6px"><canvas id="plotS"></canvas></div>
+    </section>
+  </div>
+
+  <div class="col">
+    <section class="card ctrl">
+      <h2>操作パネル</h2>
+      <div class="btns">
+        <button id="btn-play" class="primary"></button>
+        <button id="btn-reset">はじめから（すべて 250 K）</button>
+      </div>
+      <div class="row"><label for="speed">時間の進み（日/コマ）</label><input type="range" id="speed" min="-0.5" max="1.3" step="0.05" value="0.3"><output id="speed-val"></output></div>
+      <div class="group-title">条件（途中で変えてよい）</div>
+      <div class="row"><label for="tau">赤外の光学的厚さ τ<sub>s</sub></label><input type="range" id="tau" min="0.3" max="4" step="0.1" value="1.6"><output id="tau-val"></output></div>
+      <div class="row"><label for="phi">吸収する太陽放射 <i>J</i><sub>abs</sub>（W m⁻²）</label><input type="range" id="phi" min="200" max="280" step="1" value="240"><output id="phi-val"></output></div>
+      <div class="row"><label for="gc">限界減率 Γ<sub>crit</sub>（K/km）</label><input type="range" id="gc" min="4" max="9.8" step="0.1" value="6.5"><output id="gc-val"></output></div>
+      <p class="hint" style="margin:0">τ<sub>s</sub> を増やすのは、赤外を吸収する気体（水蒸気・CO₂）を増やすことに相当する（灰色近似）。Γ<sub>crit</sub> = 9.8 は乾燥断熱減率、6.5 は水蒸気の凝結を含む対流の代表値。</p>
+    </section>
+
+    <section class="card notes">
+      <h2>ねらい</h2>
+      <p>第一法則「熱容量 × 温度の変化の速さ ＝ 流入 − 流出」を、地球全体ではなく大気の薄い層ごとに書く。各層の放射の流入・流出から温度を少しずつ更新すると、<b>放射だけ</b>なら地表付近の気温減率が大きくなりすぎ、対流不安定になる（14）。実際には対流が熱を上へ運び、気温減率は限界減率程度に保たれる。これを <b>エネルギーを保存する対流調整</b> で表すと、放射による冷却と対流による加熱がつり合った <b>放射対流平衡</b> が得られる。</p>
+      <p>平衡と呼ばれるが、熱力学的な平衡ではなく定常状態。太陽からのエネルギーが地表に入り、対流と放射で上へ運ばれ、宇宙へ出ていく流れが続いている。</p>
+      <h3>やってみよう</h3>
+      <ol>
+        <li>再生して、二つの分布が定常状態に落ち着くまで待つ。放射だけの地表温度は対流ありより何 K 高い？ どちらも大気上端では <i>J</i><sub>abs</sub> = OLR になっている。</li>
+        <li>下の加熱率の図：対流圏では放射で冷え（負）、対流で温まる（正）。成層圏（対流が届かない上空）では両方とも 0。</li>
+        <li>τ<sub>s</sub> を増やす（温室効果を強める）。地表は暖まるが、上空はどうなる？ 圏界面の高さは？</li>
+        <li>Γ<sub>crit</sub> を 9.8（乾燥）にすると地表温度は？ 6.5 より大きい？小さい？</li>
+      </ol>
+      <div class="q"><b>問い</b>　対流調整で温度の傾きだけを書き換えると、何が保存されなくなる？ このページでは各層の熱容量で重みをつけた <span class="math">Σ C<sub>i</sub>T<sub>i</sub></span> を保っている。下層 300 K・上層 280 K（同じ熱容量、高さの差 1 km）を 9.77 K/km にそろえると、それぞれ何 K になる？</div>
+      <div class="q"><b>問い</b>　対流がある層では放射の収支は 0 ではない。それでも温度が変わらないのはなぜ？ 局所の収支と、大気上端での地球全体の収支を区別しよう。</div>
+      <div class="q"><b>問い</b>　放射だけの大気は地表付近で減率が大きすぎた。14 の判定（温位が上ほど低い）で、この大気は安定か不安定か？</div>
+      <details><summary>モデルの中身（教育用の灰色大気）</summary>
+        <p>層の境界の上向き・下向きの長波を下から・上から順に求める（8.1 節の式）：<span class="math">U<sub>i</sub> = t<sub>i</sub>U<sub>i−1</sub> + (1 − t<sub>i</sub>)σT<sub>i</sub>⁴</span>、<span class="math">D<sub>i−1</sub> = t<sub>i</sub>D<sub>i</sub> + (1 − t<sub>i</sub>)σT<sub>i</sub>⁴</span>、地表は <span class="math">U₀ = σT<sub>s</sub>⁴</span>、宇宙からは <span class="math">D = 0</span>。層の透過率は <span class="math">t = exp(−1.66Δτ)</span>、光学的厚さは下層に多く <span class="math">τ(P) = τ<sub>s</sub>(P/P<sub>s</sub>)²</span>。</p>
+        <p>各層の温度は <span class="math">(c<sub>p</sub>ΔP/g) dT/dt = 流入 − 流出</span>（式 8.2）で 6 時間ずつ進める。太陽放射はすべて地表が吸収する（簡単のため）。対流ありの気柱では、毎回の更新のあと、地表と層の気温減率が Γ<sub>crit</sub> を超えた部分を、熱容量で重みをつけた合計エネルギーを保ったまま Γ<sub>crit</sub> の直線にそろえる。層の高さは静水圧平衡 <span class="math">dz = −(R<sub>d</sub>T/g) d ln P</span> から求める。</p>
+        <p>これは放射対流平衡の考え方を見るための教育モデルで、1967年の眞鍋・ウェザラルドのモデル（波長ごとの吸収、水蒸気量を相対湿度一定で決める、など）を再現するものではない。灰色大気なので、上空の温度などの細かい形は現実と合わない。</p>
+      </details>
+    </section>
+  </div>
+</main>
+
+<script type="module">
+import { Column } from '../assets/js/climate.js';
+import { XYPlot, TimePlot, SERIES } from '../assets/js/plot.js';
+import { $, fmt, fmtSigned, bindRange, Loop, bindPlayPause, setupCommon } from '../assets/js/ui.js';
+
+setupCommon();
+const DT = 6 * 3600;   // 1回の更新 6 時間
+let tau = 1.6, phi = 240, gc = 6.5, daysPerFrame = 2;
+let rce, rad, last;
+
+const plotT = new XYPlot($('plotT'), { height: 340, xmin: 180, xmax: 340, ymin: 0, ymax: 26, xlabel: 'T （K）', ylabel: '高さ z （km）', xd: 1, yd: 2 });
+const plotH = new XYPlot($('plotH'), { height: 280, xmin: -3, xmax: 3, ymin: 0, ymax: 26, xlabel: '加熱率 （K/日）', ylabel: '高さ z （km）', xd: 2, yd: 2 });
+const plotS = new TimePlot($('plotS'), { height: 170, ylabel: '地表温度（K）', window: 600, xlabel: '経過日数',
+  series: [{ key: 'c', label: '対流あり', color: '#d6453d' }, { key: 'r', label: '放射だけ', color: SERIES[0], dash: [6, 4] }] });
+
+function make(convect) { return new Column({ tauS: tau, phiAbs: phi, gammaCrit: gc, convect }); }
+function reset() { rce = make(true); rad = make(false); last = rce.fluxes(); plotS.reset(); }
+
+/** 地表と各層の (T, z) の点列 */
+const profile = (c) => { const z = c.heights(); return [[c.Ts, 0], ...c.T.map((T, i) => [T, z[i + 1]])]; };
+
+function update(f) {
+  const z = rce.heights(), zt = Math.ceil(z[z.length - 1] + 2);   // いちばん上の層の代表の高さまで
+  // 対流が届く一番上の層（対流による加熱が 0 でない）
+  let trop = 0; for (let i = 0; i < rce.T.length; i++) if (Math.abs(rce.convHeat[i + 1]) > 1e-6) trop = z[i + 1];
+  $('r-Ts').textContent = `${fmt(rce.Ts, 1)} K`; $('r-Tr').textContent = `${fmt(rad.Ts, 1)} K`;
+  $('r-olr').textContent = `${fmt(f.olr, 1)} W m⁻²`; $('r-imb').textContent = `${fmtSigned(phi - f.olr, 2)} W m⁻²`;
+  $('r-trop').textContent = trop > 0 ? `${fmt(trop, 1)} km` : '–';
+  $('r-day').textContent = fmt(rce.t / 86400, 0);
+  const pr = profile(rce), pd = profile(rad);
+  const Ts = pr.concat(pd).map((p) => p[0]);
+  Object.assign(plotT.opt, { xmin: Math.floor((Math.min(...Ts) - 10) / 10) * 10, xmax: Math.ceil((Math.max(...Ts) + 10) / 10) * 10, ymax: zt });
+  plotT.paths = [
+    { label: '対流あり（放射対流平衡へ）', color: '#d6453d', pts: pr, width: 2.5 },
+    { label: '放射だけ（放射平衡へ）', color: SERIES[0], pts: pd, width: 2, dash: [6, 4] },
+    { label: `限界減率 ${fmt(gc, 1)} K/km の直線`, color: '#77756f', pts: [[rce.Ts, 0], [rce.Ts - gc * zt, zt]], width: 1.2, dash: [2, 3] },
+  ];
+  plotT.marker = null;
+  plotT.draw();
+  // 加熱率
+  const rh = rce.radHeat.map((v, i) => [v, z[i + 1]]), ch = rce.convHeat.slice(1).map((v, i) => [v, z[i + 1]]);
+  const sum = rce.radHeat.map((v, i) => [v + rce.convHeat[i + 1], z[i + 1]]);
+  const mx = Math.max(1, ...rh.map((p) => Math.abs(p[0])), ...ch.map((p) => Math.abs(p[0])));
+  Object.assign(plotH.opt, { xmin: -Math.ceil(mx * 1.1), xmax: Math.ceil(mx * 1.1), ymax: zt });
+  plotH.paths = [
+    { label: '放射による加熱', color: SERIES[0], pts: rh, width: 2.2 },
+    { label: '対流による加熱', color: SERIES[1], pts: ch, width: 2.2 },
+    { label: '合計', color: '#1f1f1f', pts: sum, width: 1.4, dash: [4, 3] },
+  ];
+  plotH.draw();
+}
+
+bindRange('tau', (v) => { tau = v; rce?.setTau(v); rad?.setTau(v); }, (v) => v.toFixed(1), false);
+bindRange('phi', (v) => { phi = v; if (rce) { rce.o.phiAbs = v; rad.o.phiAbs = v; } }, (v) => v.toFixed(0), false);
+bindRange('gc', (v) => { gc = v; if (rce) rce.o.gammaCrit = v; }, (v) => v.toFixed(1), false);
+bindRange('speed', (v) => { daysPerFrame = Math.pow(10, v); }, (v) => Math.pow(10, v).toFixed(1));
+$('btn-reset').addEventListener('click', reset);
+reset();
+
+let frame = 0;
+const loop = new Loop((paused) => {
+  if (!paused) {
+    const n = Math.max(1, Math.round((daysPerFrame * 86400) / DT));
+    for (let k = 0; k < n; k++) { last = rce.step(DT); rad.step(DT); }
+    frame++;
+    plotS.push(rce.t / 86400, { c: rce.Ts, r: rad.Ts });
+  }
+  if (paused) last = rce.fluxes();   // 停止中に τ を変えても収支を今の状態で表示する
+  if (frame % 2 === 0 || paused) { update(last); plotS.draw(); }
+});
+bindPlayPause('btn-play', loop);
+</script>
+</body>
+</html>

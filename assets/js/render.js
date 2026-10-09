@@ -175,6 +175,30 @@ export class SimView {
     ctx.fillStyle = COLORS.fluid;
     ctx.fillRect(this.X(0), this.Y(0), g.X * s, g.H * s);
 
+    // --- 高さによるエネルギーの段差（壁ではない）: 位置エネルギーの高い層ほど少し濃く、境目は灰色の点線 ---
+    if (g.levels) {
+      const L = g.levels, emax = Math.max(0, (L.n - 1) * L.dE), emin = Math.min(0, (L.n - 1) * L.dE);
+      const zb = [0, ...L.bounds, 1];                // 層の境目（下端からの割合）
+      const yOf = (z) => g.H * (1 - z);
+      for (let k = 0; k < L.n; k++) {
+        const e = k * L.dE, a = emax > emin ? (0.16 * (e - emin)) / (emax - emin) : 0;
+        if (a > 0) { ctx.fillStyle = `rgba(47,85,151,${a.toFixed(3)})`; ctx.fillRect(this.X(0), this.Y(yOf(zb[k + 1])), g.X * s, (zb[k + 1] - zb[k]) * g.H * s); }
+      }
+      ctx.strokeStyle = 'rgba(80,80,80,0.75)'; ctx.lineWidth = 1.3 * dpr; ctx.setLineDash([2 * dpr, 4 * dpr]);
+      for (let k = 1; k < L.n; k++) {
+        const y = yOf(zb[k]);
+        ctx.beginPath(); ctx.moveTo(this.X(0), this.Y(y)); ctx.lineTo(this.X(g.X), this.Y(y)); ctx.stroke();
+      }
+      ctx.setLineDash([]);
+      // 層のエネルギーの目盛り（層が多いときは上と下だけ）
+      ctx.font = `${fontPx * 0.95}px sans-serif`; ctx.fillStyle = 'rgba(31,31,31,0.8)';
+      ctx.textAlign = 'right'; ctx.textBaseline = 'top';
+      for (let k = 0; k < L.n; k++) {
+        if (L.n > 4 && k !== 0 && k !== L.n - 1) continue;
+        ctx.fillText(`ε = ${(k * L.dE).toFixed(2)}`, this.X(g.X) - 6 * dpr, this.Y(yOf(zb[k + 1])) + 3 * dpr);
+      }
+    }
+
     // --- 外壁（左・上・下）。上下の壁はシリンダとしてピストンの外まで伸ばす ---
     const xEnd = g.Xmax + this.pt + 1;
     this.wallRect(ctx, -wt, 0, wt, g.H, g.walls.left, 'left');

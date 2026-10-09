@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>13 鎖のエントロピー弾性 | 熱力学シミュレーション</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+<header class="site-header"><div class="inner">
+  <h1>13 鎖のエントロピー弾性</h1><span class="sub">ゴムや高分子を伸ばすと縮もうとするのはなぜ？ ― エネルギーではなく「配置の数」が力を生む</span>
+  <nav>
+    <a href="../index.html">目次</a>
+    <a href="01-operations.html">01 壁と操作</a>
+    <a href="02-equilibrium.html">02 平衡への緩和</a>
+    <a href="03-processes.html">03 準静的と不可逆</a>
+    <a href="04-isothermal.html">04 等温過程の収支</a>
+    <a href="05-extensive.html">05 示量と示強</a>
+    <a href="06-heat-capacity.html">06 熱容量</a>
+    <a href="07-entropy.html">07 エントロピー</a>
+    <a href="08-heat-engines.html">08 熱機関</a>
+    <a href="09-osmosis.html">09 浸透圧</a>
+    <a href="10-max-work.html">10 可逆と不可逆</a>
+    <a href="11-sedimentation.html">11 沈降平衡</a>
+    <a href="12-partitions.html">12 仕切りと平衡条件</a>
+    <a href="13-chain.html" aria-current="page">13 鎖の弾性</a>
+    <a href="14-stability.html">14 大気の安定性</a>
+    <a href="15-greenhouse.html">15 放射収支と温室効果</a>
+    <a href="16-phase.html">16 相平衡と水蒸気</a>
+    <a href="17-rce.html">17 放射対流平衡</a>
+    <a href="../en/sims/13-chain.html" lang="en" hreflang="en">English</a>
+    <button id="btn-proj" title="文字を大きくする">投影モード</button>
+  </nav>
+</div></header>
+
+<main class="layout">
+  <div class="col">
+    <section class="card">
+      <h2><span class="tag">ミクロ</span>でたらめにつながった鎖を次々につくる <span class="hint">一端を原点（＋）に固定。灰色の点＝これまでの末端、橙＝末端が帯の中に入った鎖</span></h2>
+      <div class="canvas-wrap"><canvas id="sim"></canvas></div>
+      <div class="readouts wrap">
+        <div class="stat"><span class="k">つくった鎖の数</span><span class="v" id="r-M">0</span></div>
+        <div class="stat"><span class="k">⟨<i>x</i>²⟩（測定）</span><span class="v" id="r-x2">–</span></div>
+        <div class="stat"><span class="k">理論 <i>N</i><sub>s</sub><i>b</i>²/2</span><span class="v" id="r-x2th">–</span></div>
+        <div class="stat"><span class="k">配置の数の比 <i>P</i>(<i>x</i>)/<i>P</i>(0)</span><span class="v" id="r-ratio">–</span></div>
+        <div class="stat"><span class="k">理論 e<sup>−<i>x</i>²/2σ²</sup></span><span class="v" id="r-ratio-th">–</span></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2><span class="tag">マクロ</span>配置の数から自由エネルギーと力へ</h2>
+      <div class="canvas-wrap"><canvas id="plotP"></canvas></div>
+      <div class="canvas-wrap" style="margin-top:6px"><canvas id="plotF"></canvas></div>
+      <div class="readouts wrap">
+        <div class="stat"><span class="k">配置のエントロピー Δ<i>S</i> = <i>k</i> ln(<i>P</i>(<i>x</i>)/<i>P</i>(0))</span><span class="v" id="r-S">–</span></div>
+        <div class="stat"><span class="k">Δ<i>F</i> = −<i>T</i>Δ<i>S</i></span><span class="v" id="r-F">–</span></div>
+        <div class="stat int"><span class="k">必要な力 <i>f</i> = <i>kTx</i>/σ²（理論）</span><span class="v" id="r-f">–</span></div>
+        <div class="stat"><span class="k">分布の幅から求めた <i>f</i></span><span class="v" id="r-fm">–</span></div>
+      </div>
+      <div class="ledger">
+        <span class="term"><b>ΔU</b><span>0</span></span><span class="op">=</span>
+        <span class="term"><b>Q</b><span id="l-Q"></span></span><span class="op">+</span>
+        <span class="term"><b>W</b><span id="l-W"></span></span>
+        <span class="note">温度 <i>T</i> の環境の中で、0 から <i>x</i> までゆっくり伸ばすとき（理想鎖なので Δ<i>U</i> = 0）。伸ばす仕事 <i>W</i> = Δ<i>F</i> はすべて熱として環境へ出ていく（<i>Q</i> = −<i>W</i>）。</span>
+      </div>
+    </section>
+  </div>
+
+  <div class="col">
+    <section class="card ctrl">
+      <h2>操作パネル</h2>
+      <div class="btns">
+        <button id="btn-play" class="primary"></button>
+        <button id="btn-reset">数え直す</button>
+      </div>
+      <div class="group-title">鎖と温度</div>
+      <div class="row"><label for="Ns">節の数 <i>N</i><sub>s</sub></label><input type="range" id="Ns" min="10" max="100" step="5" value="40"><output id="Ns-val"></output></div>
+      <div class="row"><label for="T">温度 <i>T</i></label><input type="range" id="T" min="0.5" max="3" step="0.1" value="1"><output id="T-val"></output></div>
+      <div class="group-title">伸ばす（末端の x 座標を決める）</div>
+      <div class="row"><label for="xs">伸ばした長さ <i>x</i>/σ</label><input type="range" id="xs" min="0" max="3" step="0.05" value="1.5"><output id="xs-val"></output></div>
+      <p class="hint" id="x-hint"></p>
+      <div class="group-title">表示</div>
+      <div><label class="check"><input type="checkbox" id="c-chains" checked>鎖を描く</label></div>
+    </section>
+
+    <section class="card notes">
+      <h2>ねらい</h2>
+      <p>長さ <i>b</i> の節を <i>N</i><sub>s</sub> 本、向きをでたらめに選んでつないだ鎖（理想鎖）。どの形もエネルギーは同じなのに、末端を引き離して保つには力がいる。理由は <b>配置の数</b>：末端が原点の近くにある形はたくさんあるが、遠くにある形は少ない。伸ばすとエントロピーが減るので、温度 <i>T</i> の環境の中では自由エネルギー <span class="math">F = U − TS</span> が増える。その傾きが力 <span class="math">f = dF/dx</span>。</p>
+      <p>手を離すと鎖は縮む。縮む向きに配置の数（エントロピー）が増えるから ― 変化の向きを決めているのは、ここでも第二法則。</p>
+      <h3>やってみよう</h3>
+      <ol>
+        <li>再生して、鎖をたくさんつくる。末端（灰色の点）は原点のまわりに集まり、遠くほど少ない。上のグラフの分布はガウス分布に近づく。</li>
+        <li>「伸ばした長さ」を変える。帯の中に末端が入る割合 <i>P</i>(<i>x</i>) は、<i>x</i> = 0 に比べてどれだけ少ない？ それが配置のエントロピーの減少 <span class="math">ΔS = k ln(P(x)/P(0))</span>。</li>
+        <li>下のグラフの <i>F</i>(<i>x</i>) は放物線。傾き（接線）が必要な力で、<i>x</i> に比例する（フックの法則）。ばねと同じ形だが、起源はエネルギーではなくエントロピー。</li>
+        <li>温度を2倍にすると力は？（分布は変わらないのに、力は <i>T</i> に比例する）</li>
+        <li>節の数 <i>N</i><sub>s</sub> を増やすと、同じ <i>x</i> での力は？（長い鎖ほど柔らかい）</li>
+      </ol>
+      <div class="q"><b>問い</b>　輪ゴムに重りをつるして、ドライヤーで温めるとどうなる？ ふつうの金属のばねと逆になるのはなぜ？（<span class="math">f ∝ T</span>）</div>
+      <div class="q"><b>問い</b>　輪ゴムをすばやく伸ばして唇に当てると温かい。断熱的に伸ばすと、配置のエントロピーの減少を何が補っている？（全体のエントロピーは減らない）</div>
+      <div class="q"><b>問い</b>　ゆっくり伸ばすとき、した仕事 <i>W</i> = Δ<i>F</i> はどこへ行く？ 理想鎖では Δ<i>U</i> = 0 であることと、第一法則から考えよう。</div>
+      <details><summary>理論（2次元の理想鎖）</summary>
+        <p>末端の x 座標は <span class="math">x = Σ b cos θ<sub>j</sub></span>。各項は独立で平均 0、<span class="math">⟨cos²θ⟩ = 1/2</span> なので <span class="math">σ² = ⟨x²⟩ = N<sub>s</sub>b²/2</span>（3次元なら <span class="math">N<sub>s</sub>b²/3</span>）。多数の独立な寄与の和なので、分布はガウス分布 <span class="math">P(x) ∝ e<sup>−x²/2σ²</sup></span> で近似できる（中心極限定理）。</p>
+        <p>同じ幅の帯に末端が入る配置の数の比は <span class="math">P(x)/P(0)</span> なので、<span class="math">S(x) − S(0) = k ln(P(x)/P(0)) = −kx²/2σ²</span>。理想鎖ではエネルギーが形によらないので <span class="math">F(x) − F(0) = −T(S(x) − S(0)) = kTx²/2σ²</span>。最小仕事の等号 <span class="math">δW = dF</span> から、外から加える力は <span class="math">f = dF/dx = kTx/σ² = 2kTx/(N<sub>s</sub>b²)</span>（3次元なら <span class="math">3kTx/(N<sub>s</sub>b²)</span>）。</p>
+        <p>ガウス近似は、末端間の距離が鎖の全長 <span class="math">N<sub>s</sub>b</span> より十分短い範囲で使える。この教材では長さ <i>b</i> = 1、<i>k</i> = 1。</p>
+      </details>
+    </section>
+  </div>
+</main>
+
+<script type="module">
+import { sampleChain, chainVar, chainP, chainF, chainForce } from '../assets/js/chain.js';
+import { XYPlot, SERIES } from '../assets/js/plot.js';
+import { $, fmt, fmtSigned, bindRange, bindCheck, Loop, bindPlayPause, setupCommon } from '../assets/js/ui.js';
+
+setupCommon();
+const b = 1, K = 61, PER_FRAME = 120, MAXPTS = 1500;
+let Ns = 40, T = 1, xs = 1.5, showChains = true;
+let hist, M, sx2, ends, shown, hits, cBand = 0, c0 = 0;   // 分布・数・⟨x²⟩・末端の点・描く鎖・帯に入った鎖・帯（x と 0）に入った数
+
+const plotP = new XYPlot($('plotP'), { height: 200, xmin: -1, xmax: 1, ymin: 0, ymax: null, xlabel: 'x （末端の x 座標）', ylabel: 'P(x)', xd: 2, yd: 4 });
+const plotF = new XYPlot($('plotF'), { height: 220, xmin: -1, xmax: 1, ymin: 0, ymax: 1, xlabel: 'x （末端の x 座標）', ylabel: 'F(x) − F(0)', xd: 2, yd: 3 });
+
+const sigma = () => Math.sqrt(chainVar(Ns, b));
+const xT = () => xs * sigma();               // 伸ばした長さ
+const range = () => 4 * sigma();             // 分布を数える範囲 ±4σ
+const binW = () => (2 * range()) / K;
+const binOf = (x) => Math.floor((x + range()) / binW());
+
+function reset() {
+  hist = new Array(K).fill(0); M = 0; sx2 = 0; ends = []; shown = []; hits = []; cBand = 0; c0 = 0;
+  $('x-hint').textContent = `σ = √(Nₛb²/2) = ${fmt(sigma(), 2)}、鎖の全長 Nₛb = ${Ns}。x = ${fmt(xT(), 2)}`;
+}
+
+// --- 鎖の絵（自前の canvas）---
+const cv = $('sim');
+let dpr = 1;
+function resize() {
+  dpr = window.devicePixelRatio || 1;
+  const w = cv.parentElement.clientWidth || 600, h = Math.round(Math.min(420, w * 0.62));
+  cv.style.width = w + 'px'; cv.style.height = h + 'px';
+  cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
+}
+if (typeof ResizeObserver !== 'undefined') new ResizeObserver(() => { resize(); draw(); }).observe(cv.parentElement);
+resize();
+
+function draw() {
+  const ctx = cv.getContext('2d'), W = cv.width, H = cv.height;
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, W, H);
+  const R = Math.max(range(), xT() + sigma()) * 1.05;
+  const s = Math.min(W / (2 * R), H / (1.6 * R));
+  const X = (x) => W / 2 + x * s, Y = (y) => H / 2 - y * s;
+  // 帯（末端の x がこの範囲に入る配置を数える）
+  const w = binW();
+  ctx.fillStyle = 'rgba(235,104,52,0.12)';
+  ctx.fillRect(X(xT() - w / 2), 0, w * s, H);
+  ctx.strokeStyle = 'rgba(235,104,52,0.6)'; ctx.lineWidth = 1 * dpr;
+  ctx.strokeRect(X(xT() - w / 2), 0, w * s, H);
+  // 末端の点
+  ctx.fillStyle = 'rgba(95,94,90,0.35)';
+  for (const [x, y] of ends) { ctx.beginPath(); ctx.arc(X(x), Y(y), 1.6 * dpr, 0, 7); ctx.fill(); }
+  // 鎖
+  const line = (pts, color, width) => {
+    ctx.strokeStyle = color; ctx.lineWidth = width * dpr; ctx.beginPath();
+    pts.forEach(([x, y], k) => { if (k === 0) ctx.moveTo(X(x), Y(y)); else ctx.lineTo(X(x), Y(y)); });
+    ctx.stroke();
+  };
+  if (showChains) {
+    for (const c of shown) line(c, 'rgba(68,114,196,0.35)', 1.2);
+    for (const c of hits) { line(c, 'rgba(235,104,52,0.9)', 2); const e = c[c.length - 1]; ctx.beginPath(); ctx.arc(X(e[0]), Y(e[1]), 3.5 * dpr, 0, 7); ctx.fillStyle = '#eb6834'; ctx.fill(); }
+  }
+  // 原点（固定した端）
+  ctx.strokeStyle = '#1f1f1f'; ctx.lineWidth = 2 * dpr;
+  ctx.beginPath(); ctx.moveTo(X(0) - 7 * dpr, Y(0)); ctx.lineTo(X(0) + 7 * dpr, Y(0)); ctx.moveTo(X(0), Y(0) - 7 * dpr); ctx.lineTo(X(0), Y(0) + 7 * dpr); ctx.stroke();
+}
+
+function sample() {
+  const w = binW(), x0 = xT();
+  for (let k = 0; k < PER_FRAME; k++) {
+    const c = sampleChain(Ns, b, Math.random), e = c[c.length - 1];
+    const j = binOf(e[0]);
+    if (j >= 0 && j < K) hist[j]++;
+    M++; sx2 += e[0] * e[0];
+    ends.push(e); if (ends.length > MAXPTS) ends.shift();
+    if (k < 2) { shown.push(c); if (shown.length > 24) shown.shift(); }
+    if (Math.abs(e[0]) < w / 2) c0++;
+    if (Math.abs(e[0] - x0) < w / 2) { cBand++; hits.push(c); if (hits.length > 6) hits.shift(); }
+  }
+}
+
+function update() {
+  const s2 = chainVar(Ns, b), w = binW(), x0 = xT();
+  const dens = hist.map((c) => c / Math.max(1, M) / w);
+  const centers = hist.map((_, j) => -range() + (j + 0.5) * w);
+  const j0 = binOf(0);
+  const ratio = c0 > 0 ? cBand / c0 : NaN;   // 帯（x のまわり）と原点のまわりに末端が入った数の比
+  const ratioTh = Math.exp(-(x0 * x0) / (2 * s2));
+  const s2m = M ? sx2 / M : NaN;
+  $('r-M').textContent = M;
+  $('r-x2').textContent = fmt(s2m, 2); $('r-x2th').textContent = fmt(s2, 2);
+  $('r-ratio').textContent = fmt(ratio, 3); $('r-ratio-th').textContent = fmt(ratioTh, 3);
+  const dS = Math.log(ratioTh), dF = chainF(x0, Ns, b, T), f = chainForce(x0, Ns, b, T);
+  $('r-S').textContent = fmtSigned(Number.isFinite(ratio) && ratio > 0 ? Math.log(ratio) : dS, 2);
+  $('r-F').textContent = fmtSigned(dF, 2);
+  $('r-f').textContent = fmt(f, 3);
+  $('r-fm').textContent = fmt(Number.isFinite(s2m) && s2m > 0 ? (T * x0) / s2m : NaN, 3);
+  $('l-W').textContent = fmtSigned(dF, 2); $('l-Q').textContent = fmtSigned(-dF, 2);
+  // 分布
+  Object.assign(plotP.opt, { xmin: -range(), xmax: range(), ymax: chainP(0, Ns, b) * 1.35 });
+  const stair = [];
+  dens.forEach((d, j) => { stair.push([centers[j] - w / 2, d], [centers[j] + w / 2, d]); });
+  plotP.refs = [{ label: 'ガウス分布（理論）', color: SERIES[1], fn: (x) => chainP(x, Ns, b) }];
+  plotP.paths = [{ label: '測定（末端の x の分布）', color: SERIES[0], pts: stair, width: 1.8 }];
+  plotP.marker = [x0, chainP(x0, Ns, b)];
+  plotP.draw();
+  // 自由エネルギー（測定は −T ln(P(x)/P(0))、数が少ない端は省く）
+  const Fm = [];
+  hist.forEach((c, j) => { if (c >= 8 && hist[j0] > 0) Fm.push([centers[j], -T * Math.log(c / hist[j0])]); });
+  const Fmax = chainF(range(), Ns, b, T);
+  Object.assign(plotF.opt, { xmin: -range(), xmax: range(), ymin: -0.08 * Fmax, ymax: Fmax * 1.05 });
+  const d = sigma();
+  plotF.refs = [{ label: 'F = kTx²/2σ²（理論）', color: SERIES[3], fn: (x) => chainF(x, Ns, b, T) }];
+  plotF.paths = [
+    { label: '測定 −kT ln(P(x)/P(0))', color: SERIES[0], pts: Fm, width: 1.5 },
+    { label: '接線の傾き = 力 f', color: SERIES[1], pts: [[x0 - d, dF - f * d], [x0 + d, dF + f * d]], width: 2, dash: [6, 4] },
+  ];
+  plotF.marker = [x0, dF];
+  plotF.draw();
+}
+
+bindRange('Ns', (v) => { Ns = v; reset(); }, (v) => v.toFixed(0), false);
+bindRange('T', (v) => { T = v; }, (v) => v.toFixed(1), false);
+bindRange('xs', (v) => { xs = v; hits = []; cBand = 0; c0 = 0; $('x-hint').textContent = `σ = √(Nₛb²/2) = ${fmt(sigma(), 2)}、鎖の全長 Nₛb = ${Ns}。x = ${fmt(xT(), 2)}`; }, (v) => v.toFixed(2), false);
+bindCheck('c-chains', (on) => { showChains = on; });
+$('btn-reset').addEventListener('click', reset);
+reset();
+
+let frame = 0;
+const loop = new Loop((paused) => {
+  if (!paused) { sample(); frame++; }
+  if (frame % 2 === 0 || paused) update();
+  draw();
+});
+bindPlayPause('btn-play', loop);
+</script>
+</body>
+</html>

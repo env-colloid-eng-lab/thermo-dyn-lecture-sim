@@ -4,6 +4,9 @@ import { Gas, DIATHERMAL, ADIABATIC, SEMIPERMEABLE } from '../assets/js/engine.j
 import { HeatCapacityRun } from '../assets/js/experiments.js';
 import { lnChoose, binomHalf } from '../assets/js/entropy.js';
 import { CycleRunner } from '../assets/js/cycles.js';
+import { sampleEnd, chainVar } from '../assets/js/chain.js';
+import * as CL from '../assets/js/climate.js';
+import { xEqBath, xEqIsolated, twoRegionF, boltzmannLayers, lnMultinomial, meltT } from '../assets/js/levels.js';
 
 let fails = 0;
 function check(name, cond, info) {
@@ -241,6 +244,160 @@ const f = (v, d = 3) => Number(v).toFixed(d);
   check('半透膜: 溶媒は左右で同じ密度になる', Math.abs(nL / 120 - 1) < 0.08, `左の溶媒 ⟨n⟩=${f(nL, 1)}（理論 120）`);
   check('浸透圧: P右 − P左 ≈ nkT/V', Math.abs(Pi / th - 1) < 0.12, `Π=${f(Pi, 4)} nkT/V=${f(th, 4)}`);
   check('浸透圧: 膜が溶質から受ける圧力 ≈ nkT/V', Math.abs(g.P.vpart / th - 1) < 0.12, `P膜=${f(g.P.vpart, 4)}`);
+}
+
+// 14) 高さによるエネルギーの段差（二領域・沈降平衡）
+{
+  const avgX = (g, steps) => {
+    let x = 0;
+    for (let k = 0; k < steps; k++) { g.advance(1); x += g.layerCounts()[1] / g.N; }
+    return x / steps;
+  };
+  // 孤立系：運動＋位置エネルギーが厳密に保存し、上にいる割合は全エントロピー最大の値に近づく
+  {
+    const g = new Gas({ H: 60, X: 90, Xmin: 90, Xmax: 90, r: 0.15, seed: 41 });
+    g.addParticles(300, 1, { x0: 0, x1: 90, y0: 0, y1: 60 });
+    g.setLevels(2, 1.5); g.resetLedger();
+    const E0 = g.kinetic() + g.potential();
+    for (let k = 0; k < 600; k++) g.advance(1);
+    const x = avgX(g, 3000), E = g.kinetic() + g.potential();
+    const th = xEqIsolated(1.5, E0 / g.N);
+    check('段差（孤立系）: 運動＋位置エネルギーの保存', Math.abs(E - E0) < 1e-8, `E0=${f(E0)} E=${f(E)}`);
+    check('段差（孤立系）: 上にいる割合 ≈ S 最大の値', Math.abs(x - th) < 0.02, `x=${f(x)} 理論=${f(th)} T=${f(g.kinetic() / g.N)}`);
+  }
+  // 熱源に接触：x ≈ 1/(1+e^{ΔE/T})、途中で段差を変えても ΔU = Q + W（厳密）
+  {
+    const g = new Gas({ H: 60, X: 90, Xmin: 90, Xmax: 90, r: 0.15, seed: 42 });
+    g.addParticles(300, 1, { x0: 0, x1: 90, y0: 0, y1: 60 });
+    g.walls = { left: DIATHERMAL, top: DIATHERMAL, bottom: DIATHERMAL };
+    g.bath = { left: true, top: true, bottom: true }; g.Tbath = 1;
+    g.setLevels(2, 0.5); g.resetLedger();
+    for (let k = 0; k < 200; k++) g.advance(1);
+    g.setLevels(2, 1.5);
+    for (let k = 0; k < 600; k++) g.advance(1);
+    const x = avgX(g, 3000), s = g.stats();
+    check('段差（熱源）: 上にいる割合 ≈ 1/(1+e^{ΔE/T})', Math.abs(x - xEqBath(1.5, 1)) < 0.02, `x=${f(x)} 理論=${f(xEqBath(1.5, 1))}`);
+    check('段差（熱源）: ΔU = Q + W（段差を変えた仕事を含め厳密）', Math.abs(s.dU - s.Q - s.W) < 1e-8, `ΔU=${f(s.dU)} Q=${f(s.Q)} W=${f(s.W)}`);
+    check('段差（熱源）: 自由エネルギー最小の位置 = 1/(1+e^{ΔE/T})', (() => {
+      let best = 0, fb = Infinity;
+      for (let i = 1; i < 10000; i++) { const xx = i / 10000, v = twoRegionF(xx, 1.5, 1); if (v < fb) { fb = v; best = xx; } }
+      return Math.abs(best - xEqBath(1.5, 1)) < 2e-4;
+    })());
+  }
+  // 多段（重力の近似）：層ごとの割合 ≈ e^{−kΔE/T} / Σ
+  {
+    const g = new Gas({ H: 60, X: 90, Xmin: 90, Xmax: 90, r: 0.15, seed: 43 });
+    g.addParticles(300, 1, { x0: 0, x1: 90, y0: 0, y1: 60 });
+    g.walls = { left: DIATHERMAL, top: DIATHERMAL, bottom: DIATHERMAL };
+    g.bath = { left: true, top: true, bottom: true }; g.Tbath = 1;
+    g.setLevels(6, 0.5); g.resetLedger();
+    for (let k = 0; k < 800; k++) g.advance(1);
+    const acc = new Array(6).fill(0);
+    for (let k = 0; k < 3000; k++) { g.advance(1); g.layerCounts().forEach((c, j) => { acc[j] += c / g.N / 3000; }); }
+    const th = boltzmannLayers(6, 0.5, 1);
+    const err = Math.max(...acc.map((v, j) => Math.abs(v - th[j])));
+    check('多段: 層ごとの割合 ≈ ボルツマン分布', err < 0.02, `測定=${acc.map((v) => f(v, 3)).join(',')} 理論=${th.map((v) => f(v, 3)).join(',')}`);
+    check('多段: ln(N!/ΠN_k!) は一様な分け方で最大', lnMultinomial([50, 50, 50, 50, 50, 50]) > lnMultinomial(g.layerCounts()));
+  }
+}
+
+// 14b) 二状態（広さの違う二領域）：x/(1−x) = (v2/v1) e^{−ΔE/T}、T_m で x = 1/2
+{
+  const g = new Gas({ H: 60, X: 90, Xmin: 90, Xmax: 90, r: 0.15, seed: 44 });
+  g.addParticles(300, 1, { x0: 0, x1: 90, y0: 0, y1: 60 });
+  g.walls = { left: DIATHERMAL, top: DIATHERMAL, bottom: DIATHERMAL };
+  g.bath = { left: true, top: true, bottom: true };
+  const v2 = 0.8, dE = 1.5, Tm = meltT(dE, v2);
+  g.Tbath = Tm;
+  g.setLevels(2, dE, [1 - v2]); g.resetLedger();
+  for (let k = 0; k < 600; k++) g.advance(1);
+  let x = 0; for (let k = 0; k < 3000; k++) { g.advance(1); x += g.layerCounts()[1] / g.N / 3000; }
+  check('二状態: T = T_m で上にいる割合 ≈ 1/2', Math.abs(x - 0.5) < 0.03 && Math.abs(xEqBath(dE, Tm, v2) - 0.5) < 1e-12, `x=${f(x)} T_m=${f(Tm)}`);
+  const s = g.stats();
+  check('二状態: ΔU = Q + W (厳密)', Math.abs(s.dU - s.Q - s.W) < 1e-8);
+}
+
+// 15) 可動の仕切り（12）：全エネルギー保存、部分系ごとの ΔU = Q + W、透熱なら T と P がそろう
+{
+  const run = (type, seed) => {
+    const g = new Gas({ H: 60, X: 100, Xmin: 100, Xmax: 100, seed });
+    g.setVPartition(50, ADIABATIC);
+    g.addParticles(200, 2.0, { x0: 0, x1: 50, y0: 0, y1: 60 }, 0);
+    g.addParticles(100, 0.6, { x0: 50, x1: 100, y0: 0, y1: 60 }, 1);
+    Object.assign(g.vpart, { Tw: 1.3, Cw: 20, M: 30, movable: true });
+    g.setVPartition(50, type); g.resetLedger();
+    const E = () => g.kinetic() + g.vpart.Cw * g.vpart.Tw + 0.5 * g.vpart.M * g.vpart.u ** 2;
+    const E0 = E();
+    for (let k = 0; k < 2500; k++) g.advance(1);
+    let x = 0, T1 = 0, T2 = 0, P1 = 0, P2 = 0; const n = 2500;
+    for (let k = 0; k < n; k++) {
+      g.advance(1); const a = g.regionStats(0), b = g.regionStats(1);
+      x += g.vpart.x / n; T1 += a.T / n; T2 += b.T / n; P1 += a.U / a.V / n; P2 += b.U / b.V / n;
+    }
+    const a = g.regionStats(0), b = g.regionStats(1);
+    return { dE: E() - E0, x, T1, T2, P1, P2, led: Math.max(Math.abs(a.dU - a.Q - a.W), Math.abs(b.dU - b.Q - b.W)) };
+  };
+  const d = run(DIATHERMAL, 51), ad = run(ADIABATIC, 52);
+  check('可動の仕切り: 気体＋壁の全エネルギー保存', Math.abs(d.dE) < 1e-8 && Math.abs(ad.dE) < 1e-8, `透熱 ${d.dE.toExponential(1)} 断熱 ${ad.dE.toExponential(1)}`);
+  check('可動の仕切り: 部分系ごとに ΔU = Q + W (厳密)', d.led < 1e-8 && ad.led < 1e-8);
+  check('可動・透熱: T と P がそろう', Math.abs(d.T1 / d.T2 - 1) < 0.08 && Math.abs(d.P1 / d.P2 - 1) < 0.05, `T=${f(d.T1)},${f(d.T2)} P=${f(d.P1, 4)},${f(d.P2, 4)} x=${f(d.x, 1)}（理論 66.7）`);
+  check('可動・断熱: P がそろう', Math.abs(ad.P1 / ad.P2 - 1) < 0.05, `P=${f(ad.P1, 4)},${f(ad.P2, 4)} T=${f(ad.T1)},${f(ad.T2)}`);
+  // すべてを通す壁（pass < 0）：数密度と温度がそろう
+  const g = new Gas({ H: 60, X: 100, Xmin: 100, Xmax: 100, seed: 53 });
+  g.setVPartition(50, ADIABATIC);
+  g.addParticles(200, 2.0, { x0: 0, x1: 50, y0: 0, y1: 60 }, 0);
+  g.addParticles(100, 0.6, { x0: 50, x1: 100, y0: 0, y1: 60 }, 1);
+  g.setVPartition(50, SEMIPERMEABLE); g.vpart.pass = -1;
+  for (let k = 0; k < 1500; k++) g.advance(1);
+  let n1 = 0; for (let k = 0; k < 1000; k++) { g.advance(1); n1 += g.regionStats(0).N / 1000; }
+  check('すべてを通す壁: 左右の粒子数がそろう', Math.abs(n1 / 150 - 1) < 0.05, `左 ⟨N⟩=${f(n1, 1)}（理論 150）`);
+}
+
+// 16) 理想鎖（13）：末端の x の分散 ≈ Ns b²/2（2次元）
+{
+  let a = 7;   // mulberry32
+  const rand = () => { a |= 0; a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+  let s2 = 0, s4 = 0; const M = 20000;
+  for (let k = 0; k < M; k++) { const [x] = sampleEnd(40, 1, rand); s2 += x * x / M; s4 += x ** 4 / M; }
+  check('理想鎖: ⟨x²⟩ ≈ Ns b²/2', Math.abs(s2 / chainVar(40, 1) - 1) < 0.03, `⟨x²⟩=${f(s2, 2)} 理論=${f(chainVar(40, 1), 2)}`);
+  check('理想鎖: ほぼガウス分布（⟨x⁴⟩ ≈ 3⟨x²⟩²）', Math.abs(s4 / (3 * s2 * s2) - 1) < 0.06, `比=${f(s4 / (3 * s2 * s2))}`);
+}
+
+// 17) 応用ページのマクロなモデル（教科書の数値例と照合）
+{
+  const r = CL.grayFluxes((400 / CL.SIGMA) ** 0.25, [(300 / CL.SIGMA) ** 0.25, (200 / CL.SIGMA) ** 0.25], [0.5, 0.5], 275);
+  check('灰色2層: 途中の問い8.1・8.2（U₁=350, U₂=275, D₁=100, 加熱 −50, −25, 地表 +75）',
+    [r.up[1] - 350, r.up[2] - 275, r.down[1] - 100, r.heat[0] + 50, r.heat[1] + 25, r.surfaceHeat - 75].every((v) => Math.abs(v) < 1e-9));
+  const one = CL.oneLayer(CL.absorbedSolar(1361, 0.3), 0.8);
+  const g1 = CL.grayFluxes(one.Ts, [one.Ta], [0.2], CL.absorbedSolar(1361, 0.3));
+  check('1層モデル: 定常状態で地表・大気・大気上端の収支が 0', Math.abs(g1.surfaceHeat) < 1e-9 && Math.abs(g1.heat[0]) < 1e-9 && Math.abs(one.olr - CL.absorbedSolar(1361, 0.3)) < 1e-9, `T_e=${f(one.Te, 1)} T_s=${f(one.Ts, 1)}`);
+  check('復元係数 B_s(ε=0.8, 290 K) = 3.32', Math.abs(CL.restoringB(0.8, 290) - 3.32) < 0.005);
+  check('乾燥断熱減率 g/c_p = 9.77 K/km', Math.abs(CL.GAMMA_D - 9.77) < 0.005);
+  check('クラウジウス＝クラペイロン: 300 K で 6.03 %/K、303/300 K で 1.196 倍', Math.abs(CL.LV / (CL.RV * 300 ** 2) - 0.0603) < 5e-5 && Math.abs(CL.satVapor(303) / CL.satVapor(300) - 1.196) < 5e-4);
+  check('露点は飽和水蒸気圧の逆関数', Math.abs(CL.dewPoint(CL.satVapor(290)) - 290) < 1e-9);
+  const T = [300, 280]; CL.convectiveAdjust(T, [1, 1], [0, 1], CL.GAMMA_D);
+  check('例題9: 対流調整（平均 290 K を保ち、差 9.77 K）', Math.abs(T[0] - 294.885) < 1e-3 && Math.abs(T[1] - 285.115) < 1e-3);
+  const T2 = [300, 290, 270, 250, 240], C = [3, 1, 1, 1, 1], z = [0, 1, 2, 3, 4], E0 = T2.reduce((a, v, i) => a + C[i] * v, 0);
+  CL.convectiveAdjust(T2, C, z, 6.5);
+  const ok = T2.every((v, i) => i === 0 || T2[i - 1] - v <= 6.5 + 1e-9);
+  check('対流調整: エネルギー保存・不安定がなくなる', ok && Math.abs(T2.reduce((a, v, i) => a + C[i] * v, 0) - E0) < 1e-9, T2.map((v) => f(v, 1)).join(','));
+  // 調整した直線より上の層が冷たすぎるときは、その層もまとめて調整する
+  const T3 = [300, 299, 280, 250], C3 = [1, 1, 1, 1], z3 = [0, 1, 2, 3], E3 = T3.reduce((a, v) => a + v, 0);
+  CL.convectiveAdjust(T3, C3, z3, 6.5);
+  check('対流調整: 上へ広がる不安定もまとめて直す', T3.every((v, i) => i === 0 || T3[i - 1] - v <= 6.5 + 1e-9) && Math.abs(T3.reduce((a, v) => a + v, 0) - E3) < 1e-9, T3.map((v) => f(v, 1)).join(','));
+  // 気柱モデル：定常状態で大気上端の収支 0、対流のない上空は放射平衡、対流圏の減率 = 限界減率
+  const col = new CL.Column({ tauS: 1.6 }), rad = new CL.Column({ tauS: 1.6, convect: false });
+  let fc, fr;
+  for (let k = 0; k < 6000; k++) { fc = col.step(21600); fr = rad.step(21600); }
+  const zc = col.heights(), top = col.T.length - 1;
+  check('放射対流平衡: 大気上端で J_abs = OLR、成層圏は放射平衡', Math.abs(fc.olr - 240) < 0.05 && Math.abs(fc.heat[top]) < 0.01, `OLR=${f(fc.olr, 2)} T_s=${f(col.Ts, 1)}`);
+  check('放射対流平衡: 地表付近の減率 = 6.5 K/km、放射平衡だけより地表が冷たい', Math.abs((col.T[0] - col.T[1]) / (zc[2] - zc[1]) - 6.5) < 0.05 && rad.Ts > col.Ts + 10, `放射平衡のみ T_s=${f(rad.Ts, 1)}`);
+  const c1 = new CL.Column({ tauS: 1.6 }), r1 = c1.step(21600);
+  check('気柱モデル: step() は更新後の状態の収支を返す', Math.abs(r1.olr - c1.fluxes().olr) < 1e-9, `OLR=${f(r1.olr, 2)}`);
+  const N2 = CL.bruntN2(288, 6.5);
+  check('浮力振動数: Γ_env < Γ_d で N² > 0、周期 ≈ 10 分', N2 > 0 && Math.abs(2 * Math.PI / Math.sqrt(N2) / 60 - 9.8) < 1.5, `周期=${f(2 * Math.PI / Math.sqrt(N2) / 60, 1)} 分`);
+  const a = CL.lapseProfile(5, 288.15, 1000, CL.GAMMA_D), th = CL.potentialTemp(a.T, a.p);
+  check('乾燥断熱の大気では温位が一定', Math.abs(th - 288.15) < 0.05, `θ(5 km)=${f(th, 2)}`);
 }
 
 console.log(fails ? `\n${fails} 件失敗` : '\nすべて成功');

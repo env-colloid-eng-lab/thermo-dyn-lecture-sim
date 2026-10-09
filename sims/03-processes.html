@@ -21,6 +21,14 @@
     <a href="07-entropy.html">07 エントロピー</a>
     <a href="08-heat-engines.html">08 熱機関</a>
     <a href="09-osmosis.html">09 浸透圧</a>
+    <a href="10-max-work.html">10 可逆と不可逆</a>
+    <a href="11-sedimentation.html">11 沈降平衡</a>
+    <a href="12-partitions.html">12 仕切りと平衡条件</a>
+    <a href="13-chain.html">13 鎖の弾性</a>
+    <a href="14-stability.html">14 大気の安定性</a>
+    <a href="15-greenhouse.html">15 放射収支と温室効果</a>
+    <a href="16-phase.html">16 相平衡と水蒸気</a>
+    <a href="17-rce.html">17 放射対流平衡</a>
     <a href="../en/sims/03-processes.html" lang="en" hreflang="en">English</a>
     <button id="btn-proj" title="文字を大きくする">投影モード</button>
   </nav>
@@ -41,6 +49,7 @@
         <div class="stat int"><span class="k">温度 <i>T</i></span><span class="v" id="r-T"></span></div>
         <div class="stat int"><span class="k">圧力 <i>NkT</i>/<i>V</i></span><span class="v" id="r-P"></span></div>
         <div class="stat ext"><span class="k">内部エネルギー <i>U</i></span><span class="v" id="r-U"></span></div>
+        <div class="stat"><span class="k">温位 θ = <i>T</i>(<i>P</i>₀/<i>P</i>)<sup>1/2</sup></span><span class="v" id="r-th"></span></div>
         <div class="stat"><span class="k">ピストンの速さ</span><span class="v" id="r-u"></span></div>
       </div>
       <div class="ledger">
@@ -111,6 +120,7 @@
         <li>「断熱」「準静的」で <b>1往復</b>（再生速度を上げてよい）。戻ってきたとき <i>T</i> は元に戻った？ 往復の <i>W</i> は？</li>
         <li>「断熱」「とても速い」で 1往復。今度は？ P–V 図で橙と青はどうずれる？</li>
         <li>「等温」「準静的」で圧縮。<i>W</i> &gt; 0 なのに Δ<i>U</i> ≈ 0。エネルギーはどこへ？（→ 04）</li>
+        <li>右の「温位 θ」を見る。断熱・準静的な往復では θ は一定のまま、とても速い往復では θ が上がる。等温で圧縮すると θ は下がる。θ は何を表している？（下の「温位とエントロピー」）</li>
         <li>自由膨張：準備して仕切りを外す。<i>W</i>, <i>Q</i>, Δ<i>U</i>, <i>T</i> は？ 途中の状態を P–V 図に描けるだろうか？</li>
       </ol>
       <div class="q"><b>問い</b>　断熱壁で囲まれていても、速く往復させると気体の <i>U</i> は増えてしまいます（<b>不可逆な断熱過程</b>）。逆に、断熱のまま <i>U</i> だけを減らして元に戻す操作はあるでしょうか？</div>
@@ -122,6 +132,11 @@
           <li>等温準静的：<span class="math">W = NkT ln(V₀/V₁)</span>、<span class="math">ΔU = 0</span>、<span class="math">Q = −W</span></li>
         </ul>
         <p>このシミュレーションの粒子は大きさをもつ（剛体円板）ので、強く圧縮すると圧力が理想気体より数％大きくなります。</p>
+      </details>
+      <details><summary>温位とエントロピー（大気の温度へ）</summary>
+        <p>圧力 <i>P</i>、温度 <i>T</i> の気体を、基準の圧力 <i>P</i>₀ まで準静的・断熱に変えたときの温度を <b>温位</b> θ という。2次元理想気体では <span class="math">c<sub>P</sub> = 2k</span>（1粒子あたり）なので <span class="math">θ = T(P₀/P)<sup>k/c<sub>P</sub></sup> = T(P₀/P)<sup>1/2</sup></span>。3次元の乾燥空気なら指数は <span class="math">R/c<sub>p</sub> ≈ 0.286</span>。</p>
+        <p>エントロピーは <span class="math">S = Nc<sub>P</sub> ln θ + 定数</span> と書ける（このページの気体なら <span class="math">ΔS = 2Nk ln(θ/θ₀)</span>）。準静的な断熱変化では <i>S</i> も θ も一定。速い往復（不可逆な断熱過程）では <i>S</i> が増えるので θ も上がる。等温圧縮では熱が出ていくので <i>S</i> が減り、θ も下がる。</p>
+        <p>大気では、上昇する空気塊は膨張して冷えるが、θ は保たれる。温度ではなく温位で比べると、上下の空気のどちらが「本当に暖かいか」（エントロピーが大きいか）が分かり、対流が起こるかどうかを判定できる。</p>
       </details>
     </section>
   </div>
@@ -317,6 +332,8 @@ const loop = new Loop((paused) => {
     $('r-P').textContent = fmt(s.U / V, 4);
     $('r-U').textContent = fmt(s.U, 1);
     $('r-u').textContent = fmt(Math.abs(gas.piston.u), 2);
+    // 温位：基準圧力 P₀（はじめの圧力）まで準静的・断熱に変えたときの温度。2次元では k/c_P = 1/2
+    $('r-th').textContent = fmt(s.T * Math.sqrt(refState.P0 / (s.U / V)), 3);
     updateLedger('l-', s);
     plotT.push(gas.time, { T: s.T });
     if (frame % 2 === 0) { updatePV(); plotT.draw(); }

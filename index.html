@@ -22,6 +22,14 @@
     <a href="sims/07-entropy.html">07 エントロピー</a>
     <a href="sims/08-heat-engines.html">08 熱機関</a>
     <a href="sims/09-osmosis.html">09 浸透圧</a>
+    <a href="sims/10-max-work.html">10 可逆と不可逆</a>
+    <a href="sims/11-sedimentation.html">11 沈降平衡</a>
+    <a href="sims/12-partitions.html">12 仕切りと平衡条件</a>
+    <a href="sims/13-chain.html">13 鎖の弾性</a>
+    <a href="sims/14-stability.html">14 大気の安定性</a>
+    <a href="sims/15-greenhouse.html">15 放射収支と温室効果</a>
+    <a href="sims/16-phase.html">16 相平衡と水蒸気</a>
+    <a href="sims/17-rce.html">17 放射対流平衡</a>
     <a href="en/index.html" lang="en" hreflang="en">English</a>
     <button id="btn-proj" title="文字を大きくする">投影モード</button>
   </nav>
@@ -93,7 +101,63 @@
     <p>溶媒だけを通す半透膜で純粋な溶媒と溶液を仕切る。溶媒が溶液側へ移り、圧力差 Π が生まれる。ファントホッフの式と逆浸透。</p>
     <div class="kw">半透膜・浸透・浸透圧・ファントホッフの式・逆浸透・化学ポテンシャル</div>
   </a>
+  <a class="item" href="sims/10-max-work.html">
+    <span class="num">10</span>
+    <h2>同じ始状態と終状態：可逆と不可逆</h2>
+    <p>可逆な等温膨張と自由膨張を並べて比べる。<i>Q</i> と <i>W</i> は経路で違い、気体の Δ<i>S</i> は同じ。違いは外界のエントロピー。取り出せる仕事の上限 −Δ<i>F</i>。</p>
+    <div class="kw">状態量と経路・可逆と不可逆・エントロピー生成・自由エネルギー F・最大仕事の原理</div>
+  </a>
+  <a class="item" href="sims/11-sedimentation.html">
+    <span class="num">11</span>
+    <h2>二領域の分配と沈降平衡</h2>
+    <p>高さでエネルギーが違うと粒子はどう分かれるか。自由エネルギー最小（熱源）／エントロピー最大（孤立系）と、層を細かくした沈降平衡 <i>c</i>(<i>z</i>) ∝ e<sup>−<i>z</i>/ℓ</sup>。</p>
+    <div class="kw">配置のエントロピー・自由エネルギー最小・ボルツマン分布・沈降平衡・重力長・エントロピーの収支</div>
+  </a>
+  <a class="item" href="sims/12-partitions.html">
+    <span class="num">12</span>
+    <h2>仕切りが決める平衡条件</h2>
+    <p>孤立した二室の仕切りを、透熱・固定／透熱・可動／粒子を通す壁に替える。許すやりとりに応じて <i>T</i>、<i>P</i>、μ がそろう。エントロピーの増える向きから平衡条件を導く。</p>
+    <div class="kw">熱平衡・力学的平衡・化学平衡・拘束・化学ポテンシャル・エントロピー最大</div>
+  </a>
+  <a class="item" href="sims/13-chain.html">
+    <span class="num">13</span>
+    <h2>鎖のエントロピー弾性</h2>
+    <p>でたらめにつながった鎖をたくさんつくり、末端の位置の分布から配置のエントロピー、自由エネルギー、伸ばすのに必要な力 <i>f</i> = <i>kTx</i>/σ² を求める。ゴムが縮もうとする理由。</p>
+    <div class="kw">理想鎖・配置のエントロピー・自由エネルギー・エントロピー弾性・ゴム・高分子</div>
+  </a>
 </section>
+
+<section class="hero">
+  <h2>応用：マクロなモデル</h2>
+  <p>ここからは粒子ではなく、収支の式（第一法則・静水圧平衡・相平衡の条件など）を解いて、大気や気候に熱力学を使う。実際の空気・水の値（3次元、SI 単位）を使う。</p>
+</section>
+<section class="toc">
+  <a class="item" href="sims/14-stability.html">
+    <span class="num">14</span>
+    <h2>空気塊と大気の安定性</h2>
+    <p>持ち上げた空気塊は断熱膨張で冷える。周囲の気温減率と乾燥断熱減率の比べ方で、振動して戻るか（安定）昇り続けるか（対流）が決まる。温度ではなく温位（エントロピー）で比べる。</p>
+    <div class="kw">乾燥断熱減率・温位・静水圧平衡・浮力振動・対流安定性</div>
+  </a>
+  <a class="item" href="sims/15-greenhouse.html">
+    <span class="num">15</span>
+    <h2>放射収支と温室効果</h2>
+    <p>第一法則を時間あたりの収支 <i>C<sub>A</sub></i> d<i>T</i>/d<i>t</i> = <i>J</i><sub>in</sub> − <i>J</i><sub>out</sub> にする。1層大気モデルで地表温度が決まる仕組み、熱容量と応答時間、CO₂ の強制力とフィードバック。</p>
+    <div class="kw">ステファン＝ボルツマン則・有効放射温度・1層大気モデル・復元係数・放射強制力・フィードバック</div>
+  </a>
+  <a class="item" href="sims/16-phase.html">
+    <span class="num">16</span>
+    <h2>相平衡と水蒸気</h2>
+    <p>水面から飛び出す分子と飛び込む分子。化学ポテンシャルの低い相へ水が移り、等しくなるところが飽和水蒸気圧。クラウジウス＝クラペイロンの式、相対湿度、露点。</p>
+    <div class="kw">相平衡・化学ポテンシャル・飽和水蒸気圧・クラウジウス＝クラペイロン・相対湿度・露点</div>
+  </a>
+  <a class="item" href="sims/17-rce.html">
+    <span class="num">17</span>
+    <h2>放射対流平衡</h2>
+    <p>大気の層ごとに放射の収支を解き、エネルギーを保存する対流調整を加えて、気温の高さ分布を求める。放射だけの場合と比べ、対流圏・成層圏ができる理由を見る。</p>
+    <div class="kw">灰色大気・放射加熱・対流調整・放射対流平衡・眞鍋モデル・定常状態</div>
+  </a>
+</section>
+
 
 <section class="foot">
   <div class="card notes">

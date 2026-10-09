@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>14 Air parcels and atmospheric stability | Thermodynamics Simulations</title>
+<link rel="icon" href="../../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body>
+<header class="site-header"><div class="inner">
+  <h1>14 Air parcels and atmospheric stability</h1><span class="sub">Application: does lifted air come back or keep rising? ― adiabatic expansion, potential temperature, buoyancy</span>
+  <nav>
+    <a href="../index.html">Contents</a>
+    <a href="01-operations.html">01 Walls & operations</a>
+    <a href="02-equilibrium.html">02 Relaxation to equilibrium</a>
+    <a href="03-processes.html">03 Quasi-static vs. irreversible</a>
+    <a href="04-isothermal.html">04 Isothermal energy balance</a>
+    <a href="05-extensive.html">05 Extensive & intensive</a>
+    <a href="06-heat-capacity.html">06 Heat capacity</a>
+    <a href="07-entropy.html">07 Entropy</a>
+    <a href="08-heat-engines.html">08 Heat engines</a>
+    <a href="09-osmosis.html">09 Osmotic pressure</a>
+    <a href="10-max-work.html">10 Reversible vs. irreversible</a>
+    <a href="11-sedimentation.html">11 Sedimentation</a>
+    <a href="12-partitions.html">12 Partitions & equilibrium</a>
+    <a href="13-chain.html">13 Chain elasticity</a>
+    <a href="14-stability.html" aria-current="page">14 Atmospheric stability</a>
+    <a href="15-greenhouse.html">15 Radiation & greenhouse</a>
+    <a href="16-phase.html">16 Phase equilibrium & vapor</a>
+    <a href="17-rce.html">17 Radiative-convective eq.</a>
+    <a href="../../sims/14-stability.html" lang="ja" hreflang="ja">日本語</a>
+    <button id="btn-proj" title="Enlarge text">Projector mode</button>
+  </nav>
+</div></header>
+
+<main class="layout">
+  <div class="col">
+    <section class="card">
+      <h2><span class="tag">Macro</span>Surrounding air temperature and the temperature of a lifted air parcel <span class="hint">Values for real dry air (3D). The parcel exchanges no heat with its surroundings (adiabatic) and expands to the surrounding pressure</span></h2>
+      <div class="canvas-wrap"><canvas id="plotT"></canvas></div>
+      <div class="readouts wrap">
+        <div class="stat"><span class="k">Environmental lapse rate Γ<sub>env</sub></span><span class="v" id="r-ge">–</span></div>
+        <div class="stat"><span class="k">Dry adiabatic lapse rate Γ<sub>d</sub> = <i>g</i>/<i>c<sub>p</sub></i></span><span class="v" id="r-gd">–</span></div>
+        <div class="stat int"><span class="k">Parcel temperature − surrounding temperature</span><span class="v" id="r-dT">–</span></div>
+        <div class="stat"><span class="k">Oscillation period 2π/<i>N</i></span><span class="v" id="r-per">–</span></div>
+      </div>
+      <p class="q" id="r-dir" style="margin-top:8px"></p>
+      <div class="canvas-wrap" style="margin-top:6px"><canvas id="plotZ"></canvas></div>
+    </section>
+
+    <section class="card">
+      <h2><span class="tag">Macro</span>Compare potential temperature, not temperature <span class="hint">θ = <i>T</i>(<i>P</i>₀/<i>P</i>)<sup><i>R</i><sub>d</sub>/<i>c<sub>p</sub></i></sup>, <i>P</i>₀ = 1000 hPa. For dry air <i>s</i> = <i>c<sub>p</sub></i> ln θ + const</span></h2>
+      <div class="canvas-wrap"><canvas id="plotTh"></canvas></div>
+      <div class="canvas-wrap" style="margin-top:6px"><canvas id="plotP"></canvas></div>
+    </section>
+  </div>
+
+  <div class="col">
+    <section class="card ctrl">
+      <h2>Controls</h2>
+      <div class="btns">
+        <button id="btn-play" class="primary"></button>
+        <button id="btn-up">▲ Lift and release</button>
+        <button id="btn-down">▼ Push down and release</button>
+        <button id="btn-reset">Back to the starting height</button>
+      </div>
+      <div class="row"><label for="speed">Time speed</label><input type="range" id="speed" min="1" max="3" step="0.05" value="2"><output id="speed-val"></output></div>
+      <div class="group-title">Surrounding atmosphere</div>
+      <div class="row"><label for="ge">Lapse rate Γ<sub>env</sub> (K/km)</label><input type="range" id="ge" min="-4" max="14" step="0.5" value="6.5"><output id="ge-val"></output></div>
+      <div class="row"><label for="Ts">Surface temperature <i>T</i><sub>s</sub> (K)</label><input type="range" id="Ts" min="270" max="310" step="1" value="288"><output id="Ts-val"></output></div>
+      <div class="group-title">Air parcel</div>
+      <div class="row"><label for="z0">Starting height (km)</label><input type="range" id="z0" min="0.5" max="6" step="0.5" value="2"><output id="z0-val"></output></div>
+      <div class="row"><label for="dz">Displacement (km)</label><input type="range" id="dz" min="0.1" max="1.5" step="0.1" value="0.5"><output id="dz-val"></output></div>
+    </section>
+
+    <section class="card notes">
+      <h2>Goal</h2>
+      <p>Lift a parcel of air a little: the surrounding pressure drops, so it <b>expands adiabatically</b> and cools (the same adiabatic expansion as in 03). It cools at the dry adiabatic lapse rate <span class="math">Γ<sub>d</sub> = g/c<sub>p</sub> ≈ 9.8 K/km</span>. If the surrounding temperature falls <b>more slowly</b> than that, the lifted parcel is colder and heavier than its surroundings and is pushed back (stable). If the surroundings fall <b>faster</b>, the parcel is warmer and lighter and keeps rising (unstable → convection).</p>
+      <p>The parcel moves adiabatically, so it keeps its potential temperature θ (that is, its entropy). <b>An atmosphere whose potential temperature (entropy) increases upward is stable</b>; if it decreases upward, it is unstable. Comparing entropy rather than temperature tells you which way the parcel moves.</p>
+      <h3>Try it</h3>
+      <ol>
+        <li>With Γ<sub>env</sub> = 6.5 K/km (an average troposphere), press "Lift and release". The parcel oscillates up and down. What is the period?</li>
+        <li>Make Γ<sub>env</sub> larger than 9.8 K/km. What happens to the lifted parcel? In the potential-temperature plot, θ now decreases upward.</li>
+        <li>Make Γ<sub>env</sub> negative (warmer aloft: an inversion). Is the oscillation faster? Why do smoke and fog stay near the ground on winter mornings?</li>
+        <li>What about Γ<sub>env</sub> = Γ<sub>d</sub> exactly (uniform θ)?</li>
+        <li>In the pressure plot below, compare an isothermal atmosphere (the same exponential as sedimentation equilibrium in 11) with a dry adiabatic one. Even with the same surface pressure, the pressure aloft differs.</li>
+      </ol>
+      <div class="q"><b>Question</b> A parcel at 1000 hPa and 300 K is lifted adiabatically to 800 hPa. What is its temperature? What is its potential temperature? (<span class="math">R<sub>d</sub>/c<sub>p</sub> = 0.286</span>)</div>
+      <div class="q"><b>Question</b> A parcel at 300 K at the ground is lifted by 1 km. If the surrounding lapse rate is 6.0 K/km, is the parcel warmer or colder than its surroundings? Which way does buoyancy act?</div>
+      <div class="q"><b>Question</b> What kind of state is an atmosphere whose temperature "falls at the dry adiabatic lapse rate"? Think about what happens to the potential temperature (entropy) in an atmosphere well mixed by convection.</div>
+      <details><summary>Summary of formulas (dry air)</summary>
+        <p>From the first law per unit mass and hydrostatic balance <span class="math">dP/dz = −ρg</span>, a parcel moving adiabatically while keeping the surrounding pressure satisfies <span class="math">c<sub>p</sub> dT = v dP</span>, i.e. <span class="math">dT/dz = −g/c<sub>p</sub> = −Γ<sub>d</sub></span> (approximating a small density difference from the surroundings).</p>
+        <p>Displace a parcel by ξ from a height <i>z</i>₀ where it has the surrounding temperature: the temperature difference is <span class="math">(Γ<sub>env</sub> − Γ<sub>d</sub>)ξ</span> and the buoyant acceleration is <span class="math">g(T<sub>parcel</sub> − T<sub>env</sub>)/T<sub>env</sub></span>. Together, <span class="math">d²ξ/dt² = −N²ξ</span> with <span class="math">N² = (g/T)(Γ<sub>d</sub> − Γ<sub>env</sub>)</span>. If <i>N</i>² &gt; 0 the parcel oscillates with period <span class="math">2π/N</span> (minutes to ten-odd minutes); if <i>N</i>² &lt; 0 it moves away exponentially. This page ignores friction and mixing with the surroundings.</p>
+        <p>The height change of potential temperature is <span class="math">(1/θ)dθ/dz = (Γ<sub>d</sub> − Γ<sub>env</sub>)/T</span>, the same sign as <i>N</i>². The entropy of dry air is <span class="math">s = c<sub>p</sub> ln θ + const</span>.</p>
+        <p>The surrounding pressure comes from hydrostatic balance and the equation of state. Isothermal: <span class="math">P = P<sub>s</sub> e<sup>−gz/(R<sub>d</sub>T)</sup></span> (the same Boltzmann factor as sedimentation of molecules); constant lapse rate Γ: <span class="math">P = P<sub>s</sub>(T/T<sub>s</sub>)<sup>g/(R<sub>d</sub>Γ)</sup></span>.</p>
+      </details>
+    </section>
+  </div>
+</main>
+
+<script type="module">
+import { GAMMA_D, G, lapseProfile, potentialTemp, bruntN2 } from '../../assets/js/climate.js';
+import { XYPlot, TimePlot, SERIES } from '../../assets/js/plot.js';
+import { $, fmt, fmtSigned, bindRange, Loop, bindPlayPause, setupCommon } from '../../assets/js/ui.js';
+
+setupCommon();
+const PS = 1000, ZTOP = 12;
+let ge = 6.5, Ts = 288, z0 = 2, dz = 0.5, rate = 100;
+let zp = 2, w = 0, Tp0 = 0, zstart = 2, t = 0;   // parcel height (km), speed (m/s), starting temperature, starting height, elapsed time (s)
+
+const env = (z) => lapseProfile(z, Ts, PS, ge);
+const parcelT = (z) => Tp0 - GAMMA_D * (z - zstart);   // dry adiabatic
+const plotT = new XYPlot($('plotT'), { height: 300, xmin: 200, xmax: 320, ymin: 0, ymax: ZTOP, xlabel: 'T (K)', ylabel: 'height z (km)', xd: 1, yd: 2 });
+const plotTh = new XYPlot($('plotTh'), { height: 260, xmin: 260, xmax: 360, ymin: 0, ymax: ZTOP, xlabel: 'θ (K)', ylabel: 'height z (km)', xd: 1, yd: 2 });
+const plotP = new XYPlot($('plotP'), { height: 240, xmin: 0, xmax: 1000, ymin: 0, ymax: ZTOP, xlabel: 'P (hPa)', ylabel: 'height z (km)', xd: 0, yd: 2 });
+const plotZ = new TimePlot($('plotZ'), { height: 160, ylabel: 'parcel height (km)', window: 3600, xlabel: 'time t (s)',
+  series: [{ key: 'z', label: 'parcel height', color: SERIES[1] }, { key: 'z0', label: 'starting height', color: '#77756f', dash: [6, 4] }] });
+
+const curve = (fn, a, b, n = 60) => Array.from({ length: n + 1 }, (_, k) => { const z = a + ((b - a) * k) / n; return [fn(z), z]; });
+
+/** Release the parcel (it has the surrounding temperature at the starting height) */
+function release(dzSign) {
+  zstart = z0; Tp0 = env(z0).T;
+  zp = Math.min(ZTOP, Math.max(0, z0 + dzSign * dz)); w = 0; t = 0;
+  plotZ.reset();
+}
+function resetParcel() { zstart = z0; Tp0 = env(z0).T; zp = z0; w = 0; t = 0; plotZ.reset(); }
+
+function step(dt) {
+  // d²z/dt² = g (T_parcel − T_env)/T_env (z in m); friction and mixing ignored; stops at the ground and 12 km
+  const sub = 20, h = dt / sub;
+  for (let k = 0; k < sub; k++) {
+    const Te = env(zp).T, a = (G * (parcelT(zp) - Te)) / Te;
+    w += a * h; zp += (w * h) / 1000;
+    if (zp <= 0) { zp = 0; w = 0; } else if (zp >= ZTOP) { zp = ZTOP; w = 0; }
+  }
+  t += dt;
+}
+
+function draw() {
+  const Tmin = Math.min(env(ZTOP).T, parcelT(ZTOP)) - 10, Tmax = Math.max(Ts, env(0).T, parcelT(0)) + 10;
+  Object.assign(plotT.opt, { xmin: Math.floor(Tmin / 10) * 10, xmax: Math.ceil(Tmax / 10) * 10 });
+  plotT.paths = [
+    { label: 'surrounding temperature', color: SERIES[0], pts: curve((z) => env(z).T, 0, ZTOP), width: 2.5 },
+    { label: 'dry adiabat followed by the parcel', color: SERIES[1], pts: curve(parcelT, 0, ZTOP), dash: [6, 4], width: 1.8 },
+  ];
+  plotT.marker = [parcelT(zp), zp];
+  plotT.draw();
+  const thEnv = (z) => { const e = env(z); return potentialTemp(e.T, e.p); };
+  const thP = potentialTemp(Tp0, env(zstart).p);
+  const ths = curve(thEnv, 0, ZTOP).map((p) => p[0]).concat([thP]);
+  Object.assign(plotTh.opt, { xmin: Math.floor((Math.min(...ths) - 5) / 10) * 10, xmax: Math.ceil((Math.max(...ths) + 5) / 10) * 10 });
+  plotTh.paths = [
+    { label: 'surrounding potential temperature', color: SERIES[0], pts: curve(thEnv, 0, ZTOP), width: 2.5 },
+    { label: 'parcel potential temperature (constant as it moves)', color: SERIES[1], pts: [[thP, 0], [thP, ZTOP]], dash: [6, 4], width: 1.8 },
+  ];
+  plotTh.marker = [thP, zp];
+  plotTh.draw();
+  plotP.paths = [
+    { label: 'current surrounding atmosphere', color: SERIES[0], pts: curve((z) => env(z).p, 0, ZTOP), width: 2.5 },
+    { label: `isothermal ${Ts} K`, color: '#77756f', pts: curve((z) => lapseProfile(z, Ts, PS, 0).p, 0, ZTOP), dash: [6, 4], width: 1.6 },
+    { label: 'dry adiabatic (uniform θ)', color: SERIES[2], pts: curve((z) => lapseProfile(z, Ts, PS, GAMMA_D).p, 0, ZTOP), dash: [2, 3], width: 1.6 },
+  ];
+  plotP.draw();
+}
+
+function readouts() {
+  const N2 = bruntN2(env(zstart).T, ge), dT = parcelT(zp) - env(zp).T;
+  $('r-ge').textContent = `${fmt(ge, 1)} K/km`; $('r-gd').textContent = `${fmt(GAMMA_D, 2)} K/km`;
+  $('r-dT').textContent = `${fmtSigned(dT, 2)} K`;
+  $('r-per').textContent = N2 > 0 ? `${fmt(2 * Math.PI / Math.sqrt(N2) / 60, 1)} min` : 'no oscillation';
+  const el = $('r-dir'), moved = Math.abs(zp - zstart) > 0.02;
+  if (Math.abs(ge - GAMMA_D) < 0.25) el.innerHTML = '<b>Neutral</b>: the surrounding lapse rate is almost the dry adiabatic one (uniform potential temperature). Hardly any buoyancy acts when the parcel is moved.';
+  else if (ge < GAMMA_D) el.innerHTML = '<b>Stable</b>: Γ<sub>env</sub> &lt; Γ<sub>d</sub> (potential temperature increases upward). ' + (moved ? (dT < 0 ? 'The parcel is colder and heavier than its surroundings, so a downward buoyancy pushes it back.' : 'The parcel is warmer and lighter than its surroundings, so an upward buoyancy pushes it back.') : 'Whether lifted or pushed down, buoyancy acts to bring it back to its original height.');
+  else el.innerHTML = '<b>Unstable</b>: Γ<sub>env</sub> &gt; Γ<sub>d</sub> (potential temperature decreases upward). ' + (moved ? (dT > 0 ? 'The parcel is warmer and lighter than its surroundings, so it keeps rising (convection).' : 'The parcel is colder and heavier than its surroundings, so it keeps sinking.') : 'Moved a little, it keeps moving away.');
+}
+
+bindRange('ge', (v) => { ge = v; resetParcel(); }, (v) => v.toFixed(1), false);
+bindRange('Ts', (v) => { Ts = v; resetParcel(); }, (v) => v.toFixed(0), false);
+bindRange('z0', (v) => { z0 = v; resetParcel(); }, (v) => v.toFixed(1), false);
+bindRange('dz', (v) => { dz = v; }, (v) => v.toFixed(1), false);
+bindRange('speed', (v) => { rate = Math.pow(10, v); }, (v) => `×${Math.round(Math.pow(10, v))}`);
+$('btn-up').addEventListener('click', () => release(1));
+$('btn-down').addEventListener('click', () => release(-1));
+$('btn-reset').addEventListener('click', resetParcel);
+resetParcel();
+
+let frame = 0;
+const loop = new Loop((paused) => {
+  if (!paused) {
+    const dt = rate / 60;   // time advanced per frame (about 1/60 s), in s
+    step(dt); frame++;
+    plotZ.push(t, { z: zp, z0: zstart });
+  }
+  if (frame % 2 === 0 || paused) { draw(); plotZ.draw(); readouts(); }
+});
+bindPlayPause('btn-play', loop);
+</script>
+</body>
+</html>
