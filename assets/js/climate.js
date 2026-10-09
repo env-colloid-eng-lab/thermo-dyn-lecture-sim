@@ -121,7 +121,7 @@ export function convectiveAdjust(T, C, z, gammaCrit) {
  *   長波：灰色大気。光学的厚さ τ(P) = τ_s (P/P_s)^2（水蒸気のように下層に多い）、層の透過率 t = exp(−1.66 Δτ)
  *   短波：吸収する太陽放射 J_abs をすべて地表が吸収する（簡単のため）
  *   温度の更新：各層 C_i dT_i/dt = 流入 − 流出（式 8.2）。対流ありなら、その後に限界減率への対流調整（エネルギー保存）
- *   層の高さは静水圧平衡（dz = (R_d T/g) d ln p）から毎回求める
+ *   層の高さは静水圧平衡（dz = −(R_d T/g) d ln P）から毎回求める
  */
 export class Column {
   constructor(o = {}) {

@@ -87,7 +87,7 @@
       <div class="q"><b>問い</b>　放射だけの大気は地表付近で減率が大きすぎた。14 の判定（温位が上ほど低い）で、この大気は安定か不安定か？</div>
       <details><summary>モデルの中身（教育用の灰色大気）</summary>
         <p>層の境界の上向き・下向きの長波を下から・上から順に求める（8.1 節の式）：<span class="math">U<sub>i</sub> = t<sub>i</sub>U<sub>i−1</sub> + (1 − t<sub>i</sub>)σT<sub>i</sub>⁴</span>、<span class="math">D<sub>i−1</sub> = t<sub>i</sub>D<sub>i</sub> + (1 − t<sub>i</sub>)σT<sub>i</sub>⁴</span>、地表は <span class="math">U₀ = σT<sub>s</sub>⁴</span>、宇宙からは <span class="math">D = 0</span>。層の透過率は <span class="math">t = exp(−1.66Δτ)</span>、光学的厚さは下層に多く <span class="math">τ(P) = τ<sub>s</sub>(P/P<sub>s</sub>)²</span>。</p>
-        <p>各層の温度は <span class="math">(c<sub>p</sub>ΔP/g) dT/dt = 流入 − 流出</span>（式 8.2）で 6 時間ずつ進める。太陽放射はすべて地表が吸収する（簡単のため）。対流ありの気柱では、毎回の更新のあと、地表と層の気温減率が Γ<sub>crit</sub> を超えた部分を、熱容量で重みをつけた合計エネルギーを保ったまま Γ<sub>crit</sub> の直線にそろえる。層の高さは静水圧平衡 <span class="math">dz = (R<sub>d</sub>T/g) d ln P</span> から求める。</p>
+        <p>各層の温度は <span class="math">(c<sub>p</sub>ΔP/g) dT/dt = 流入 − 流出</span>（式 8.2）で 6 時間ずつ進める。太陽放射はすべて地表が吸収する（簡単のため）。対流ありの気柱では、毎回の更新のあと、地表と層の気温減率が Γ<sub>crit</sub> を超えた部分を、熱容量で重みをつけた合計エネルギーを保ったまま Γ<sub>crit</sub> の直線にそろえる。層の高さは静水圧平衡 <span class="math">dz = −(R<sub>d</sub>T/g) d ln P</span> から求める。</p>
         <p>これは放射対流平衡の考え方を見るための教育モデルで、1967年の眞鍋・ウェザラルドのモデル（波長ごとの吸収、水蒸気量を相対湿度一定で決める、など）を再現するものではない。灰色大気なので、上空の温度などの細かい形は現実と合わない。</p>
       </details>
     </section>
