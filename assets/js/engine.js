@@ -67,6 +67,7 @@ export class Gas {
     this.walls = { left: ADIABATIC, top: ADIABATIC, bottom: ADIABATIC };
     this.bath = { left: false, top: false, bottom: false };
     this.Tbath = 1.0;
+    this.Tside = { left: null, top: null, bottom: null };   // 壁ごとの熱源の温度（null なら Tbath）。上下で変えると熱が流れ続ける
 
     // ピストン（操作1）
     //   mode 'position' : 目標位置 target へ一定の速さ speed で動かす（人が動かす）
@@ -177,6 +178,7 @@ export class Gas {
       Wfield: 0,    // 段差 dE を外から変えたときの仕事（位置エネルギーの変化）
       Wpart: 0,     // 可動の仕切りが気体にした仕事（両側の合計）
       Q: 0,         // 熱源から気体が受け取った熱
+      Qside: { left: 0, top: 0, bottom: 0 },   // そのうち、壁ごとの熱源から受け取った熱
       Qreg: new Float64Array(4),     // 部分系ごとの熱（熱源＋透熱仕切りから）
       Wreg: new Float64Array(4),     // 部分系ごとの仕事
       U0: this.kinetic() + this.potential(),
@@ -327,10 +329,11 @@ export class Gas {
     const vx0 = this.vx[i], vy0 = this.vy[i];
     const e0 = 0.5 * (vx0 * vx0 + vy0 * vy0);
     if (this.walls[side] === DIATHERMAL && this.bath[side]) {
-      const [a, b] = this._thermalVelocity(nx, ny, this.Tbath);
+      const [a, b] = this._thermalVelocity(nx, ny, this.Tside[side] ?? this.Tbath);
       this.vx[i] = a; this.vy[i] = b;
       const dE = 0.5 * (a * a + b * b) - e0;
       this.ledger.Q += dE;
+      this.ledger.Qside[side] += dE;
       this.ledger.Qreg[this.region[i]] += dE;
       this._logHeat(this.x[i], this.y[i], dE);
     } else {

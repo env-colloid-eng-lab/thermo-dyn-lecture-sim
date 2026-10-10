@@ -400,5 +400,37 @@ const f = (v, d = 3) => Number(v).toFixed(d);
   check('乾燥断熱の大気では温位が一定', Math.abs(th - 288.15) < 0.05, `θ(5 km)=${f(th, 2)}`);
 }
 
+// --- 18 平衡と定常状態：上下の熱源の温度が違うと熱が流れ続ける ---
+{
+  const mk = (Th, Tc, seed) => {
+    const g = new Gas({ H: 60, X: 100, Xmin: 40, Xmax: 110, r: 1, seed });
+    g.addParticles(400, (Th + Tc) / 2, { x0: 0, x1: 100, y0: 0, y1: 60 });
+    g.piston.target = 100;
+    g.walls = { left: ADIABATIC, top: DIATHERMAL, bottom: DIATHERMAL };
+    g.bath = { left: false, top: true, bottom: true };
+    g.Tside = { left: null, top: Tc, bottom: Th };
+    g.advance(1000); g.resetLedger();
+    return g;
+  };
+  // 温度差あり：定常状態。入る熱 = 出る熱、エントロピー生成 > 0、温度は下ほど高い
+  const g = mk(2, 0.5, 11), nb = 6, ke = new Float64Array(nb), cnt = new Float64Array(nb);
+  for (let k = 0; k < 800; k++) {
+    g.advance(5);
+    for (let i = 0; i < g.N; i++) { const b = Math.min(nb - 1, Math.floor((g.y[i] / 60) * nb)); ke[b] += 0.5 * (g.vx[i] ** 2 + g.vy[i] ** 2); cnt[b]++; }
+  }
+  const L = g.ledger, t = g.time - L.t0, qh = L.Qside.bottom / t, qc = L.Qside.top / t, s = g.stats();
+  const Tl = [...ke].map((v, b) => v / cnt[b]);
+  check('定常状態: 熱い熱源から入る熱の速さ = 冷たい熱源へ出る熱の速さ', qh > 1 && Math.abs(qh + qc) < 0.03 * qh, `Q̇_h=${f(qh, 3)} −Q̇_c=${f(-qc, 3)}`);
+  check('定常状態: 帳簿 ΔU = Q_h + Q_c が厳密（W = 0）', Math.abs(s.dU - (L.Qside.bottom + L.Qside.top)) < 1e-6 && Math.abs(s.W) < 1e-12 && Math.abs(L.Qside.left) < 1e-12, `ΔU=${f(s.dU, 3)}`);
+  const sig = -qh / 2 - qc / 0.5;
+  check('定常状態: エントロピーを作る速さ σ = Q̇(1/T_c − 1/T_h) > 0', sig > 0 && Math.abs(sig - qh * (1 / 0.5 - 1 / 2)) < 0.05 * sig, `σ=${f(sig, 3)}`);
+  check('定常状態: 温度は冷たい上から熱い下へ単調に上がる（壁で温度がとぶ）', Tl.every((v, b) => b === 0 || v > Tl[b - 1]) && Tl[0] > 0.5 && Tl[nb - 1] < 2, Tl.map((v) => f(v, 2)).join(' '));
+  // 同じ温度：平衡。正味の熱の流れは 0 のまわりでゆらぐだけ
+  const e = mk(1.25, 1.25, 12);
+  e.advance(4000);
+  const qe = e.ledger.Qside.bottom / (e.time - e.ledger.t0);
+  check('平衡: 上下が同じ温度なら正味の熱の流れはほぼ 0', Math.abs(qe) < 0.1 * qh, `Q̇_h=${f(qe, 3)}（温度差ありの ${f(qh, 2)} と比べて）`);
+}
+
 console.log(fails ? `\n${fails} 件失敗` : '\nすべて成功');
 process.exit(fails ? 1 : 0);

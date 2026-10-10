@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>18 平衡と定常状態 | 熱力学シミュレーション</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+<header class="site-header"><div class="inner">
+  <h1>18 平衡と定常状態</h1><span class="sub">熱い熱源と冷たい熱源ではさむと、気体は変わらなくなるのに熱は流れ続ける ― エントロピーを作り続ける「定常状態」</span>
+  <nav>
+    <a href="../index.html">目次</a>
+    <a href="01-operations.html">01 壁と操作</a>
+    <a href="02-equilibrium.html">02 平衡への緩和</a>
+    <a href="03-processes.html">03 準静的と不可逆</a>
+    <a href="04-isothermal.html">04 等温過程の収支</a>
+    <a href="05-extensive.html">05 示量と示強</a>
+    <a href="06-heat-capacity.html">06 熱容量</a>
+    <a href="07-entropy.html">07 エントロピー</a>
+    <a href="08-heat-engines.html">08 熱機関</a>
+    <a href="09-osmosis.html">09 浸透圧</a>
+    <a href="10-max-work.html">10 可逆と不可逆</a>
+    <a href="11-sedimentation.html">11 沈降平衡</a>
+    <a href="12-partitions.html">12 仕切りと平衡条件</a>
+    <a href="13-chain.html">13 鎖の弾性</a>
+    <a href="14-stability.html">14 大気の安定性</a>
+    <a href="15-greenhouse.html">15 放射収支と温室効果</a>
+    <a href="16-phase.html">16 相平衡と水蒸気</a>
+    <a href="17-rce.html">17 放射対流平衡</a>
+    <a href="18-steady-state.html" aria-current="page">18 平衡と定常状態</a>
+    <a href="../en/sims/18-steady-state.html" lang="en" hreflang="en">English</a>
+    <button id="btn-proj" title="文字を大きくする">投影モード</button>
+  </nav>
+</div></header>
+
+<main class="layout">
+  <div class="col">
+    <section class="card">
+      <h2><span class="tag">ミクロ</span>温度の違う二つの熱源にはさまれた気体 <span class="hint" id="mode-hint"></span></h2>
+      <div class="canvas-wrap"><canvas id="sim"></canvas></div>
+      <div class="legend">
+        <span><span class="sw adi"></span>断熱壁</span>
+        <span><span class="sw dia"></span>透熱壁（熱源に接触）</span>
+        <span><span class="dot hot"></span>熱源から粒子へエネルギーが入った衝突</span>
+        <span><span class="dot cold"></span>粒子から熱源へエネルギーが出た衝突</span>
+        <span>遅い<span class="grad"></span>速い</span>
+      </div>
+      <div class="readouts wrap">
+        <div class="stat"><span class="k">熱い熱源から入る熱の速さ <i>Q̇</i><sub>h</sub></span><span class="v" id="r-Qh">–</span></div>
+        <div class="stat"><span class="k">冷たい熱源へ出る熱の速さ −<i>Q̇</i><sub>c</sub></span><span class="v" id="r-Qc">–</span></div>
+        <div class="stat"><span class="k">気体の内部エネルギーの変化の速さ d<i>U</i>/d<i>t</i></span><span class="v" id="r-dU">–</span></div>
+        <div class="stat int"><span class="k">エントロピーを作る速さ σ</span><span class="v" id="r-sig">–</span></div>
+      </div>
+      <p class="hint" style="margin:4px 0 0">熱の速さは、直近の時間 <span id="r-win">–</span> の平均（粒子が少ないので短い時間ではゆらぐ）。<i>Q̇</i> は気体が受け取る向きを正にとる（Δ<i>U</i> = <i>Q</i> + <i>W</i> と同じ約束）。</p>
+      <p class="q" id="r-dir" style="margin-top:8px"></p>
+    </section>
+
+    <section class="card">
+      <h2><span class="tag">マクロ</span>高さによる温度と混み具合 <span class="hint">層ごとの時間平均（点）。破線は熱源の温度</span></h2>
+      <div class="twin">
+        <div><div class="canvas-wrap"><canvas id="plotT"></canvas></div></div>
+        <div><div class="canvas-wrap"><canvas id="plotN"></canvas></div></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2><span class="tag">マクロ</span>エネルギーとエントロピーの帳簿 <span class="hint">「測り直す」からの累計</span></h2>
+      <div class="canvas-wrap"><canvas id="plotE"></canvas></div>
+      <div class="canvas-wrap" style="margin-top:6px"><canvas id="plotS"></canvas></div>
+      <div class="ledger">
+        <span class="term"><b>ΔU</b><span id="l-dU"></span></span><span class="op">=</span>
+        <span class="term"><b>Q</b><span id="l-Q"></span></span><span class="op">+</span>
+        <span class="term"><b>W</b><span id="l-W"></span></span>
+        <span class="note"><i>Q</i> = <i>Q</i><sub>h</sub> + <i>Q</i><sub>c</sub>（下の熱い熱源と上の冷たい熱源から受け取った熱の合計）。<i>W</i> = 0（ピストンは止めてある）。</span>
+      </div>
+    </section>
+  </div>
+
+  <div class="col">
+    <section class="card ctrl">
+      <h2>操作パネル</h2>
+      <div class="btns">
+        <button id="btn-play" class="primary"></button>
+        <button id="btn-reset">はじめから</button>
+        <button id="btn-ledger">測り直す</button>
+        <button id="btn-ff">早送り（時間 500）</button>
+      </div>
+      <div class="row"><label for="speed">再生速度</label><input type="range" id="speed" min="-0.7" max="1.6" step="0.05" value="0.48"><output id="speed-val"></output></div>
+
+      <div class="group-title">熱源（途中で変えてよい）</div>
+      <div class="seg" id="contact"><button data-value="on" aria-pressed="true">熱源につなぐ（透熱壁）</button><button data-value="off">熱源を外す（断熱壁）</button></div>
+      <div class="row"><label for="Th">下の熱源の温度 <i>T</i><sub>h</sub></label><input type="range" id="Th" min="0.5" max="3" step="0.05" value="1"><output id="Th-val"></output></div>
+      <div class="row"><label for="Tc">上の熱源の温度 <i>T</i><sub>c</sub></label><input type="range" id="Tc" min="0.25" max="2" step="0.05" value="1"><output id="Tc-val"></output></div>
+      <div class="btns" style="margin-top:6px">
+        <button id="btn-same">同じ温度にする（1, 1）</button>
+        <button id="btn-diff">温度差をつける（2, 0.5）</button>
+      </div>
+
+      <div class="group-title">はじめの状態</div>
+      <div class="row"><label for="N">粒子数 <i>N</i></label><input type="range" id="N" min="200" max="600" step="50" value="400"><output id="N-val"></output></div>
+
+      <div class="group-title">表示</div>
+      <div>
+        <label class="check"><input type="checkbox" id="c-heat" checked>熱のやりとり</label>
+      </div>
+    </section>
+
+    <section class="card notes">
+      <h2>ねらい</h2>
+      <p>02 や 11 では、放っておくと気体は<b>平衡</b>に落ち着き、そこで変化が止まりました。平衡では全体のエントロピーが最大で、熱も物質も正味には流れません。</p>
+      <p>では、下を熱い熱源、上を冷たい熱源にはさんだらどうなるか。しばらくすると気体の温度の分布は変わらなくなります。でもそれは平衡ではありません。熱が熱い方から冷たい方へ<b>流れ続け</b>、全体のエントロピーは<b>増え続け</b>ます。これを<b>定常状態</b>（非平衡定常状態）といいます。地球の気候（15・17）も、生き物の細胞も、この「流れに支えられた定常状態」です。</p>
+      <h3>やってみよう</h3>
+      <ol>
+        <li>はじめは上下とも <i>T</i> = 1（同じ温度）。<i>Q̇</i><sub>h</sub> も −<i>Q̇</i><sub>c</sub> も 0 のまわりでゆらぐだけで、温度は高さによらず一様。これが平衡。</li>
+        <li>「温度差をつける」を押す（<i>T</i><sub>h</sub> = 2、<i>T</i><sub>c</sub> = 0.5）。しばらくすると温度は下ほど高い分布で止まり、d<i>U</i>/d<i>t</i> ≈ 0 になる。それでも <i>Q̇</i><sub>h</sub> ≈ −<i>Q̇</i><sub>c</sub> &gt; 0：入った熱と同じだけ出ていく。</li>
+        <li>下のグラフで、熱源のエントロピーの合計が<b>一定の速さで増え続ける</b>ことを確かめる。気体の状態は変わらないのに、全体ではエントロピーが作られ続けている。</li>
+        <li>「混み具合」のグラフ：冷たい上の方ほど粒子が混んでいる。圧力（上下でほぼ同じ）をそろえるには、温度が低いところほど多くの粒子が必要。</li>
+        <li>「熱源を外す」を押す。熱の流れが止まり、温度の分布はならされて一様になる（平衡へ戻る）。定常状態は、外から熱を流し続けないと保てない。</li>
+        <li>温度差を半分にすると <i>Q̇</i> と σ はどう変わる？（σ はおよそ温度差の2乗に比例する）</li>
+      </ol>
+      <div class="q"><b>問い</b>　定常状態でも平衡でも「気体の状態は時間によらない」。では二つの違いは何？　熱の流れとエントロピーの生成、外から何を供給しているかで答えよう。</div>
+      <div class="q"><b>問い</b>　熱い熱源から入った熱 <i>Q</i> がそのまま冷たい熱源へ出ていくとき、全体のエントロピーの変化 Δ<i>S</i> = −<i>Q</i>/<i>T</i><sub>h</sub> + <i>Q</i>/<i>T</i><sub>c</sub> の符号は？　熱が冷たい方から熱い方へひとりでに流れる定常状態がないのはなぜ？</div>
+      <div class="q"><b>問い</b>　地球は太陽（約 5800 K）から放射を受け取り、宇宙（約 3 K）へ放射を出して、ほぼ定常状態にある。細胞は ATP を作り続けて、平衡から離れた状態を保っている（4.10 節）。どちらも、このページの気体と何が同じか？</div>
+      <details><summary>エネルギーとエントロピーの帳簿</summary>
+        <p>第一法則：<span class="math">dU/dt = Q̇<sub>h</sub> + Q̇<sub>c</sub></span>（ピストンは止めてあるので <i>W</i> = 0）。定常状態では d<i>U</i>/d<i>t</i> = 0 なので <span class="math">Q̇<sub>h</sub> = −Q̇<sub>c</sub> ≡ Q̇</span>。</p>
+        <p>熱源のエントロピーの変化は、熱源が受け取った熱をその温度で割ったもの：<span class="math">dS<sub>熱源</sub>/dt = −Q̇<sub>h</sub>/T<sub>h</sub> − Q̇<sub>c</sub>/T<sub>c</sub></span>。定常状態では気体のエントロピーは変わらないので、全体のエントロピーを作る速さは <span class="math">σ = Q̇ (1/T<sub>c</sub> − 1/T<sub>h</sub>) ≥ 0</span>。熱が熱い方から冷たい方へ流れる（<i>Q̇</i> &gt; 0、<i>T</i><sub>h</sub> &gt; <i>T</i><sub>c</sub>）ときだけ正になる。これは第二法則が決める流れの向き。</p>
+        <p>温度差が小さいとき、熱の速さは温度差に比例する（フーリエの法則 <span class="math">Q̇ ∝ T<sub>h</sub> − T<sub>c</sub></span>）。すると σ は温度差の2乗に比例する。</p>
+      </details>
+      <details><summary>平衡と定常状態の違い（教科書 8.7 節）</summary>
+        <p>沈降平衡（11）は、外から何も供給しなくても続く平衡で、全体のエントロピーは最大、正味の流れはない。気候の放射対流平衡（17）は、名前に「平衡」とついているが、太陽からのエネルギーが入って宇宙へ出ていく流れに支えられた定常状態で、エントロピーを作り続けている。このページの気体は後者のいちばん簡単な例。</p>
+      </details>
+      <details><summary>このモデルについて</summary>
+        <p>2次元剛体円板気体（m = 1、k = 1、<i>U</i> = <i>NkT</i>）。他のページより粒子を大きくして（半径 1）、熱が粒子どうしの衝突でリレーされるようにしている。粒子が熱源の壁に当たると、その熱源の温度の分布から速さを選び直して跳ね返る（ミクロに見た熱のやりとり）。帳簿は衝突1回ごとのエネルギー変化をすべて足したもので、Δ<i>U</i> = <i>Q</i> + <i>W</i> が厳密に成り立つ。</p>
+        <p>壁のすぐそばの層の温度は熱源の温度と少しずれる（壁で温度がとぶ）。粒子が壁に当たる回数が有限で、壁との熱のやりとりが完全ではないため。粒子が多い（気体が濃い）ほど、とびは小さくなる。粒子に大きさがあるので、状態方程式は理想気体から少しずれる（混み具合と温度の積は高さで少し変わる）。</p>
+      </details>
+    </section>
+  </div>
+</main>
+
+<script type="module" src="../assets/js/pages/18-steady-state.js"></script>
+</body>
+</html>
