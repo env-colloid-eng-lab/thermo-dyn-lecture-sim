@@ -34,7 +34,7 @@ GitHub Pages でそのまま公開できます。
 | 16 | `sims/16-phase.html` | 水面から飛び出す・飛び込む分子の確率モデルと、*e<sub>s</sub>*(*T*) の曲線・化学ポテンシャルの比較。蒸発か凝結かを Δμ = *RT* ln(*e*/*e<sub>s</sub>*) の符号で判定 | 相平衡・クラウジウス＝クラペイロン・相対湿度（第7章） |
 | 17 | `sims/17-rce.html` | 20 層の灰色大気の放射と、エネルギーを保存する対流調整で気温の高さ分布を求める。放射だけの場合と比較し、加熱率のつり合いを見る | 放射対流平衡・眞鍋モデルの考え方（第8章） |
 
-英語版は `en/`（`en/index.html`, `en/sims/01〜17-*.html`）にあり、各ページ右上の「English」「日本語」で行き来できます。JavaScript 内の表示（グラフの軸・段階の名前など）は `assets/js/i18n.js` がページの `lang` を見て切り替えます。
+英語版は `en/`（`en/index.html`, `en/sims/01〜17-*.html`）にあり、各ページ右上の「English」「日本語」で行き来できます。ページの動き（JavaScript）は日英で1つのファイル `assets/js/pages/01〜17-*.js` を共有し、その中の表示（グラフの軸・状態の説明など）は `tr('日本語', 'English')`（`assets/js/i18n.js`）がページの `lang` を見て切り替えます。日英の HTML に書くのは本文（説明・問い・操作パネルの文字）だけです。
 
 各ページに「やってみよう」と「問い」があり、授業中の投影（右上の **投影モード** で文字拡大、スペースキーで再生/停止）にも、学生の自習・レポートにも使えます。
 
@@ -99,10 +99,12 @@ npm run test:browser
 ```
 index.html                 目次
 sims/01〜17-*.html         各シミュレーション（14〜17 は応用：マクロなモデル）（en/ に英語版）
+assets/js/pages/01〜17-*.js 各ページの動き（日英共通。表示する文字は tr() で書く）
 assets/js/engine.js        分子動力学エンジン（DOM 非依存・Node でも動く）
 assets/js/render.js        容器・壁・粒子の描画（スライドの図の約束に準拠）
 assets/js/plot.js          時系列・P–V 図・ヒストグラム（外部ライブラリなし）
 assets/js/ui.js            スライダー等の UI ヘルパー
+assets/js/i18n.js          日本語／英語の切り替え（tr()）
 assets/css/style.css       共通スタイル
 assets/js/experiments.js   熱容量の測定手順（06）
 assets/js/entropy.js       場合の数・エントロピーの計算（07）
@@ -119,7 +121,7 @@ tests/smoke-browser.mjs    ブラウザ操作テスト（Playwright）
 `engine.js` の `Gas` クラスで容器・壁・操作を組み立てられます。
 
 ```js
-import { Gas, ADIABATIC, DIATHERMAL } from '../assets/js/engine.js';
+import { Gas, ADIABATIC, DIATHERMAL } from '../engine.js';   // assets/js/pages/ に置いたページのスクリプトから
 const gas = new Gas({ H: 60, X: 100, Xmin: 30, Xmax: 110 });
 gas.addParticles(200, 1.0, { x0: 0, x1: 100, y0: 0, y1: 60 });   // N, T, 領域
 gas.walls.left = DIATHERMAL; gas.bath.left = true; gas.Tbath = 2;  // 左壁を熱源に接触
