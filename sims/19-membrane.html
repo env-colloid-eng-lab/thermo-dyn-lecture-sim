@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>19 膜電位とネルンストの式 | 熱力学シミュレーション</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+<header class="site-header"><div class="inner">
+  <h1>19 膜電位とネルンストの式</h1><span class="sub">イオンを通す膜 ― 濃度の差と電位の差がつり合うところで平衡。沈降平衡と同じ形</span>
+  <nav>
+    <a href="../index.html">目次</a>
+    <a href="01-operations.html">01 壁と操作</a>
+    <a href="02-equilibrium.html">02 平衡への緩和</a>
+    <a href="03-processes.html">03 準静的と不可逆</a>
+    <a href="04-isothermal.html">04 等温過程の収支</a>
+    <a href="05-extensive.html">05 示量と示強</a>
+    <a href="06-heat-capacity.html">06 熱容量</a>
+    <a href="07-entropy.html">07 エントロピー</a>
+    <a href="08-heat-engines.html">08 熱機関</a>
+    <a href="09-osmosis.html">09 浸透圧</a>
+    <a href="10-max-work.html">10 可逆と不可逆</a>
+    <a href="11-sedimentation.html">11 沈降平衡</a>
+    <a href="12-partitions.html">12 仕切りと平衡条件</a>
+    <a href="13-chain.html">13 鎖の弾性</a>
+    <a href="14-stability.html">14 大気の安定性</a>
+    <a href="15-greenhouse.html">15 放射収支と温室効果</a>
+    <a href="16-phase.html">16 相平衡と水蒸気</a>
+    <a href="17-rce.html">17 放射対流平衡</a>
+    <a href="18-steady-state.html">18 平衡と定常状態</a>
+    <a href="19-membrane.html" aria-current="page">19 膜電位</a>
+    <a href="../en/sims/19-membrane.html" lang="en" hreflang="en">English</a>
+    <button id="btn-proj" title="文字を大きくする">投影モード</button>
+  </nav>
+</div></header>
+
+<main class="layout">
+  <div class="col">
+    <section class="card">
+      <h2><span class="tag">ミクロ</span>膜で仕切った細胞の内側と外側 <span class="hint">下＝内側（電位 ψ<sub>in</sub>）、上＝外側（電位 ψ<sub>out</sub> = 0）、破線＝膜</span></h2>
+      <div class="canvas-wrap"><canvas id="sim"></canvas></div>
+      <div class="legend">
+        <span><span class="sw dia"></span>透熱壁（まわりは温度 <i>T</i> = 1 の環境）</span>
+        <span><span class="sw semi"></span>膜（通すイオンを選べる）</span>
+        <span><span class="dot" style="background:#d6453d"></span>K⁺（+1）</span>
+        <span><span class="dot" style="background:#2a78d6"></span>Cl⁻（−1）</span>
+        <span><span class="dot" style="background:#77756f"></span>A⁻（−1、膜を通らない大きな陰イオン：タンパク質など）</span>
+      </div>
+      <div style="overflow-x:auto;margin-top:8px"><table class="tbl">
+        <thead><tr><th>イオン</th><th>内側の数</th><th>外側の数</th><th>ln(<i>c</i><sub>in</sub>/<i>c</i><sub>out</sub>)</th><th>平衡なら −<i>z</i>eΔψ/<i>kT</i></th><th>μ̃<sub>in</sub> − μ̃<sub>out</sub>（<i>kT</i>）</th><th>外へ出る正味の速さ（×100）</th></tr></thead>
+        <tbody>
+          <tr><td>K⁺</td><td id="r-in0">–</td><td id="r-out0">–</td><td id="r-lr0">–</td><td id="r-th0">–</td><td id="r-dmu0">–</td><td id="r-flux0">–</td></tr>
+          <tr><td>Cl⁻</td><td id="r-in1">–</td><td id="r-out1">–</td><td id="r-lr1">–</td><td id="r-th1">–</td><td id="r-dmu1">–</td><td id="r-flux1">–</td></tr>
+          <tr><td>A⁻</td><td id="r-in2">–</td><td id="r-out2">–</td><td id="r-lr2">–</td><td id="r-th2">–</td><td id="r-dmu2">–</td><td id="r-flux2">–</td></tr>
+        </tbody>
+      </table></div>
+      <p class="hint" style="margin:4px 0 0">数は時間平均（内側と外側は同じ広さなので、数の比＝濃度の比）。正味の速さは直近の時間 300 の平均。電位は <i>kT</i>/e 単位（<i>T</i> = 1 を体温 310 K とみると 1 ≈ 26.7 mV）。</p>
+      <div class="readouts wrap" style="margin-top:8px">
+        <div class="stat"><span class="k">いまの膜電位 Δψ = ψ<sub>in</sub> − ψ<sub>out</sub></span><span class="v" id="r-psi">–</span></div>
+        <div class="stat int"><span class="k">K⁺ のネルンスト電位（いまの濃度から）(<i>kT</i>/e) ln(<i>c</i><sub>out</sub>/<i>c</i><sub>in</sub>)</span><span class="v" id="r-vN">–</span></div>
+      </div>
+      <p class="q" id="r-dir" style="margin-top:8px"></p>
+      <div class="ledger">
+        <span class="term"><b>ΔU</b><span id="l-dU"></span></span><span class="op">=</span>
+        <span class="term"><b>Q</b><span id="l-Q"></span></span><span class="op">+</span>
+        <span class="term"><b>W</b><span id="l-W"></span></span>
+        <span class="note"><i>U</i> は運動エネルギーと電気的な位置エネルギー <i>z</i>eψ の合計。<i>W</i>：膜電位を途中で変えたときに外からした仕事。<i>Q</i>：まわりの環境から受け取った熱。</span>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2><span class="tag">マクロ</span>濃度の比の時間変化 <span class="hint">破線＝その膜電位でのネルンストの式</span></h2>
+      <div class="canvas-wrap"><canvas id="plotR"></canvas></div>
+    </section>
+
+    <section class="card">
+      <h2><span class="tag">マクロ</span>ネルンストの式：膜電位と濃度の比 <span class="hint">「いまの値を記録」で点を足す。黒丸＝いまの K⁺</span></h2>
+      <div class="canvas-wrap"><canvas id="plotN"></canvas></div>
+      <div class="btns" style="margin-top:6px"><button id="btn-rec">いまの値を記録</button><button id="btn-clear">記録を消す</button></div>
+    </section>
+  </div>
+
+  <div class="col">
+    <section class="card ctrl">
+      <h2>操作パネル</h2>
+      <div class="btns">
+        <button id="btn-play" class="primary"></button>
+        <button id="btn-reset">はじめから</button>
+        <button id="btn-ledger">測り直す（W=Q=0）</button>
+      </div>
+      <div class="row"><label for="speed">再生速度</label><input type="range" id="speed" min="-0.7" max="1.6" step="0.05" value="0.3"><output id="speed-val"></output></div>
+
+      <div class="group-title">膜電位（外から与える）</div>
+      <div class="row"><label for="psi">Δψ = ψ<sub>in</sub> − ψ<sub>out</sub>（<i>kT</i>/e）</label><input type="range" id="psi" min="-3" max="3" step="0.1" value="0"><output id="psi-val"></output></div>
+      <div class="btns" style="margin-top:6px"><button id="btn-nernst">K⁺ のネルンスト電位にそろえる</button></div>
+
+      <div class="group-title">膜が通すイオン</div>
+      <div class="seg" id="perm"><button data-value="K" aria-pressed="true">K⁺ だけ</button><button data-value="KCl">K⁺ と Cl⁻</button><button data-value="none">通さない</button></div>
+
+      <div class="group-title">はじめの状態</div>
+      <div class="seg" id="init"><button data-value="same" aria-pressed="true">内外で同じ濃度</button><button data-value="cell">細胞のように（内側に K⁺）</button></div>
+
+      <div class="group-title">表示</div>
+      <div>
+        <label class="check"><input type="checkbox" id="c-speed">色＝速さ</label>
+      </div>
+    </section>
+
+    <section class="card notes">
+      <h2>ねらい</h2>
+      <p>11 の沈降平衡では、粒子は「高さによるエネルギー」と「広がろうとする向き（配置のエントロピー）」のつり合いで、<span class="math">c<sub>上</sub>/c<sub>下</sub> = e<sup>−ΔE/kT</sup></span> に分かれました。イオンでは、重力の代わりに<b>電気的なエネルギー <i>z</i>eψ</b> がその役をします（<i>z</i>：価数、e：素電荷）。</p>
+      <p>膜の内外でイオンが平衡になる条件は、<b>電気化学ポテンシャル</b> <span class="math">μ̃ = μ° + kT ln c + zeψ</span> が内外でそろうこと。そこから<b>ネルンストの式</b> <span class="math">ψ<sub>in</sub> − ψ<sub>out</sub> = (kT/ze) ln(c<sub>out</sub>/c<sub>in</sub>)</span> が出ます（教科書 4.9 節）。</p>
+      <h3>やってみよう</h3>
+      <ol>
+        <li>Δψ = 0、「K⁺ だけ」で再生。K⁺ は内外で同じ濃度のまま（ln(<i>c</i><sub>in</sub>/<i>c</i><sub>out</sub>) ≈ 0）。</li>
+        <li>Δψ を −1 にする（内側が低い電位）。正の K⁺ は内側に集まり、ln(<i>c</i><sub>in</sub>/<i>c</i><sub>out</sub>) ≈ +1 で止まる。濃度の差で外へ広がろうとする向きと、電位で内へ引かれる向きがつり合う。</li>
+        <li>いろいろな Δψ で「いまの値を記録」。点は傾き −1 の直線（K⁺ のネルンストの式）に乗る？</li>
+        <li>「K⁺ と Cl⁻」にする。負の Cl⁻ は K⁺ と逆に分かれ、傾き +1 の直線に乗る。A⁻ は膜を通れないので、内側にとどまったまま。</li>
+        <li>「はじめの状態」を「細胞のように」にし、Δψ = 0 で再生。K⁺ は外へ出ていく（μ̃<sub>in</sub> &gt; μ̃<sub>out</sub>）。途中で「K⁺ のネルンスト電位にそろえる」を押すと、正味の移動が止まる。</li>
+        <li>「通さない」にすると、濃度差があっても電位差があっても何も起こらない。平衡の条件は「やりとりを許された量」についてだけ成り立つ（12 の仕切りと同じ）。</li>
+      </ol>
+      <div class="q"><b>問い</b>　神経細胞の K⁺ の濃度は、内側 140 mM、外側 5 mM くらい。体温（<i>kT</i>/e ≈ 26.7 mV）で K⁺ のネルンスト電位は何 mV？　内側は正・負のどちら？</div>
+      <div class="q"><b>問い</b>　11 の沈降平衡の式 <span class="math">c<sub>上</sub>/c<sub>下</sub> = e<sup>−mgh/kT</sup></span> と、ネルンストの式を見比べよう。<i>mgh</i> に当たるのは何？　符号が K⁺ と Cl⁻ で逆になるのはなぜ？</div>
+      <div class="q"><b>問い</b>　実際の細胞の静止膜電位（約 −70 mV）は K⁺ のネルンスト電位とずれていて、Na⁺ はずっと内へ流れ込もうとしている。それでも濃度差が保たれているのはなぜ？（ヒント：18 の定常状態、4.10 節の ATP、ナトリウム–カリウムポンプ）</div>
+      <details><summary>ネルンストの式の導き方</summary>
+        <p>イオン1個の電気化学ポテンシャルは <span class="math">μ̃ = μ° + kT ln(c/c°) + zeψ</span>。内外で同じ基準をとれば、平衡 μ̃<sub>in</sub> = μ̃<sub>out</sub> から <span class="math">0 = kT ln(c<sub>in</sub>/c<sub>out</sub>) + ze(ψ<sub>in</sub> − ψ<sub>out</sub>)</span>。よって <span class="math">c<sub>in</sub>/c<sub>out</sub> = e<sup>−zeΔψ/kT</sup></span>、すなわち <span class="math">Δψ = (kT/ze) ln(c<sub>out</sub>/c<sub>in</sub>)</span>。1 mol あたりで書けば <i>kT</i> → <i>RT</i>、e → ファラデー定数 <i>F</i><sub>A</sub> で、教科書の式 (4.16) になる。</p>
+        <p>平衡でないとき、μ̃<sub>in</sub> − μ̃<sub>out</sub> &gt; 0 ならイオンを外へ移すと自由エネルギーが下がるので、正味に外へ出ていく（逆なら入ってくる）。表の「μ̃<sub>in</sub> − μ̃<sub>out</sub>」と「外へ出る正味の速さ」の符号がそろうことを確かめよう。</p>
+      </details>
+      <details><summary>このモデルについて</summary>
+        <p>2次元剛体円板気体（m = 1、k = 1）。膜を越えるとき、イオンは電気的なエネルギーの差 <i>z</i>eΔψ の分だけ膜に垂直な速さを変える（足りなければ跳ね返る）。11 の段差と同じしくみで、運動＋電気的なエネルギーは厳密に保存される。まわりの壁は温度 1 の環境と熱をやりとりするので、温度はほぼ一定。</p>
+        <p>この模型では、イオンどうしの電気的な力（クーロン力）は入れず、膜電位 Δψ は外から与えた値として扱う（電位を固定した実験に当たる）。実際の細胞では、膜電位は膜の両側にたまったごくわずかな電荷の差でつくられ、それは濃度にくらべて無視できるほど小さい。</p>
+      </details>
+    </section>
+  </div>
+</main>
+
+<script type="module" src="../assets/js/pages/19-membrane.js"></script>
+</body>
+</html>

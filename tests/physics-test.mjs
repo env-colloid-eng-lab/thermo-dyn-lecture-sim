@@ -432,5 +432,28 @@ const f = (v, d = 3) => Number(v).toFixed(d);
   check('平衡: 上下が同じ温度なら正味の熱の流れはほぼ 0', Math.abs(qe) < 0.1 * qh, `Q̇_h=${f(qe, 3)}（温度差ありの ${f(qh, 2)} と比べて）`);
 }
 
+// --- 19 膜電位：種類ごとの価数 q と、通れない種類 block ---
+{
+  const g = new Gas({ H: 60, X: 100, Xmin: 40, Xmax: 110, r: 0.2, seed: 21 });
+  const IN = { x0: 0, x1: 100, y0: 30, y1: 60 }, OUT = { x0: 0, x1: 100, y0: 0, y1: 30 };
+  g.addParticles(80, 1, IN, 0); g.addParticles(80, 1, OUT, 0);     // K⁺
+  g.addParticles(60, 1, IN, 1); g.addParticles(60, 1, OUT, 1);     // Cl⁻
+  g.addParticles(60, 1, IN, 2);                                    // A⁻（膜を通らない）
+  g.piston.target = 100;
+  g.walls = { left: DIATHERMAL, top: DIATHERMAL, bottom: DIATHERMAL }; g.bath = { left: true, top: true, bottom: true }; g.Tbath = 1;
+  g.setLevels(2, 0, [0.5], { q: [1, -1, -1], block: [false, false, true] });
+  g.resetLedger();
+  const psi = -1;
+  g.setLevels(2, -psi, [0.5], { q: [1, -1, -1], block: [false, false, true] });   // 外側のエネルギー −qΔψ
+  g.advance(600);
+  const cin = [0, 0, 0], cout = [0, 0, 0];
+  for (let k = 0; k < 800; k++) { g.advance(5); for (let i = 0; i < g.N; i++) (g.layerOf(g.y[i]) === 0 ? cin : cout)[g.species[i]]++; }
+  const rK = cin[0] / cout[0], rC = cin[1] / cout[1], s = g.stats();
+  check('膜電位: K⁺ は c_in/c_out = e^{−eΔψ/kT}（ネルンスト）', Math.abs(rK / Math.exp(-psi) - 1) < 0.08, `測定=${f(rK, 3)} 理論=${f(Math.exp(-psi), 3)}`);
+  check('膜電位: Cl⁻ は逆向きに c_in/c_out = e^{+eΔψ/kT}', Math.abs(rC / Math.exp(psi) - 1) < 0.08, `測定=${f(rC, 3)} 理論=${f(Math.exp(psi), 3)}`);
+  check('膜電位: 膜を通れない A⁻ は外へ出ない', cout[2] === 0, `外側の A⁻ = ${cout[2]}`);
+  check('膜電位: ΔU = Q + W（電位を変えた仕事を含め厳密）', Math.abs(s.dU - s.Q - s.W) < 1e-6 && Math.abs(s.W) > 1, `ΔU=${f(s.dU, 3)} Q=${f(s.Q, 3)} W=${f(s.W, 3)}`);
+}
+
 console.log(fails ? `\n${fails} 件失敗` : '\nすべて成功');
 process.exit(fails ? 1 : 0);

@@ -16,7 +16,7 @@ const PAGES = ['index.html', 'sims/01-operations.html', 'sims/02-equilibrium.htm
   'sims/06-heat-capacity.html', 'sims/07-entropy.html', 'sims/08-heat-engines.html', 'sims/09-osmosis.html',
   'sims/10-max-work.html', 'sims/11-sedimentation.html', 'sims/12-partitions.html', 'sims/13-chain.html',
   'sims/14-stability.html', 'sims/15-greenhouse.html', 'sims/16-phase.html', 'sims/17-rce.html',
-  'sims/18-steady-state.html'];
+  'sims/18-steady-state.html', 'sims/19-membrane.html'];
 PAGES.push(...PAGES.map((p) => 'en/' + p));   // 英語版も同じように確かめる
 
 let chromium;

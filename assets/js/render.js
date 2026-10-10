@@ -53,6 +53,9 @@ export class SimView {
    *   arrows: bool, Tref: number, showHeat: bool
    *   bathPad: 左に熱源ブロックを置く余白, envPad: 周囲に環境枠を置く余白
    *   tbPad: 上下の壁に熱源ブロックを置く余白（温度は gas.Tside.top / bottom）
+   *   speciesColors: 粒子の種類ごとの色（指定すると colorMode 'species' でこの色を使う）
+   *   levelStyle: 'steps'（既定：段差を濃淡と点線）| 'membrane'（境目を膜として破線で描き、濃淡と ε は出さない）
+   *   levelText: (k) => 層 k の左上に書く文字（省くと書かない）
    *   regionLabels: bool
    */
   constructor(canvas, gas, opt = {}) {
@@ -193,7 +196,20 @@ export class SimView {
     ctx.fillRect(this.X(0), this.Y(0), g.X * s, g.H * s);
 
     // --- 高さによるエネルギーの段差（壁ではない）: 位置エネルギーの高い層ほど少し濃く、境目は灰色の点線 ---
-    if (g.levels) {
+    if (g.levels && o.levelStyle === 'membrane') {
+      const L = g.levels, zb = [0, ...L.bounds, 1], yOf = (z) => g.H * (1 - z);
+      ctx.strokeStyle = COLORS.wall; ctx.lineWidth = 2.2 * dpr; ctx.setLineDash([5 * dpr, 4 * dpr]);
+      for (let k = 1; k < L.n; k++) { const y = yOf(zb[k]); ctx.beginPath(); ctx.moveTo(this.X(0), this.Y(y)); ctx.lineTo(this.X(g.X), this.Y(y)); ctx.stroke(); }
+      ctx.setLineDash([]);
+      if (o.levelText) {
+        ctx.font = `${fontPx}px sans-serif`; ctx.fillStyle = 'rgba(31,31,31,0.85)'; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+        for (let k = 0; k < L.n; k++) {
+          const t = o.levelText(k), x = this.X(0) + 6 * dpr, y = this.Y(yOf(zb[k + 1])) + 4 * dpr;
+          ctx.fillStyle = 'rgba(255,255,255,0.8)'; ctx.fillRect(x - 3 * dpr, y - 2 * dpr, ctx.measureText(t).width + 6 * dpr, fontPx + 4 * dpr);
+          ctx.fillStyle = 'rgba(31,31,31,0.9)'; ctx.fillText(t, x, y);
+        }
+      }
+    } else if (g.levels) {
       const L = g.levels, emax = Math.max(0, (L.n - 1) * L.dE), emin = Math.min(0, (L.n - 1) * L.dE);
       const zb = [0, ...L.bounds, 1];                // 層の境目（下端からの割合）
       const yOf = (z) => g.H * (1 - z);
@@ -268,6 +284,8 @@ export class SimView {
       if (o.colorMode === 'speed') {
         ctx.fillStyle = speedColor(Math.hypot(g.vx[i], g.vy[i]), o.Tref);
         ctx.fill();
+      } else if (o.speciesColors) {
+        ctx.fillStyle = o.speciesColors[g.species[i]] ?? COLORS.particle; ctx.fill();
       } else if (g.species[i] === 1) {
         ctx.fillStyle = COLORS.particle2Fill; ctx.fill();
         ctx.strokeStyle = COLORS.particle2Stroke; ctx.lineWidth = 1 * dpr; ctx.stroke();
