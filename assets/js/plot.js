@@ -56,13 +56,16 @@ class Base {
     const ys = niceStep(ymax - ymin, 4);
     ctx.strokeStyle = GRID; ctx.lineWidth = 1; ctx.fillStyle = INK2;
     ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
-    for (let v = Math.ceil(ymin / ys) * ys; v <= ymax + 1e-12; v += ys) {
+    // 目盛りは整数番目 k × 間隔 で数える（間隔が値にくらべて小さすぎても止まるよう、本数にも上限）
+    for (let k = Math.ceil(ymin / ys), n = 0; k * ys <= ymax + 1e-12 && n < 60; k++, n++) {
+      const v = k * ys;
       ctx.beginPath(); ctx.moveTo(l, sy(v)); ctx.lineTo(l + pw, sy(v)); ctx.stroke();
       ctx.fillText(fmtTick(v, ys), l - 6 * this.dpr, sy(v));
     }
     const xs = niceStep(xmax - xmin, 5);
     ctx.textAlign = 'center'; ctx.textBaseline = 'top';
-    for (let v = Math.ceil(xmin / xs) * xs; v <= xmax + 1e-12; v += xs) {
+    for (let k = Math.ceil(xmin / xs), n = 0; k * xs <= xmax + 1e-12 && n < 60; k++, n++) {
+      const v = k * xs;
       ctx.fillText(fmtTick(v, xs), sx(v), t + ph + 5 * this.dpr);
     }
     ctx.strokeStyle = AXIS; ctx.lineWidth = 1.2 * this.dpr;
@@ -125,7 +128,9 @@ export class TimePlot extends Base {
     if (this.opt.yZero) { ymin = Math.min(ymin, 0); ymax = Math.max(ymax, 0); }
     if (this.opt.ymin != null) ymin = Math.min(ymin, this.opt.ymin);
     if (this.opt.ymax != null) ymax = Math.max(ymax, this.opt.ymax);
-    const pad = (ymax - ymin) * 0.08 || Math.abs(ymax) * 0.1 || 1;
+    // 値がほぼ一定（差が丸め誤差ほど）のときは一定とみなす。そうしないと目盛りの間隔が小さくなりすぎる
+    const span = ymax - ymin;
+    const pad = span > 1e-9 * Math.max(1, Math.abs(ymax)) ? span * 0.08 : Math.abs(ymax) * 0.1 || 1;
     ymin -= pad; ymax += pad;
     const { sx, sy } = this.frame(ctx, tmin, tmax, ymin, ymax);
     ctx.save();

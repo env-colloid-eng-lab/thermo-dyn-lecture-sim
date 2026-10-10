@@ -198,7 +198,7 @@ export class Gas {
     const L = this.levels;
     if (!L) return 0;
     let n = 0;
-    for (let i = 0; i < this.N; i++) n += this.layerOf(this.y[i]);
+    for (let i = 0; i < this.N; i++) n += this.layerOf(this.y[i]) * this._levelQ(i);
     return n * L.dE;
   }
 
@@ -263,11 +263,13 @@ export class Gas {
   /**
    * n 層（n < 2 なら段差なし）、1段あたりのエネルギー dE。途中で変えた分は仕事として記録。
    * bounds：層の境目の高さ（下端からの割合、昇順、n−1 個）。省くと等間隔
+   * opt.q：粒子の種類ごとの段差の倍率（イオンの価数。省くとすべて 1）
+   * opt.block：境目を通れない粒子の種類（true なら必ず跳ね返る＝その種類だけを止める膜）
    */
-  setLevels(n, dE, bounds) {
+  setLevels(n, dE, bounds, opt = {}) {
     const U0 = this.potential();
     const b = bounds && bounds.length === n - 1 ? bounds.slice() : Array.from({ length: Math.max(0, n - 1) }, (_, k) => (k + 1) / n);
-    this.levels = n >= 2 ? { n, dE, bounds: b } : null;
+    this.levels = n >= 2 ? { n, dE, bounds: b, q: opt.q ?? null, block: opt.block ?? null } : null;
     const dW = this.potential() - U0;
     this.ledger.Wfield += dW;
   }
@@ -289,14 +291,17 @@ export class Gas {
     return c;
   }
 
-  /** 1刻みのあいだに層の境目を越えた粒子：登れなければ跳ね返り、越えたら鉛直の速さを変える */
+  /** 粒子 i の段差の倍率（イオンの価数） */
+  _levelQ(i) { const q = this.levels.q; return q ? (q[this.species[i]] ?? 1) : 1; }
+
+  /** 1刻みのあいだに層の境目を越えた粒子：登れなければ（または通れない種類なら）跳ね返り、越えたら鉛直の速さを変える */
   _crossLevels() {
     const L = this.levels, H = this.H;
     for (let i = 0; i < this.N; i++) {
       const k0 = this.layerOf(this.py[i]), k1 = this.layerOf(this.y[i]);
       if (k0 === k1) continue;
-      const dPE = (k1 - k0) * L.dE;                  // 越えたときの位置エネルギーの増加
-      const vy = this.vy[i], e = 0.5 * vy * vy - dPE;
+      const dPE = (k1 - k0) * L.dE * this._levelQ(i);   // 越えたときの位置エネルギーの増加
+      const vy = this.vy[i], e = L.block?.[this.species[i]] ? -1 : 0.5 * vy * vy - dPE;
       if (e >= 0) {
         this.vy[i] = Math.sign(vy) * Math.sqrt(2 * e);
       } else {
