@@ -455,5 +455,34 @@ const f = (v, d = 3) => Number(v).toFixed(d);
   check('膜電位: ΔU = Q + W（電位を変えた仕事を含め厳密）', Math.abs(s.dU - s.Q - s.W) < 1e-6 && Math.abs(s.W) > 1, `ΔU=${f(s.dU, 3)} Q=${f(s.Q, 3)} W=${f(s.W, 3)}`);
 }
 
+// --- 20 結合の平衡：受容体（1部位1個まで）と自由なリガンド ---
+{
+  const run = (NL, eps, T, seed) => {
+    const M = 20, H = 60, X = 100, A = X * H;
+    const g = new Gas({ H, X, Xmin: 40, Xmax: 110, r: 0.3, seed });
+    g.addParticles(NL, T, { x0: 0, x1: X, y0: 0, y1: H }, 0);
+    g.piston.target = X;
+    g.walls = { left: DIATHERMAL, top: DIATHERMAL, bottom: DIATHERMAL }; g.bath = { left: true, top: true, bottom: true }; g.Tbath = T;
+    const cols = Math.ceil(Math.sqrt((M * X) / H)), rows = Math.ceil(M / cols), pos = [];
+    for (let k = 0; k < M; k++) pos.push([((k % cols + 0.5) * X) / cols, ((Math.floor(k / cols) + 0.5) * H) / rows]);
+    g.setSites(pos, { a: 1, eps, species: 0 });
+    g.resetLedger();
+    g.advance(500);
+    let nb = 0, c = 0, n = 0;
+    for (let k = 0; k < 2500; k++) { g.advance(2); nb += g.sites.nb; c += g.N / A; n++; }
+    const Kd = Math.exp(-eps / T) / Math.PI;
+    return { g, f: nb / n / M, c: c / n, Kd, nTot: nb / n + g.N };
+  };
+  const a = run(60, 3, 1, 31);
+  const fth = a.c / (a.Kd + a.c);
+  check('結合: 結合した割合 f = c/(K_d + c)（c は自由なリガンドの濃度）', Math.abs(a.f - fth) < 0.05, `f=${f(a.f, 3)} 理論=${f(fth, 3)}`);
+  const s = a.g.stats();
+  check('結合: ΔU = Q + W が厳密（結合のエネルギー −ε を含む）、リガンドの総数は保存', Math.abs(s.dU - s.Q - s.W) < 1e-6 && a.g.N + a.g.sites.nb === 60, `ΔU=${f(s.dU, 3)} Q=${f(s.Q, 3)}`);
+  const b = run(60, 2, 1, 32), c2 = run(60, 3, 1.5, 33);
+  check('結合: K_d は ε/kT だけで決まる（ε=2,T=1 と ε=3,T=1.5 で同じ割合）', Math.abs(b.f - c2.f) < 0.05 && Math.abs(b.f - b.c / (b.Kd + b.c)) < 0.05, `f=${f(b.f, 3)} と ${f(c2.f, 3)}`);
+  const sat = run(300, 4, 1, 34);
+  check('結合: リガンドが多いと飽和に近づく（f → 1、1 は超えない）', sat.f > 0.85 && sat.f <= 1 && Math.abs(sat.f - sat.c / (sat.Kd + sat.c)) < 0.05, `f=${f(sat.f, 3)} 理論=${f(sat.c / (sat.Kd + sat.c), 3)}`);
+}
+
 console.log(fails ? `\n${fails} 件失敗` : '\nすべて成功');
 process.exit(fails ? 1 : 0);

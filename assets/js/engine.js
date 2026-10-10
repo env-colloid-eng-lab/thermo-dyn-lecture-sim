@@ -86,6 +86,7 @@ export class Gas {
 
     // 高さによるエネルギーの段差: null または {n, dE}（仕切り壁とは一緒に使わない）
     this.levels = null;
+    this.sites = null;      // 結合部位（20）: setSites で置く
 
     this.time = 0;
     this.resetLedger();
@@ -179,6 +180,7 @@ export class Gas {
       Wpart: 0,     // 可動の仕切りが気体にした仕事（両側の合計）
       Q: 0,         // 熱源から気体が受け取った熱
       Qside: { left: 0, top: 0, bottom: 0 },   // そのうち、壁ごとの熱源から受け取った熱
+      Qbind: 0,     // そのうち、結合・解離のときに環境とやりとりした熱（20）
       Qreg: new Float64Array(4),     // 部分系ごとの熱（熱源＋透熱仕切りから）
       Wreg: new Float64Array(4),     // 部分系ごとの仕事
       U0: this.kinetic() + this.potential(),
@@ -195,11 +197,12 @@ export class Gas {
 
   /** 高さによる位置エネルギーの合計（段差がなければ 0） */
   potential() {
+    let u = this.sites ? -this.sites.eps * this.sites.nb : 0;   // 結合した粒子は ε だけエネルギーが低い
     const L = this.levels;
-    if (!L) return 0;
+    if (!L) return u;
     let n = 0;
     for (let i = 0; i < this.N; i++) n += this.layerOf(this.y[i]) * this._levelQ(i);
-    return n * L.dE;
+    return u + n * L.dE;
   }
 
   regionEnergies() {
@@ -309,6 +312,68 @@ export class Gas {
         this.vy[i] = -vy;
         this.y[i] = 2 * yb - this.y[i];
       }
+    }
+  }
+
+  // ------------------------------------------------------------
+  //  結合部位（20）
+  // ------------------------------------------------------------
+  /**
+   * 動かない結合部位（受容体）。pos: [[x, y], ...]（null なら位置と結合はそのままで opt だけ変える）
+   * opt.a：とらえる半径、opt.eps：結合のエネルギー（結合した粒子は ε 低い）、opt.species：結合する粒子の種類
+   * 種類 species の粒子の中心が、空いている部位から a 以内に入ると結合する（1つの部位に1個まで）。
+   * 結合した粒子は気体から外して部位にため、離れる速さ k_off = k_on e^{−ε/kT}/(πa²)（k_on = a√(2πkT)、T は熱源の温度）で
+   * 部位のまわりから熱源の温度の速さで飛び出す。この組み合わせで、平衡の割合が f/(1−f) = c πa² e^{ε/kT} になる。
+   * 結合・解離のエネルギー変化は環境との熱、ε を途中で変えた分は仕事として帳簿に記録する
+   */
+  setSites(pos, opt = {}) {
+    const old = this.sites;
+    if (pos) {
+      this.sites = { pos: pos.map((p) => p.slice()), occ: new Array(pos.length).fill(false), nb: 0,
+        a: opt.a ?? old?.a ?? 1, eps: opt.eps ?? old?.eps ?? 1, species: opt.species ?? old?.species ?? 0 };
+      return;
+    }
+    if (!old) return;
+    if (opt.eps != null) { this.ledger.Wfield += -(opt.eps - old.eps) * old.nb; old.eps = opt.eps; }
+    if (opt.a != null) old.a = opt.a;
+  }
+
+  _removeParticle(i) {
+    const j = --this.N;
+    if (i !== j) for (const A of [this.x, this.y, this.vx, this.vy, this.px, this.py, this.species, this.region, this.paddleSide]) A[i] = A[j];
+  }
+
+  _bindSites(dt) {
+    const S = this.sites, a2 = S.a * S.a, T = this.Tbath, L = this.ledger;
+    // 結合：後ろから見る（取り除くと最後の粒子が i に移るが、それはもう見た粒子）
+    for (let i = this.N - 1; i >= 0; i--) {
+      if (this.species[i] !== S.species) continue;
+      for (let k = 0; k < S.pos.length; k++) {
+        if (S.occ[k]) continue;
+        const dx = this.x[i] - S.pos[k][0], dy = this.y[i] - S.pos[k][1];
+        if (dx * dx + dy * dy >= a2) continue;
+        const dE = -0.5 * (this.vx[i] ** 2 + this.vy[i] ** 2) - S.eps;   // 運動エネルギーと ε が環境へ
+        L.Q += dE; L.Qbind += dE; L.Qreg[this.region[i]] += dE;
+        this._logHeat(this.x[i], this.y[i], dE);
+        this._removeParticle(i);
+        S.occ[k] = true; S.nb++;
+        break;
+      }
+    }
+    // 解離
+    const kon = S.a * Math.sqrt(2 * Math.PI * T), koff = (kon * Math.exp(-S.eps / T)) / (Math.PI * a2);
+    const p = 1 - Math.exp(-koff * dt);
+    for (let k = 0; k < S.pos.length; k++) {
+      if (!S.occ[k] || this.rand() >= p || this.N >= MAXN) continue;
+      const th = 2 * Math.PI * this.rand(), nx = Math.cos(th), ny = Math.sin(th);
+      const [vx, vy] = this._thermalVelocity(nx, ny, T);   // 外向きに、流束で重みをつけた速さ
+      const i = this.N++;
+      this.x[i] = this.px[i] = S.pos[k][0] + nx * S.a * 1.001; this.y[i] = this.py[i] = S.pos[k][1] + ny * S.a * 1.001;
+      this.vx[i] = vx; this.vy[i] = vy; this.species[i] = S.species; this.region[i] = 0; this.paddleSide[i] = 0;
+      const dE = 0.5 * (vx * vx + vy * vy) + S.eps;
+      L.Q += dE; L.Qbind += dE; L.Qreg[0] += dE;
+      this._logHeat(this.x[i], this.y[i], dE);
+      S.occ[k] = false; S.nb--;
     }
   }
 
@@ -551,6 +616,9 @@ export class Gas {
 
     // --- 粒子間衝突 ---
     this._collide();
+
+    // --- 結合部位（20） ---
+    if (this.sites) this._bindSites(dt);
 
     this.time += dt;
 

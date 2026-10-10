@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>20 結合の平衡 | 熱力学シミュレーション</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+<header class="site-header"><div class="inner">
+  <h1>20 結合の平衡</h1><span class="sub">受容体にリガンドがつく・離れる ― 結合した割合 f = c/(K<sub>d</sub> + c) と、飽和・温度による変化</span>
+  <nav>
+    <a href="../index.html">目次</a>
+    <a href="01-operations.html">01 壁と操作</a>
+    <a href="02-equilibrium.html">02 平衡への緩和</a>
+    <a href="03-processes.html">03 準静的と不可逆</a>
+    <a href="04-isothermal.html">04 等温過程の収支</a>
+    <a href="05-extensive.html">05 示量と示強</a>
+    <a href="06-heat-capacity.html">06 熱容量</a>
+    <a href="07-entropy.html">07 エントロピー</a>
+    <a href="08-heat-engines.html">08 熱機関</a>
+    <a href="09-osmosis.html">09 浸透圧</a>
+    <a href="10-max-work.html">10 可逆と不可逆</a>
+    <a href="11-sedimentation.html">11 沈降平衡</a>
+    <a href="12-partitions.html">12 仕切りと平衡条件</a>
+    <a href="13-chain.html">13 鎖の弾性</a>
+    <a href="14-stability.html">14 大気の安定性</a>
+    <a href="15-greenhouse.html">15 放射収支と温室効果</a>
+    <a href="16-phase.html">16 相平衡と水蒸気</a>
+    <a href="17-rce.html">17 放射対流平衡</a>
+    <a href="18-steady-state.html">18 平衡と定常状態</a>
+    <a href="19-membrane.html">19 膜電位</a>
+    <a href="20-binding.html" aria-current="page">20 結合の平衡</a>
+    <a href="../en/sims/20-binding.html" lang="en" hreflang="en">English</a>
+    <button id="btn-proj" title="文字を大きくする">投影モード</button>
+  </nav>
+</div></header>
+
+<main class="layout">
+  <div class="col">
+    <section class="card">
+      <h2><span class="tag">ミクロ</span>受容体（結合部位）とリガンド <span class="hint">輪＝受容体（1つに1個までつく）、点＝自由なリガンド</span></h2>
+      <div class="canvas-wrap"><canvas id="sim"></canvas></div>
+      <div class="legend">
+        <span><span class="sw dia"></span>透熱壁（まわりは温度 <i>T</i> の環境）</span>
+        <span><span class="dot" style="background:#eb6834"></span>自由なリガンド</span>
+        <span><span class="dot" style="background:transparent;border:2px solid #4a3aa7"></span>空いている受容体</span>
+        <span><span class="dot" style="background:#eb6834;border:2px solid #4a3aa7"></span>リガンドが結合した受容体（エネルギーが ε 低い）</span>
+      </div>
+      <div class="readouts wrap">
+        <div class="stat"><span class="k">結合した割合 <i>f</i>（時間平均）</span><span class="v" id="r-f">–</span></div>
+        <div class="stat"><span class="k">自由なリガンドの濃度 <i>c</i>（面積あたり）</span><span class="v" id="r-c">–</span></div>
+        <div class="stat"><span class="k">解離定数 <i>K</i><sub>d</sub> = e<sup>−ε/<i>kT</i></sup>/π<i>a</i>²</span><span class="v" id="r-Kd">–</span></div>
+        <div class="stat int"><span class="k">理論 <i>f</i> = <i>c</i>/(<i>K</i><sub>d</sub> + <i>c</i>)</span><span class="v" id="r-fth">–</span></div>
+      </div>
+      <p class="hint" style="margin:4px 0 0">時間平均は時定数 300。<i>c</i> には<b>自由な</b>リガンドだけを数える（結合したものは入れない）。</p>
+      <p class="q" id="r-dir" style="margin-top:8px"></p>
+      <div class="ledger">
+        <span class="term"><b>ΔU</b><span id="l-dU"></span></span><span class="op">=</span>
+        <span class="term"><b>Q</b><span id="l-Q"></span></span><span class="op">+</span>
+        <span class="term"><b>W</b><span id="l-W"></span></span>
+        <span class="note"><i>U</i> は自由なリガンドの運動エネルギーと、結合のエネルギー −ε × （結合した数）の合計。結合で下がったエネルギーは熱としてまわりへ出ていき、離れるときにはまわりから熱をもらう。</span>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2><span class="tag">マクロ</span>結合した割合の時間変化 <span class="hint">破線＝いまの自由な濃度から求めた理論</span></h2>
+      <div class="canvas-wrap"><canvas id="plotF"></canvas></div>
+    </section>
+
+    <section class="card">
+      <h2><span class="tag">マクロ</span>結合曲線 <span class="hint">「いまの値を記録」で点を足す（ε や <i>T</i> を変えると記録は消える）。黒丸＝いまの値、点線＝<i>c</i> = <i>K</i><sub>d</sub>（半分が結合）</span></h2>
+      <div class="canvas-wrap"><canvas id="plotB"></canvas></div>
+      <div class="btns" style="margin-top:6px"><button id="btn-rec">いまの値を記録</button><button id="btn-clear">記録を消す</button></div>
+    </section>
+  </div>
+
+  <div class="col">
+    <section class="card ctrl">
+      <h2>操作パネル</h2>
+      <div class="btns">
+        <button id="btn-play" class="primary"></button>
+        <button id="btn-reset">はじめから（すべて離す）</button>
+        <button id="btn-ledger">測り直す（W=Q=0）</button>
+      </div>
+      <div class="row"><label for="speed">再生速度</label><input type="range" id="speed" min="-0.7" max="1.6" step="0.05" value="0.48"><output id="speed-val"></output></div>
+
+      <div class="group-title">リガンドと受容体（はじめからやり直す）</div>
+      <div class="row"><label for="NL">リガンドの数</label><input type="range" id="NL" min="5" max="300" step="5" value="60"><output id="NL-val"></output></div>
+      <div class="row"><label for="M">受容体の数</label><input type="range" id="M" min="4" max="40" step="2" value="20"><output id="M-val"></output></div>
+
+      <div class="group-title">結合の強さと温度（途中で変えてよい）</div>
+      <div class="row"><label for="eps">結合のエネルギー ε</label><input type="range" id="eps" min="0" max="6" step="0.1" value="3"><output id="eps-val"></output></div>
+      <div class="row"><label for="T">環境の温度 <i>T</i></label><input type="range" id="T" min="0.5" max="2.5" step="0.05" value="1"><output id="T-val"></output></div>
+    </section>
+
+    <section class="card notes">
+      <h2>ねらい</h2>
+      <p>受容体 R とリガンド L の結合 R + L ⇄ RL は、11 の二状態モデルと同じく「エネルギーが低い（結合する）」と「広い場所を動き回れる（離れている）」の競争です。平衡で結合した割合は <span class="math">f = c/(K<sub>d</sub> + c)</span>（教科書 4.8 節の式 (4.13)）。<i>c</i> は自由なリガンドの濃度、<i>K</i><sub>d</sub> は解離定数で、ちょうど半分の受容体がふさがる濃度です。</p>
+      <p>受容体は1つに1個までしかつかないので、濃度を上げても <i>f</i> は 1 を超えず、<b>飽和</b>します。</p>
+      <h3>やってみよう</h3>
+      <ol>
+        <li>再生して、結合した割合 <i>f</i> が理論（破線）のまわりに落ち着くのを見る。結合も解離も続いているが、つく数と離れる数がつり合っている。</li>
+        <li>リガンドの数を変えて「はじめから」→ 落ち着いたら「いまの値を記録」。何点か記録すると、点は <i>f</i> = <i>c</i>/(<i>K</i><sub>d</sub> + <i>c</i>) の曲線に乗る？　<i>c</i> = <i>K</i><sub>d</sub> で <i>f</i> = 1/2 になる？</li>
+        <li>リガンドをとても多くする。<i>f</i> は 1 に近づくが超えない（飽和）。</li>
+        <li>ε を大きくする（結合が強い）と <i>K</i><sub>d</sub> は小さくなり、薄い濃度でもよく結合する。ε を 1 下げると <i>K</i><sub>d</sub> は何倍？</li>
+        <li>温度 <i>T</i> を上げると、結合していたリガンドが離れていく。エネルギーで得する結合より、自由に動ける（エントロピーの大きい）状態の方が有利になる。</li>
+      </ol>
+      <div class="q"><b>問い</b>　受容体とリガンドを同じ数ずつ入れたとき、「入れたリガンドの数」から求めた濃度を <i>c</i> に入れて <i>f</i> を計算すると、測定よりも大きくなる。なぜ？（教科書の途中の問い 4.4）</div>
+      <div class="q"><b>問い</b>　<i>K</i><sub>d</sub> ∝ e<sup>−ε/<i>kT</i></sup>。結合のエネルギーが 1 <i>kT</i> 増えると、半分が結合する濃度は何分の1になる？　薬が「よく効く（低い濃度で働く）」とはどういうことか？</div>
+      <div class="q"><b>問い</b>　11 の「二状態」（広さの違う二領域）と見比べよう。結合部位の面積 π<i>a</i>² は二状態モデルの何に当たる？　温度を上げると結合が外れるのは、タンパク質の変性と同じしくみ？</div>
+      <details><summary>平衡の式の導き方</summary>
+        <p>定温・定面積で、自由なリガンドの化学ポテンシャルは <span class="math">μ<sub>L</sub> = kT ln(c λ²)</span>（λ は温度で決まる長さ）。受容体にとらえられたリガンドは、面積 π<i>a</i>² の中でエネルギーが ε 低いので、1つの部位あたり <span class="math">f/(1 − f) = c · πa² · e<sup>ε/kT</sup></span> で平衡になる（結合の自由エネルギー変化 = 0）。これを書き直すと <span class="math">f = c/(K<sub>d</sub> + c)</span>、<span class="math">K<sub>d</sub> = e<sup>−ε/kT</sup>/(πa²)</span>。</p>
+        <p>1 mol あたりで書けば <span class="math">K<sub>d</sub> = c° e<sup>Δ<sub>r</sub>G°/RT</sup></span>（教科書の式）。Δ<sub>r</sub>G° = Δ<sub>r</sub>H° − TΔ<sub>r</sub>S° のうち、−ε がエネルギー（エンタルピー）の部分、π<i>a</i>² が「狭いところに閉じ込められる」エントロピーの部分に当たる。</p>
+      </details>
+      <details><summary>入れた量と自由な量（全量の保存）</summary>
+        <p>リガンドを <i>N</i><sub>L</sub> 個、受容体を <i>M</i> 個入れ、そのうち <i>n</i> 個が結合したとすると、自由なリガンドの濃度は <span class="math">c = (N<sub>L</sub> − n)/A</span>（<i>A</i>：容器の面積）。平衡の式 <span class="math">n/(M − n) = c/K<sub>d</sub></span> と連立すると <i>n</i> の2次方程式になる。下の「全量から求めた理論」はこれを解いた値。結合で自由なリガンドが減るので、入れた量で計算すると結合を多く見積もってしまう。</p>
+        <p>全量から求めた理論 <i>f</i>：<span id="r-ftot">–</span></p>
+      </details>
+      <details><summary>このモデルについて</summary>
+        <p>2次元剛体円板気体（m = 1、k = 1）。受容体は動かない点で、リガンドの中心が半径 <i>a</i> = 1 以内に入ると結合する（1つの部位に1個まで）。結合したリガンドは部位にとどまり、離れる速さは <span class="math">k<sub>off</sub> = k<sub>on</sub> e<sup>−ε/kT</sup>/(πa²)</span>（<i>k</i><sub>on</sub> = <i>a</i>√(2π<i>kT</i>/m) は気体分子運動論から決まる、つく速さ）で、離れるときは環境の温度の速さで飛び出す。この速さの組み合わせで、平衡の割合が熱力学の式と一致する。帳簿は1回ごとのエネルギー変化をすべて足したもので、Δ<i>U</i> = <i>Q</i> + <i>W</i> が厳密に成り立つ。</p>
+      </details>
+    </section>
+  </div>
+</main>
+
+<script type="module" src="../assets/js/pages/20-binding.js"></script>
+</body>
+</html>
