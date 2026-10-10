@@ -52,13 +52,14 @@ export class SimView {
    *   colorMode: 'species' | 'speed'
    *   arrows: bool, Tref: number, showHeat: bool
    *   bathPad: 左に熱源ブロックを置く余白, envPad: 周囲に環境枠を置く余白
+   *   tbPad: 上下の壁に熱源ブロックを置く余白（温度は gas.Tside.top / bottom）
    *   regionLabels: bool
    */
   constructor(canvas, gas, opt = {}) {
     this.c = canvas; this.g = gas;
     this.opt = Object.assign({
       colorMode: 'species', arrows: false, Tref: 1, showHeat: true,
-      bathPad: 0, envPad: 0, regionLabels: false, pistonRod: true, drawScale: 2.0,
+      bathPad: 0, envPad: 0, tbPad: 0, regionLabels: false, pistonRod: true, drawScale: 2.0,
     }, opt);
     this.wt = 2.4;   // 壁の厚さ（世界座標）
     this.pt = 3.0;   // ピストンの厚さ
@@ -73,8 +74,8 @@ export class SimView {
     const g = this.g, wt = this.wt, o = this.opt;
     const x0 = -wt - o.bathPad - o.envPad - 1;
     const x1 = g.Xmax + this.pt + (o.pistonRod ? 10 : 2) + o.envPad;
-    const y0 = -wt - o.envPad - 1;
-    const y1 = g.H + wt + o.envPad + 1;
+    const y0 = -wt - o.envPad - o.tbPad - 1;
+    const y1 = g.H + wt + o.envPad + o.tbPad + 1;
     return { x0, x1, y0, y1 };
   }
 
@@ -169,6 +170,22 @@ export class SimView {
       ctx.fillText(tr('熱源', 'reservoir'), this.X(bx0 + bw / 2), this.Y(g.H / 2) - fontPx * 0.9);
       ctx.font = `italic ${fontPx * 1.15}px serif`;
       ctx.fillText(`T=${g.Tbath.toFixed(2)}`, this.X(bx0 + bw / 2), this.Y(g.H / 2) + fontPx * 0.5);
+    }
+
+    // --- 熱源ブロック（上下の壁に接触。上と下で温度が違ってよい）---
+    if (o.tbPad > 0) {
+      const bh = o.tbPad - 1.2;
+      for (const side of ['top', 'bottom']) {
+        if (!g.bath[side]) continue;
+        const T = g.Tside[side] ?? g.Tbath, yb = side === 'top' ? -wt - o.tbPad : g.H + wt + 1.2;
+        ctx.fillStyle = bathColor(T, o.Tref);
+        ctx.fillRect(this.X(0), this.Y(yb), g.X * s, bh * s);
+        ctx.strokeStyle = COLORS.wall; ctx.lineWidth = 1.2 * dpr;
+        ctx.strokeRect(this.X(0), this.Y(yb), g.X * s, bh * s);
+        ctx.fillStyle = COLORS.text; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.font = `italic ${fontPx * 1.1}px serif`;
+        ctx.fillText(`${tr('熱源', 'reservoir')}  T = ${T.toFixed(2)}`, this.X(g.X / 2), this.Y(yb + bh / 2));
+      }
     }
 
     // --- 流体 ---

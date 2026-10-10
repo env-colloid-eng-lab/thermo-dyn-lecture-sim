@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>18 Equilibrium and steady state | Thermodynamics simulations</title>
+<link rel="icon" href="../../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body>
+<header class="site-header"><div class="inner">
+  <h1>18 Equilibrium and steady state</h1><span class="sub">Between a hot and a cold reservoir the gas stops changing, yet heat keeps flowing ― a "steady state" that keeps producing entropy</span>
+  <nav>
+    <a href="../index.html">Contents</a>
+    <a href="01-operations.html">01 Walls & operations</a>
+    <a href="02-equilibrium.html">02 Relaxation to equilibrium</a>
+    <a href="03-processes.html">03 Quasi-static vs. irreversible</a>
+    <a href="04-isothermal.html">04 Isothermal energy balance</a>
+    <a href="05-extensive.html">05 Extensive & intensive</a>
+    <a href="06-heat-capacity.html">06 Heat capacity</a>
+    <a href="07-entropy.html">07 Entropy</a>
+    <a href="08-heat-engines.html">08 Heat engines</a>
+    <a href="09-osmosis.html">09 Osmotic pressure</a>
+    <a href="10-max-work.html">10 Reversible vs. irreversible</a>
+    <a href="11-sedimentation.html">11 Sedimentation</a>
+    <a href="12-partitions.html">12 Partitions & equilibrium</a>
+    <a href="13-chain.html">13 Chain elasticity</a>
+    <a href="14-stability.html">14 Atmospheric stability</a>
+    <a href="15-greenhouse.html">15 Radiation & greenhouse</a>
+    <a href="16-phase.html">16 Phase equilibrium & vapor</a>
+    <a href="17-rce.html">17 Radiative-convective eq.</a>
+    <a href="18-steady-state.html" aria-current="page">18 Equilibrium vs. steady state</a>
+    <a href="../../sims/18-steady-state.html" lang="ja" hreflang="ja">日本語</a>
+    <button id="btn-proj" title="Enlarge text">Projector mode</button>
+  </nav>
+</div></header>
+
+<main class="layout">
+  <div class="col">
+    <section class="card">
+      <h2><span class="tag">Micro</span>A gas between two reservoirs at different temperatures <span class="hint" id="mode-hint"></span></h2>
+      <div class="canvas-wrap"><canvas id="sim"></canvas></div>
+      <div class="legend">
+        <span><span class="sw adi"></span>Adiabatic wall</span>
+        <span><span class="sw dia"></span>Diathermal wall (in contact with a reservoir)</span>
+        <span><span class="dot hot"></span>Collision where energy went from the reservoir into a particle</span>
+        <span><span class="dot cold"></span>Collision where energy went from a particle to the reservoir</span>
+        <span>Slow<span class="grad"></span>Fast</span>
+      </div>
+      <div class="readouts wrap">
+        <div class="stat"><span class="k">Rate of heat in from the hot reservoir <i>Q̇</i><sub>h</sub></span><span class="v" id="r-Qh">–</span></div>
+        <div class="stat"><span class="k">Rate of heat out to the cold reservoir −<i>Q̇</i><sub>c</sub></span><span class="v" id="r-Qc">–</span></div>
+        <div class="stat"><span class="k">Rate of change of the gas's internal energy d<i>U</i>/d<i>t</i></span><span class="v" id="r-dU">–</span></div>
+        <div class="stat int"><span class="k">Rate of entropy production σ</span><span class="v" id="r-sig">–</span></div>
+      </div>
+      <p class="hint" style="margin:4px 0 0">Heat rates are averages over the last <span id="r-win">–</span> time units (with few particles they fluctuate over short times). <i>Q̇</i> is positive when the gas receives heat (the same convention as Δ<i>U</i> = <i>Q</i> + <i>W</i>).</p>
+      <p class="q" id="r-dir" style="margin-top:8px"></p>
+    </section>
+
+    <section class="card">
+      <h2><span class="tag">Macro</span>Temperature and crowding by height <span class="hint">time average in each layer (dots); dashed lines are the reservoir temperatures</span></h2>
+      <div class="twin">
+        <div><div class="canvas-wrap"><canvas id="plotT"></canvas></div></div>
+        <div><div class="canvas-wrap"><canvas id="plotN"></canvas></div></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2><span class="tag">Macro</span>Energy and entropy ledger <span class="hint">cumulative since "Measure again"</span></h2>
+      <div class="canvas-wrap"><canvas id="plotE"></canvas></div>
+      <div class="canvas-wrap" style="margin-top:6px"><canvas id="plotS"></canvas></div>
+      <div class="ledger">
+        <span class="term"><b>ΔU</b><span id="l-dU"></span></span><span class="op">=</span>
+        <span class="term"><b>Q</b><span id="l-Q"></span></span><span class="op">+</span>
+        <span class="term"><b>W</b><span id="l-W"></span></span>
+        <span class="note"><i>Q</i> = <i>Q</i><sub>h</sub> + <i>Q</i><sub>c</sub> (total heat received from the hot reservoir below and the cold reservoir above). <i>W</i> = 0 (the piston is held still).</span>
+      </div>
+    </section>
+  </div>
+
+  <div class="col">
+    <section class="card ctrl">
+      <h2>Controls</h2>
+      <div class="btns">
+        <button id="btn-play" class="primary"></button>
+        <button id="btn-reset">Start over</button>
+        <button id="btn-ledger">Measure again</button>
+        <button id="btn-ff">Fast-forward (time 500)</button>
+      </div>
+      <div class="row"><label for="speed">Playback speed</label><input type="range" id="speed" min="-0.7" max="1.6" step="0.05" value="0.48"><output id="speed-val"></output></div>
+
+      <div class="group-title">Reservoirs (may be changed during a run)</div>
+      <div class="seg" id="contact"><button data-value="on" aria-pressed="true">Connect (diathermal walls)</button><button data-value="off">Remove (adiabatic walls)</button></div>
+      <div class="row"><label for="Th">Bottom reservoir temperature <i>T</i><sub>h</sub></label><input type="range" id="Th" min="0.5" max="3" step="0.05" value="1"><output id="Th-val"></output></div>
+      <div class="row"><label for="Tc">Top reservoir temperature <i>T</i><sub>c</sub></label><input type="range" id="Tc" min="0.25" max="2" step="0.05" value="1"><output id="Tc-val"></output></div>
+      <div class="btns" style="margin-top:6px">
+        <button id="btn-same">Same temperature (1, 1)</button>
+        <button id="btn-diff">Temperature difference (2, 0.5)</button>
+      </div>
+
+      <div class="group-title">Initial state</div>
+      <div class="row"><label for="N">Number of particles <i>N</i></label><input type="range" id="N" min="200" max="600" step="50" value="400"><output id="N-val"></output></div>
+
+      <div class="group-title">Display</div>
+      <div>
+        <label class="check"><input type="checkbox" id="c-heat" checked>Heat exchange</label>
+      </div>
+    </section>
+
+    <section class="card notes">
+      <h2>Goal</h2>
+      <p>In 02 and 11, a gas left alone settled into <b>equilibrium</b> and stopped changing there. In equilibrium the total entropy is maximal and neither heat nor matter flows on balance.</p>
+      <p>What happens if we put a hot reservoir below and a cold reservoir above? After a while the temperature distribution of the gas stops changing. But this is not equilibrium: heat keeps <b>flowing</b> from hot to cold and the total entropy keeps <b>increasing</b>. This is called a <b>steady state</b> (non-equilibrium steady state). The Earth's climate (15, 17) and living cells are also "steady states sustained by a flow".</p>
+      <h3>Try it</h3>
+      <ol>
+        <li>At first both reservoirs are at <i>T</i> = 1 (the same temperature). <i>Q̇</i><sub>h</sub> and −<i>Q̇</i><sub>c</sub> only fluctuate around 0 and the temperature is the same at every height. This is equilibrium.</li>
+        <li>Press "Temperature difference" (<i>T</i><sub>h</sub> = 2, <i>T</i><sub>c</sub> = 0.5). After a while the temperature settles into a profile that is higher near the bottom and d<i>U</i>/d<i>t</i> ≈ 0. Still <i>Q̇</i><sub>h</sub> ≈ −<i>Q̇</i><sub>c</sub> &gt; 0: as much heat goes out as comes in.</li>
+        <li>In the lower plot, check that the total entropy of the reservoirs <b>keeps increasing at a constant rate</b>. The state of the gas does not change, yet entropy keeps being produced overall.</li>
+        <li>The "crowding" plot: particles are more crowded near the cold top. To keep the pressure (nearly the same at all heights), more particles are needed where the temperature is lower.</li>
+        <li>Press "Remove". The heat flow stops and the temperature profile is smoothed out until it is uniform (back to equilibrium). A steady state cannot be kept without a continuous flow of heat from outside.</li>
+        <li>Halve the temperature difference. How do <i>Q̇</i> and σ change? (σ is roughly proportional to the square of the temperature difference.)</li>
+      </ol>
+      <div class="q"><b>Question</b> In both a steady state and equilibrium "the state of the gas does not depend on time". So what is the difference? Answer in terms of heat flow, entropy production and what is supplied from outside.</div>
+      <div class="q"><b>Question</b> When heat <i>Q</i> from the hot reservoir passes straight to the cold reservoir, what is the sign of the total entropy change Δ<i>S</i> = −<i>Q</i>/<i>T</i><sub>h</sub> + <i>Q</i>/<i>T</i><sub>c</sub>? Why is there no steady state in which heat flows by itself from cold to hot?</div>
+      <div class="q"><b>Question</b> The Earth receives radiation from the Sun (about 5800 K) and emits radiation to space (about 3 K), and is nearly in a steady state. A cell keeps making ATP to stay away from equilibrium (section 4.10). What do both have in common with the gas on this page?</div>
+      <details><summary>Energy and entropy ledger</summary>
+        <p>First law: <span class="math">dU/dt = Q̇<sub>h</sub> + Q̇<sub>c</sub></span> (the piston is held still, so <i>W</i> = 0). In a steady state d<i>U</i>/d<i>t</i> = 0, so <span class="math">Q̇<sub>h</sub> = −Q̇<sub>c</sub> ≡ Q̇</span>.</p>
+        <p>The entropy change of a reservoir is the heat it received divided by its temperature: <span class="math">dS<sub>res</sub>/dt = −Q̇<sub>h</sub>/T<sub>h</sub> − Q̇<sub>c</sub>/T<sub>c</sub></span>. In a steady state the gas's entropy does not change, so the total rate of entropy production is <span class="math">σ = Q̇ (1/T<sub>c</sub> − 1/T<sub>h</sub>) ≥ 0</span>. It is positive only when heat flows from hot to cold (<i>Q̇</i> &gt; 0, <i>T</i><sub>h</sub> &gt; <i>T</i><sub>c</sub>). This is the direction of flow set by the second law.</p>
+        <p>For a small temperature difference the heat rate is proportional to the temperature difference (Fourier's law <span class="math">Q̇ ∝ T<sub>h</sub> − T<sub>c</sub></span>). Then σ is proportional to the square of the temperature difference.</p>
+      </details>
+      <details><summary>Equilibrium vs. steady state (textbook section 8.7)</summary>
+        <p>Sedimentation equilibrium (11) is an equilibrium that lasts without any supply from outside: the total entropy is maximal and there is no net flow. The radiative-convective equilibrium of the climate (17) has "equilibrium" in its name, but it is a steady state sustained by energy coming in from the Sun and going out to space, and it keeps producing entropy. The gas on this page is the simplest example of the latter.</p>
+      </details>
+      <details><summary>About the model</summary>
+        <p>2D hard-disk gas (m = 1, k = 1, <i>U</i> = <i>NkT</i>). The particles are larger than on the other pages (radius 1) so that heat is relayed by collisions between particles. When a particle hits a reservoir wall it bounces back with a speed drawn anew from that reservoir's temperature distribution (heat exchange seen microscopically). The ledger adds up the energy change of every single collision, so Δ<i>U</i> = <i>Q</i> + <i>W</i> holds exactly.</p>
+        <p>The temperature of the layers right next to the walls differs a little from the reservoir temperature (a temperature jump at the wall), because particles hit the wall a finite number of times and the heat exchange with the wall is not complete. The more particles (the denser the gas), the smaller the jump. Because the particles have a size, the equation of state deviates a little from the ideal gas (the product of crowding and temperature changes slightly with height).</p>
+      </details>
+    </section>
+  </div>
+</main>
+
+<script type="module" src="../../assets/js/pages/18-steady-state.js"></script>
+</body>
+</html>
