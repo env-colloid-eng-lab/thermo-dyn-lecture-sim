@@ -52,9 +52,9 @@ npm run serve                      # http://localhost:8000/ で表示を確認
 
 ## ファイル構成
 
-- `index.html` 目次 / `sims/01〜19-*.html`（14〜17 は応用：マクロなモデル） 各シミュレーション / `en/` 英語版（同じ構成）
-- `assets/js/pages/01〜19-*.js` 各ページの動き（日英の HTML から `<script type="module" src=…>` で読み込む共通スクリプト）
-- `assets/js/engine.js` 分子動力学（`Gas` クラス：壁・熱源・ピストン・撹拌翼・壁ごとの熱源の温度（`Tside`）・仕切り（断熱・透熱・半透膜・可動）・高さによるエネルギーの段差（`setLevels`。種類ごとの倍率 `q`＝イオンの価数、通れない種類 `block`＝膜）・圧力測定・帳簿）
+- `index.html` 目次 / `sims/01〜20-*.html`（14〜17 は応用：マクロなモデル） 各シミュレーション / `en/` 英語版（同じ構成）
+- `assets/js/pages/01〜20-*.js` 各ページの動き（日英の HTML から `<script type="module" src=…>` で読み込む共通スクリプト）
+- `assets/js/engine.js` 分子動力学（`Gas` クラス：壁・熱源・ピストン・撹拌翼・壁ごとの熱源の温度（`Tside`）・仕切り（断熱・透熱・半透膜・可動）・高さによるエネルギーの段差（`setLevels`。種類ごとの倍率 `q`＝イオンの価数、通れない種類 `block`＝膜）・結合部位（`setSites`）・圧力測定・帳簿）
   - ピストンは `piston.mode` が `'position'`（目標位置へ一定の速さ）か `'force'`（質量 `M`、外圧 `Pext` の定圧ピストン）
   - `gas.advance(t)` で時間 t だけ進める（速い粒子がいると自動で刻みを細かくする）
 - `assets/js/render.js` 描画（`SimView`）、`plot.js` グラフ（`TimePlot` / `XYPlot` / `HistPlot`）、`ui.js` UI 部品

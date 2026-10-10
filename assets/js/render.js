@@ -56,6 +56,7 @@ export class SimView {
    *   speciesColors: 粒子の種類ごとの色（指定すると colorMode 'species' でこの色を使う）
    *   levelStyle: 'steps'（既定：段差を濃淡と点線）| 'membrane'（境目を膜として破線で描き、濃淡と ε は出さない）
    *   levelText: (k) => 層 k の左上に書く文字（省くと書かない）
+   *   siteColor: 結合部位（gas.sites）の輪の色
    *   regionLabels: bool
    */
   constructor(canvas, gas, opt = {}) {
@@ -277,6 +278,19 @@ export class SimView {
 
     // --- 粒子 ---
     const rd = Math.max(g.r * o.drawScale * s, 2.2 * dpr);
+    // 結合部位：輪（とらえる範囲）。結合しているときは中に粒子を描く
+    if (g.sites) {
+      const S = g.sites, sc = o.siteColor || COLORS.wall;
+      for (let k = 0; k < S.pos.length; k++) {
+        const X = this.X(S.pos[k][0]), Y = this.Y(S.pos[k][1]);
+        ctx.beginPath(); ctx.arc(X, Y, S.a * s, 0, Math.PI * 2);
+        ctx.strokeStyle = sc; ctx.lineWidth = 2 * dpr; ctx.stroke();
+        if (S.occ[k]) {
+          ctx.beginPath(); ctx.arc(X, Y, rd, 0, Math.PI * 2);
+          ctx.fillStyle = o.speciesColors?.[S.species] ?? COLORS.particle; ctx.fill();
+        }
+      }
+    }
     for (let i = 0; i < g.N; i++) {
       const X = this.X(g.x[i]), Y = this.Y(g.y[i]);
       ctx.beginPath();
