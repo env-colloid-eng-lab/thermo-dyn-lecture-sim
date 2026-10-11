@@ -53,9 +53,9 @@
         <div class="stat"><span class="k">熱い熱源から入る熱の速さ <i>Q̇</i><sub>h</sub></span><span class="v" id="r-Qh">–</span></div>
         <div class="stat"><span class="k">冷たい熱源へ出る熱の速さ −<i>Q̇</i><sub>c</sub></span><span class="v" id="r-Qc">–</span></div>
         <div class="stat"><span class="k">気体の内部エネルギーの変化の速さ d<i>U</i>/d<i>t</i></span><span class="v" id="r-dU">–</span></div>
-        <div class="stat int"><span class="k">エントロピーを作る速さ σ</span><span class="v" id="r-sig">–</span></div>
+        <div class="stat int"><span class="k">エントロピーを作る速さ σ（熱源 + 気体）</span><span class="v" id="r-sig">–</span></div>
       </div>
-      <p class="hint" style="margin:4px 0 0">熱の速さは、直近の時間 <span id="r-win">–</span> の平均（粒子が少ないので短い時間ではゆらぐ）。<i>Q̇</i> は気体が受け取る向きを正にとる（Δ<i>U</i> = <i>Q</i> + <i>W</i> と同じ約束）。</p>
+      <p class="hint" style="margin:4px 0 0">熱の速さは、直近の時間 <span id="r-win">–</span> の平均（粒子が少ないので短い時間ではゆらぐ）。<i>Q̇</i> は気体が受け取る向きを正にとる（Δ<i>U</i> = <i>Q</i> + <i>W</i> と同じ約束）。σ は熱源のエントロピーの変化に、気体のエントロピーの変化（d<i>U</i>/<i>T</i> で近似）を足したもの。熱源を外したときは、気体の中で作られる分を熱の出入りから測れないので「–」と表示する。</p>
       <p class="q" id="r-dir" style="margin-top:8px"></p>
     </section>
 
@@ -127,7 +127,8 @@
       <div class="q"><b>問い</b>　地球は太陽（約 5800 K）から放射を受け取り、宇宙（約 3 K）へ放射を出して、ほぼ定常状態にある。細胞は ATP を作り続けて、平衡から離れた状態を保っている（4.10 節）。どちらも、このページの気体と何が同じか？</div>
       <details><summary>エネルギーとエントロピーの帳簿</summary>
         <p>第一法則：<span class="math">dU/dt = Q̇<sub>h</sub> + Q̇<sub>c</sub></span>（ピストンは止めてあるので <i>W</i> = 0）。定常状態では d<i>U</i>/d<i>t</i> = 0 なので <span class="math">Q̇<sub>h</sub> = −Q̇<sub>c</sub> ≡ Q̇</span>。</p>
-        <p>熱源のエントロピーの変化は、熱源が受け取った熱をその温度で割ったもの：<span class="math">dS<sub>熱源</sub>/dt = −Q̇<sub>h</sub>/T<sub>h</sub> − Q̇<sub>c</sub>/T<sub>c</sub></span>。定常状態では気体のエントロピーは変わらないので、全体のエントロピーを作る速さは <span class="math">σ = Q̇ (1/T<sub>c</sub> − 1/T<sub>h</sub>) ≥ 0</span>。熱が熱い方から冷たい方へ流れる（<i>Q̇</i> &gt; 0、<i>T</i><sub>h</sub> &gt; <i>T</i><sub>c</sub>）ときだけ正になる。これは第二法則が決める流れの向き。</p>
+        <p>熱源のエントロピーの変化は、熱源が受け取った熱をその温度で割ったもの：<span class="math">dS<sub>熱源</sub>/dt = −Q̇<sub>h</sub>/T<sub>h</sub> − Q̇<sub>c</sub>/T<sub>c</sub></span>。全体のエントロピーを作る速さは、これに気体のエントロピーの変化を足した <span class="math">σ = dS<sub>熱源</sub>/dt + dS<sub>気体</sub>/dt</span>。定常状態では気体のエントロピーは変わらないので <span class="math">σ = Q̇ (1/T<sub>c</sub> − 1/T<sub>h</sub>) ≥ 0</span>。熱が熱い方から冷たい方へ流れる（<i>Q̇</i> &gt; 0、<i>T</i><sub>h</sub> &gt; <i>T</i><sub>c</sub>）ときだけ正になる。これは第二法則が決める流れの向き。</p>
+        <p>気体の項を落とすと困るのは平衡のとき。上下が同じ温度 <i>T</i> でも、気体のエネルギーは熱のやりとりでゆらぎ（d<i>U</i>/d<i>t</i> ≠ 0）、熱源の項 −d<i>U</i>/(<i>T</i> d<i>t</i>) は 0 のまわりでゆれる。気体の項 d<i>U</i>/(<i>T</i> d<i>t</i>) がちょうどそれを打ち消すので、σ ≈ 0 になる（エネルギーが行き来しているだけで、エントロピーは作られていない）。このページでは気体の項を d<i>U</i>/<i>T</i> で近似している（気体の中に温度の差があるときは近似）。</p>
         <p>温度差が小さいとき、熱の速さは温度差に比例する（フーリエの法則 <span class="math">Q̇ ∝ T<sub>h</sub> − T<sub>c</sub></span>）。すると σ は温度差の2乗に比例する。</p>
       </details>
       <details><summary>平衡と定常状態の違い（教科書 8.7 節）</summary>
