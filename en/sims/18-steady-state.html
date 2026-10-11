@@ -53,9 +53,9 @@
         <div class="stat"><span class="k">Rate of heat in from the hot reservoir <i>Q̇</i><sub>h</sub></span><span class="v" id="r-Qh">–</span></div>
         <div class="stat"><span class="k">Rate of heat out to the cold reservoir −<i>Q̇</i><sub>c</sub></span><span class="v" id="r-Qc">–</span></div>
         <div class="stat"><span class="k">Rate of change of the gas's internal energy d<i>U</i>/d<i>t</i></span><span class="v" id="r-dU">–</span></div>
-        <div class="stat int"><span class="k">Rate of entropy production σ</span><span class="v" id="r-sig">–</span></div>
+        <div class="stat int"><span class="k">Rate of entropy production σ (reservoirs + gas)</span><span class="v" id="r-sig">–</span></div>
       </div>
-      <p class="hint" style="margin:4px 0 0">Heat rates are averages over the last <span id="r-win">–</span> time units (with few particles they fluctuate over short times). <i>Q̇</i> is positive when the gas receives heat (the same convention as Δ<i>U</i> = <i>Q</i> + <i>W</i>).</p>
+      <p class="hint" style="margin:4px 0 0">Heat rates are averages over the last <span id="r-win">–</span> time units (with few particles they fluctuate over short times). <i>Q̇</i> is positive when the gas receives heat (the same convention as Δ<i>U</i> = <i>Q</i> + <i>W</i>). σ is the entropy change of the reservoirs plus that of the gas (approximated by d<i>U</i>/<i>T</i>). With the reservoirs removed, the part produced inside the gas cannot be measured from heat flows, so it shows "–".</p>
       <p class="q" id="r-dir" style="margin-top:8px"></p>
     </section>
 
@@ -127,7 +127,8 @@
       <div class="q"><b>Question</b> The Earth receives radiation from the Sun (about 5800 K) and emits radiation to space (about 3 K), and is nearly in a steady state. A cell keeps making ATP to stay away from equilibrium (section 4.10). What do both have in common with the gas on this page?</div>
       <details><summary>Energy and entropy ledger</summary>
         <p>First law: <span class="math">dU/dt = Q̇<sub>h</sub> + Q̇<sub>c</sub></span> (the piston is held still, so <i>W</i> = 0). In a steady state d<i>U</i>/d<i>t</i> = 0, so <span class="math">Q̇<sub>h</sub> = −Q̇<sub>c</sub> ≡ Q̇</span>.</p>
-        <p>The entropy change of a reservoir is the heat it received divided by its temperature: <span class="math">dS<sub>res</sub>/dt = −Q̇<sub>h</sub>/T<sub>h</sub> − Q̇<sub>c</sub>/T<sub>c</sub></span>. In a steady state the gas's entropy does not change, so the total rate of entropy production is <span class="math">σ = Q̇ (1/T<sub>c</sub> − 1/T<sub>h</sub>) ≥ 0</span>. It is positive only when heat flows from hot to cold (<i>Q̇</i> &gt; 0, <i>T</i><sub>h</sub> &gt; <i>T</i><sub>c</sub>). This is the direction of flow set by the second law.</p>
+        <p>The entropy change of a reservoir is the heat it received divided by its temperature: <span class="math">dS<sub>res</sub>/dt = −Q̇<sub>h</sub>/T<sub>h</sub> − Q̇<sub>c</sub>/T<sub>c</sub></span>. The total rate of entropy production adds the gas's entropy change, <span class="math">σ = dS<sub>res</sub>/dt + dS<sub>gas</sub>/dt</span>. In a steady state the gas's entropy does not change, so <span class="math">σ = Q̇ (1/T<sub>c</sub> − 1/T<sub>h</sub>) ≥ 0</span>. It is positive only when heat flows from hot to cold (<i>Q̇</i> &gt; 0, <i>T</i><sub>h</sub> &gt; <i>T</i><sub>c</sub>). This is the direction of flow set by the second law.</p>
+        <p>Dropping the gas term causes trouble in equilibrium. Even with both reservoirs at the same temperature <i>T</i>, the gas's energy fluctuates through heat exchange (d<i>U</i>/d<i>t</i> ≠ 0), so the reservoir term −d<i>U</i>/(<i>T</i> d<i>t</i>) swings around 0. The gas term d<i>U</i>/(<i>T</i> d<i>t</i>) cancels it exactly, giving σ ≈ 0 (energy only moves back and forth; no entropy is produced). This page approximates the gas term by d<i>U</i>/<i>T</i> (an approximation when the gas has temperature differences inside).</p>
         <p>For a small temperature difference the heat rate is proportional to the temperature difference (Fourier's law <span class="math">Q̇ ∝ T<sub>h</sub> − T<sub>c</sub></span>). Then σ is proportional to the square of the temperature difference.</p>
       </details>
       <details><summary>Equilibrium vs. steady state (textbook section 8.7)</summary>

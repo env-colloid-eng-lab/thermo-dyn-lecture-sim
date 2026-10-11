@@ -92,12 +92,15 @@ build();
 
 function update(paused) {
   const s = gas.stats(), L = gas.ledger;
-  if (!paused || !hist.length) hist.push([gas.time, L.Qside.bottom, L.Qside.top, s.U]);
+  if (!paused || !hist.length) hist.push([gas.time, L.Qside.bottom, L.Qside.top, s.U, Sh + Sc, s.T]);
   while (hist.length > 2 && hist[0][0] < gas.time - WIN) hist.shift();
   const h0 = hist[0], dt = gas.time - h0[0];
   const ok = dt > 20;
   const qh = ok ? (L.Qside.bottom - h0[1]) / dt : NaN, qc = ok ? (L.Qside.top - h0[2]) / dt : NaN, du = ok ? (s.U - h0[3]) / dt : NaN;
-  const sig = contact === 'on' ? -qh / Th - qc / Tc : 0;
+  // エントロピーを作る速さ = 熱源のエントロピーの増える速さ + 気体のエントロピーの増える速さ。
+  // 気体の分は dS = dU/T（T は測定期間の平均の気体の温度）で近似する。熱源の分だけだと、平衡でも気体のエネルギーのゆらぎがそのまま σ のゆらぎに見えてしまう。
+  // 熱源を外したときは熱の出入りがなく、気体の中で作られる分は熱の帳簿からは測れないので表示しない
+  const sig = contact === 'on' && ok ? (Sh + Sc - h0[4]) / dt + du / ((h0[5] + s.T) / 2) : NaN;
   $('r-Qh').textContent = fmtSigned(qh, 2); $('r-Qc').textContent = fmtSigned(-qc, 2);
   $('r-dU').textContent = fmtSigned(du, 2); $('r-sig').textContent = fmtSigned(sig, 3);
   $('r-win').textContent = fmt(Math.min(dt, WIN), 0);
