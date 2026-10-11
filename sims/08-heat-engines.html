@@ -63,7 +63,7 @@
         <div class="arrow"><span>熱 <i>Q</i><sub>c</sub></span><div class="bar q" id="a-c"></div></div>
         <div class="box out" style="background:#eef4fd;border-color:#b8cdf0"><span class="t">低温熱源 <i>T</i><sub>c</sub> = <span id="f-Tc"></span></span><span class="n" id="f-Qc"></span><span class="t" id="f-Qc-t"></span></div>
       </div>
-      <div class="readouts">
+      <div class="readouts wrap">
         <div class="stat"><span class="k" id="k-main">効率 η（測定）</span><span class="v" id="r-main">–</span></div>
         <div class="stat"><span class="k" id="k-th">理論（準静的）</span><span class="v" id="r-th"></span></div>
         <div class="stat" id="st-regen"><span class="k" id="k-regen">再生器ありなら（測定）</span><span class="v" id="r-regen">–</span></div>
@@ -72,6 +72,10 @@
         <div class="stat"><span class="k">熱源のエントロピー変化（1サイクル平均）</span><span class="v" id="r-sgen">–</span></div>
       </div>
       <p class="q" id="r-warn" hidden></p>
+      <div id="d3" hidden style="margin-top:8px">
+        <p class="hint" style="margin:0 0 4px"><b>3次元なら（比較）</b>：粒子は 2次元のまま。いまの条件（<i>T</i><sub>h</sub>, <i>T</i><sub>c</sub>, 等温の体積比 r = 2）での理論値を、同じ式に自由度 3 を入れて計算したもの。</p>
+        <div class="table-wrap"><table class="tbl" id="d3-tbl"><thead><tr><th></th><th>2次元（このシミュレーション）</th><th>3次元なら</th></tr></thead><tbody></tbody></table></div>
+      </div>
     </section>
 
     <section class="card">
@@ -120,6 +124,7 @@
       <div>
         <label class="check"><input type="checkbox" id="c-heat" checked>熱のやりとり</label>
         <label class="check"><input type="checkbox" id="c-speed">色＝速さ</label>
+        <label class="check"><input type="checkbox" id="c-3d">3次元なら（比較）</label>
       </div>
     </section>
 
@@ -135,6 +140,7 @@
         <li>「スターリング」：等温過程の間を定積過程でつなぐ。再生器（定積で出し入れする熱をためておく蓄熱材）がないと効率は下がる。ヒートポンプの向きでは、再生器がないと低温側から熱をくみ上げることすらできない場合がある（表の <i>Q</i> を見よう）。</li>
         <li>T–S 図を見る。カルノーサイクルは長方形（等温は水平、断熱は垂直）。高温側で受け取る熱は <span class="math">T<sub>h</sub>ΔS</span>、低温側へ捨てる熱は <span class="math">T<sub>c</sub>ΔS</span>、囲む面積が外へした仕事。だから <span class="math">η = 1 − T<sub>c</sub>/T<sub>h</sub></span>。</li>
         <li>表の「熱源の Δ<i>S</i>」の合計を見る。気体は1サイクルで元の状態に戻るので、全体のエントロピー変化は熱源の分だけ。ゆっくり回したカルノーでは ≈ 0、ピストンが速いときや再生器なしのスターリングでは正（不可逆）。</li>
+        <li>「3次元なら（比較）」をオンにする。カルノーの効率は 2次元と 3次元で同じ。再生器なしのスターリングは 3次元のほうが効率が下がる。作業物質によって変わる量・変わらない量はどれ？</li>
       </ol>
       <div class="q"><b>問い</b>　1サイクルでの熱源のエントロピー変化の合計 <span class="math">−Q<sub>h</sub>/T<sub>h</sub> − Q<sub>c</sub>/T<sub>c</sub></span> は負にならない（第二法則、クラウジウスの不等式）。このことと第一法則 <span class="math">−W = Q<sub>h</sub> + Q<sub>c</sub></span> から、効率が <span class="math">η ≤ 1 − T<sub>c</sub>/T<sub>h</sub></span> を超えられないことを導いてみよう。</div>
       <div class="q"><b>問い</b>　どの条件でも、効率は「カルノーの上限」を超えない。もし超える熱機関があったら、第二法則（クラウジウスの原理・トムソンの原理）と矛盾することを説明してみよう。</div>
@@ -150,6 +156,7 @@
         <p><b>スターリング</b>：定積過程で <span class="math">Nk(T<sub>h</sub> − T<sub>c</sub>)</span> の熱を出し入れする。再生器がなければこれも熱源とやりとりするので <span class="math">η = (T<sub>h</sub> − T<sub>c</sub>) ln r / (T<sub>h</sub> ln r + T<sub>h</sub> − T<sub>c</sub>)</span>。理想的な再生器があれば定積の熱はサイクルの中で行き来するだけになり、効率はカルノーと同じになる。</p>
         <p>再生器なしの逆スターリング（ヒートポンプの向き）で低温側から正味に受け取る熱は <span class="math">Nk(T<sub>c</sub> ln r − (T<sub>h</sub> − T<sub>c</sub>))</span>。<span class="math">T<sub>c</sub> ln r &lt; T<sub>h</sub> − T<sub>c</sub></span> だと負になり、外からした仕事が両方の熱源へ熱として捨てられるだけで、ヒートポンプとしては働かない（このとき表示する COP は 1 より小さい）。</p>
         <p>P–V 図の圧力は状態方程式 <span class="math">NkT/V</span> から描いています。ピストンを速く動かすと、動くピストンの近くの気体は平衡からずれ、ピストンが実際に受ける圧力は <span class="math">NkT/V</span> と違ってきます。そのため塗った面積と表の正味の仕事 −<i>W</i>（衝突ごとに数えた値）は、ゆっくり動かしたときにだけよく一致します。</p>
+        <p><b>3次元なら</b>（単原子理想気体, <span class="math">C<sub>V</sub> = (3/2)Nk</span>, 断熱で <span class="math">TV<sup>2/3</sup> = 一定</span>）：カルノーサイクルでは、断熱過程で <i>T</i><sub>h</sub> → <i>T</i><sub>c</sub> にするのに必要な体積比が <span class="math">(T<sub>h</sub>/T<sub>c</sub>)<sup>3/2</sup></span> に変わる（2次元は <span class="math">T<sub>h</sub>/T<sub>c</sub></span>）が、等温過程の熱は <span class="math">NkT ln r</span> のままなので効率 <span class="math">1 − T<sub>c</sub>/T<sub>h</sub></span> は変わらない。カルノーの効率は作業物質によらない（第二法則から決まる）。再生器なしのスターリングでは定積過程の熱が <span class="math">(3/2)Nk(T<sub>h</sub> − T<sub>c</sub>)</span> に増えるので、<span class="math">η = (T<sub>h</sub> − T<sub>c</sub>) ln r / (T<sub>h</sub> ln r + (3/2)(T<sub>h</sub> − T<sub>c</sub>))</span> と小さくなる。</p>
         <p>シミュレーションではピストンの速さが有限で、熱源との温度差もあるので、測定値は理論値より小さくなります。粒子数が少ないので、1サイクルごとの値は大きくゆらぎます。</p>
       </details>
     </section>

@@ -69,6 +69,10 @@
       <h2><span class="tag">Macro</span>P–V diagram <span class="hint">Shaded area = work done by the piston in the latest operation <span class="math">−∫P dV</span></span></h2>
       <div class="canvas-wrap"><canvas id="pv"></canvas></div>
       <p class="hint"><b style="color:#eb6834">Orange</b>: pressure obtained from the force the piston actually received (= the pressure that determines the work). <b style="color:#2a78d6">Blue</b>: pressure <span class="math">NkT/V</span> obtained from the instantaneous internal energy via the equation of state. When the piston moves slowly the two overlap; when it moves fast they separate.</p>
+      <div id="d3" hidden style="margin-top:8px">
+        <p class="hint" style="margin:0 0 4px"><b>If 3D (comparison)</b>: the particles stay 2D. The 3D values are computed from the same formulas with 3 degrees of freedom (the purple dash-dot line on the P–V diagram is the 3D adiabat).</p>
+        <div class="table-wrap"><table class="tbl" id="d3-tbl"><thead><tr><th></th><th>2D (this simulation)</th><th>If 3D</th></tr></thead><tbody></tbody></table></div>
+      </div>
       <div class="canvas-wrap" style="margin-top:6px"><canvas id="plotT"></canvas></div>
     </section>
   </div>
@@ -113,6 +117,7 @@
       <div>
         <label class="check"><input type="checkbox" id="c-speed">Color = speed</label>
         <label class="check"><input type="checkbox" id="c-arrow">Velocity arrows</label>
+        <label class="check"><input type="checkbox" id="c-3d">If 3D (comparison)</label>
       </div>
     </section>
 
@@ -126,6 +131,7 @@
         <li>Compress with "Isothermal" and "Quasi-static". <i>W</i> &gt; 0, yet Δ<i>U</i> ≈ 0. Where did the energy go? (→ 04)</li>
         <li>Look at the "Potential temperature θ" readout. In a quasi-static adiabatic round trip θ stays constant; in a very fast round trip θ rises. Isothermal compression lowers θ. What does θ represent? (See "Potential temperature and entropy" below.)</li>
         <li>Free expansion: set it up and remove the partition. What are <i>W</i>, <i>Q</i>, Δ<i>U</i>, and <i>T</i>? Can you draw the intermediate states on the P–V diagram?</li>
+        <li>Turn on "If 3D (comparison)". The 3D adiabat is less steep than the 2D one. Why does a 3D gas warm up less for the same compression? (See "Comparison with theory" below.)</li>
       </ol>
       <div class="q"><b>Question</b> Even when surrounded by adiabatic walls, a fast round trip makes the gas's <i>U</i> increase (an <b>irreversible adiabatic process</b>). Conversely, is there an operation that keeps everything adiabatic and only lowers <i>U</i> to bring the gas back?</div>
       <div class="q"><b>Question</b> In a fast compression, particles "pile up" in front of the piston, and the pressure on the piston becomes larger than <span class="math">NkT/V</span>. What does that do to the work? What about a fast expansion?</div>
@@ -136,6 +142,7 @@
           <li>Isothermal quasi-static: <span class="math">W = NkT ln(V₀/V₁)</span>, <span class="math">ΔU = 0</span>, <span class="math">Q = −W</span></li>
         </ul>
         <p>The particles in this simulation have a finite size (hard disks), so under strong compression the pressure is a few percent higher than for an ideal gas.</p>
+        <p><b>If 3D</b> (monatomic ideal gas): <span class="math">U = (3/2)NkT</span>, <span class="math">γ = 5/3</span>, and a quasi-static adiabat has <span class="math">PV<sup>5/3</sup> = const.</span>, <span class="math">TV<sup>2/3</sup> = const.</span> (halving the volume multiplies <i>T</i> by 2<sup>2/3</sup> ≈ 1.59). In adiabatic compression all the work done on the gas becomes <i>U</i>, but in 3D each particle's energy is shared among three directions (degrees of freedom), so the same work raises the temperature less. The pressure therefore rises less too, and the adiabat is less steep.</p>
       </details>
       <details><summary>Potential temperature and entropy (toward atmospheric temperature)</summary>
         <p>The temperature a gas at pressure <i>P</i> and temperature <i>T</i> would have after a quasi-static adiabatic change to a reference pressure <i>P</i>₀ is the <b>potential temperature</b> θ. For a 2D ideal gas <span class="math">c<sub>P</sub> = 2k</span> (per particle), so <span class="math">θ = T(P₀/P)<sup>k/c<sub>P</sub></sup> = T(P₀/P)<sup>1/2</sup></span>. For 3D dry air the exponent is <span class="math">R/c<sub>p</sub> ≈ 0.286</span>.</p>

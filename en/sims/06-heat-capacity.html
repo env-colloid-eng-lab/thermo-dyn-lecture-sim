@@ -76,6 +76,10 @@
       </div>
       <p class="hint" id="tbl-note" hidden>* The piston reached the end of its range during the measurement, so the pressure was no longer constant from that point on.</p>
       <p class="hint" id="tbl-empty">No measurements yet. Press "Measure" on the right.</p>
+      <div id="d3" hidden style="margin-top:8px">
+        <p class="hint" style="margin:0 0 4px"><b>If 3D (comparison)</b>: the particles stay 2D. The 3D values are computed from the same formulas with 3 degrees of freedom (dash-dot lines on the graph). "Measured" is the average of <i>C</i>/<i>N</i> in the table.</p>
+        <div class="table-wrap"><table class="tbl" id="d3-tbl"><thead><tr><th></th><th>Measured (average)</th><th>2D theory</th><th>If 3D</th></tr></thead><tbody></tbody></table></div>
+      </div>
     </section>
 
     <section class="card">
@@ -104,6 +108,7 @@
       <div>
         <label class="check"><input type="checkbox" id="c-heat" checked>Heat exchange</label>
         <label class="check"><input type="checkbox" id="c-speed">Color = speed</label>
+        <label class="check"><input type="checkbox" id="c-3d">If 3D (comparison)</label>
       </div>
       <div class="btns"><button id="btn-clear">Clear results table</button></div>
     </section>
@@ -117,6 +122,7 @@
         <li>Measure with different <i>N</i>. <i>C</i> is proportional to <i>N</i> (an extensive variable), but <i>C</i>/<i>N</i> does not change.</li>
         <li>Switch to "Constant pressure" and measure. The piston moves outward and the gas does work on the outside (<i>W</i> &lt; 0). What is <i>C</i>/<i>N</i> now?</li>
         <li>Also try a "cooling" measurement with the reservoir temperature below 1 (<i>Q</i> &lt; 0, Δ<i>T</i> &lt; 0).</li>
+        <li>Turn on "If 3D (comparison)". Both <i>C<sub>V</sub></i> and <i>C<sub>P</sub></i> increase, but the difference <i>C<sub>P</sub></i> − <i>C<sub>V</sub></i> = <i>Nk</i> is the same as in 2D. Why?</li>
       </ol>
       <div class="q"><b>Question</b> Heating at constant pressure needs more heat than at constant volume. Where did the extra heat go? Explain it with the first law, Δ<i>U</i> = <i>Q</i> + <i>W</i>.</div>
       <div class="q"><b>Question</b> Even if you separate the gas from the reservoir before it reaches the reservoir temperature, <i>C</i> still comes out right. Why?</div>
@@ -124,7 +130,7 @@
       <details><summary>Theoretical values (2D monatomic ideal gas)</summary>
         <p>Since <span class="math">U = NkT</span>, at constant volume <span class="math">Q = ΔU</span> and <span class="math">C<sub>V</sub> = Nk</span> (<i>C</i>/<i>N</i> = 1).</p>
         <p>At constant pressure the gas does work <span class="math">PΔV = NkΔT</span> on the outside, so <span class="math">Q = ΔU + PΔV</span> and <span class="math">C<sub>P</sub> = 2Nk</span> (<i>C</i>/<i>N</i> = 2). <span class="math">C<sub>P</sub> − C<sub>V</sub> = Nk</span> (Mayer's relation), <span class="math">γ = C<sub>P</sub>/C<sub>V</sub> = 2</span>.</p>
-        <p>For a 3D monatomic ideal gas, <span class="math">C<sub>V</sub> = (3/2)Nk</span> and <span class="math">C<sub>P</sub> = (5/2)Nk</span>. The difference is the number of degrees of freedom per particle (2 in 2D, 3 in 3D).</p>
+        <p>For a 3D monatomic ideal gas, <span class="math">C<sub>V</sub> = (3/2)Nk</span>, <span class="math">C<sub>P</sub> = (5/2)Nk</span>, and <span class="math">γ = 5/3</span>. The difference is the number of degrees of freedom per particle (2 in 2D, 3 in 3D). Each degree of freedom carries energy <span class="math">kT/2</span>, so <i>C<sub>V</sub></i> is proportional to the number of degrees of freedom. The extra heat needed at constant pressure, on the other hand, is the work done on the surroundings <span class="math">PΔV = NkΔT</span>, which is set by the equation of state <span class="math">PV = NkT</span> alone and does not depend on the dimension. That is why <span class="math">C<sub>P</sub> − C<sub>V</sub> = Nk</span> in both cases.</p>
         <p>In this simulation the temperature is defined by <span class="math">T = U/N</span>, so <i>C</i>/<i>N</i> at constant volume comes out exactly 1. At constant pressure it scatters by a few percent because of piston fluctuations (energy exchange between the gas and the weight). Cooling at constant pressure makes the volume smaller, and the effect of particle size (deviation from an ideal gas) makes <i>C</i>/<i>N</i> come out slightly below 2.</p>
       </details>
     </section>

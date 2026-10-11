@@ -69,6 +69,10 @@
       <h2><span class="tag">マクロ</span>P–V 図 <span class="hint">塗りつぶし＝直近の操作でピストンがした仕事 <span class="math">−∫P dV</span></span></h2>
       <div class="canvas-wrap"><canvas id="pv"></canvas></div>
       <p class="hint"><b style="color:#eb6834">橙</b>：ピストンが実際に受けた力から求めた圧力（＝仕事を決める圧力）。<b style="color:#2a78d6">青</b>：その瞬間の内部エネルギーから状態方程式で求めた圧力 <span class="math">NkT/V</span>。ゆっくり動かすと二つは重なり、速く動かすとずれる。</p>
+      <div id="d3" hidden style="margin-top:8px">
+        <p class="hint" style="margin:0 0 4px"><b>3次元なら（比較）</b>：粒子は 2次元のまま。3次元の値は同じ式に自由度 3 を入れて計算したもの（P–V 図の紫の一点鎖線が 3次元の断熱線）。</p>
+        <div class="table-wrap"><table class="tbl" id="d3-tbl"><thead><tr><th></th><th>2次元（このシミュレーション）</th><th>3次元なら</th></tr></thead><tbody></tbody></table></div>
+      </div>
       <div class="canvas-wrap" style="margin-top:6px"><canvas id="plotT"></canvas></div>
     </section>
   </div>
@@ -113,6 +117,7 @@
       <div>
         <label class="check"><input type="checkbox" id="c-speed">色＝速さ</label>
         <label class="check"><input type="checkbox" id="c-arrow">速度の矢印</label>
+        <label class="check"><input type="checkbox" id="c-3d">3次元なら（比較）</label>
       </div>
     </section>
 
@@ -126,6 +131,7 @@
         <li>「等温」「準静的」で圧縮。<i>W</i> &gt; 0 なのに Δ<i>U</i> ≈ 0。エネルギーはどこへ？（→ 04）</li>
         <li>右の「温位 θ」を見る。断熱・準静的な往復では θ は一定のまま、とても速い往復では θ が上がる。等温で圧縮すると θ は下がる。θ は何を表している？（下の「温位とエントロピー」）</li>
         <li>自由膨張：準備して仕切りを外す。<i>W</i>, <i>Q</i>, Δ<i>U</i>, <i>T</i> は？ 途中の状態を P–V 図に描けるだろうか？</li>
+        <li>「3次元なら（比較）」をオンにする。3次元の断熱線は 2次元よりゆるやか。同じだけ圧縮しても、3次元の気体のほうが温度の上がり方が小さいのはなぜ？（下の「理論との比較」）</li>
       </ol>
       <div class="q"><b>問い</b>　断熱壁で囲まれていても、速く往復させると気体の <i>U</i> は増えてしまいます（<b>不可逆な断熱過程</b>）。逆に、断熱のまま <i>U</i> だけを減らして元に戻す操作はあるでしょうか？</div>
       <div class="q"><b>問い</b>　速く圧縮すると、ピストンの前に粒子が「たまり」、ピストンが受ける圧力が <span class="math">NkT/V</span> より大きくなります。そのぶん仕事はどうなる？ 速く膨張させるときは？</div>
@@ -136,6 +142,7 @@
           <li>等温準静的：<span class="math">W = NkT ln(V₀/V₁)</span>、<span class="math">ΔU = 0</span>、<span class="math">Q = −W</span></li>
         </ul>
         <p>このシミュレーションの粒子は大きさをもつ（剛体円板）ので、強く圧縮すると圧力が理想気体より数％大きくなります。</p>
+        <p><b>3次元なら</b>（単原子理想気体）：<span class="math">U = (3/2)NkT</span>、<span class="math">γ = 5/3</span>、断熱準静的では <span class="math">PV<sup>5/3</sup> = 一定</span>、<span class="math">TV<sup>2/3</sup> = 一定</span>（体積を半分にすると <i>T</i> は 2<sup>2/3</sup> ≈ 1.59 倍）。断熱圧縮でされた仕事はすべて <i>U</i> になるが、3次元では1粒子のエネルギーが3つの方向（自由度）に分かれるので、同じ仕事でも温度が上がりにくい。そのぶん圧力の上がり方も小さく、断熱線がゆるやかになる。</p>
       </details>
       <details><summary>温位とエントロピー（大気の温度へ）</summary>
         <p>圧力 <i>P</i>、温度 <i>T</i> の気体を、基準の圧力 <i>P</i>₀ まで準静的・断熱に変えたときの温度を <b>温位</b> θ という。2次元理想気体では <span class="math">c<sub>P</sub> = 2k</span>（1粒子あたり）なので <span class="math">θ = T(P₀/P)<sup>k/c<sub>P</sub></sup> = T(P₀/P)<sup>1/2</sup></span>。3次元の乾燥空気なら指数は <span class="math">R/c<sub>p</sub> ≈ 0.286</span>。</p>
