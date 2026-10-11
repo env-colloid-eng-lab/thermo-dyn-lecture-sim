@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>21 平衡の分布と到達時間 | 熱力学シミュレーション</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+<header class="site-header"><div class="inner">
+  <h1>21 平衡の分布と到達時間</h1><span class="sub">熱力学は「どこに着くか」を決め、「どれだけ速く着くか」は決めない ― 拡散・沈降とアインシュタインの関係</span>
+  <nav>
+    <a href="../index.html">目次</a>
+    <a href="01-operations.html">01 壁と操作</a>
+    <a href="02-equilibrium.html">02 平衡への緩和</a>
+    <a href="03-processes.html">03 準静的と不可逆</a>
+    <a href="04-isothermal.html">04 等温過程の収支</a>
+    <a href="05-extensive.html">05 示量と示強</a>
+    <a href="06-heat-capacity.html">06 熱容量</a>
+    <a href="07-entropy.html">07 エントロピー</a>
+    <a href="08-heat-engines.html">08 熱機関</a>
+    <a href="09-osmosis.html">09 浸透圧</a>
+    <a href="10-max-work.html">10 可逆と不可逆</a>
+    <a href="11-sedimentation.html">11 沈降平衡</a>
+    <a href="12-partitions.html">12 仕切りと平衡条件</a>
+    <a href="13-chain.html">13 鎖の弾性</a>
+    <a href="14-stability.html">14 大気の安定性</a>
+    <a href="15-greenhouse.html">15 放射収支と温室効果</a>
+    <a href="16-phase.html">16 相平衡と水蒸気</a>
+    <a href="17-rce.html">17 放射対流平衡</a>
+    <a href="18-steady-state.html">18 平衡と定常状態</a>
+    <a href="19-membrane.html">19 膜電位</a>
+    <a href="20-binding.html">20 結合の平衡</a>
+    <a href="21-transport.html" aria-current="page">21 平衡と到達時間</a>
+    <a href="../en/sims/21-transport.html" lang="en" hreflang="en">English</a>
+    <button id="btn-proj" title="文字を大きくする">投影モード</button>
+  </nav>
+</div></header>
+
+<main class="layout">
+  <div class="col">
+    <section class="card">
+      <h2><span class="tag">モデル</span>水の中のコロイド粒子（ブラウン運動） <span class="hint">左：粘度 η、右：粘度 <i>k</i>η（同じ粒子・同じ重力）</span></h2>
+      <div class="twin">
+        <div><h3>左：粘度 η</h3><div class="canvas-wrap"><canvas id="boxL"></canvas></div></div>
+        <div><h3>右：粘度 <i>k</i>η</h3><div class="canvas-wrap"><canvas id="boxR"></canvas></div></div>
+      </div>
+      <div class="readouts wrap" style="margin-top:8px">
+        <div class="stat"><span class="k">時間 τ = <i>tD</i>/<i>H</i>²（左の <i>D</i> で）</span><span class="v" id="r-t">–</span></div>
+        <div class="stat"><span class="k">実際の時間（例題4の粒子）</span><span class="v" id="r-real">–</span></div>
+        <div class="stat"><span class="k">沈む時間の目安 τ<sub>g</sub> = <i>D</i>/(<i>H</i>·<i>v</i><sub>drift</sub>) = <i>r</i>/<i>P</i></span><span class="v" id="r-tg">–</span></div>
+        <div class="stat"><span class="k">平衡との自由エネルギーの差（左）</span><span class="v" id="r-FL">–</span></div>
+        <div class="stat"><span class="k">平衡との自由エネルギーの差（右）</span><span class="v" id="r-FR">–</span></div>
+      </div>
+      <p class="hint" style="margin:4px 0 0">自由エネルギーの差は粒子1個あたり <i>kT</i> 単位で、∫ <i>c</i> ln(<i>c</i>/<i>c</i><sub>eq</sub>) d<i>x</i>（<i>c</i><sub>eq</sub>：ボルツマン分布）。実際の時間は、例題4の粒子（直径 1 µm、密度差 50 kg/m³、25 °C の水、重力長 16 µm）で <i>H</i> = <i>P</i> × 16 µm としたときの値。</p>
+      <p class="q" id="r-dir" style="margin-top:8px"></p>
+    </section>
+
+    <section class="card">
+      <h2><span class="tag">マクロ</span>高さによる濃度 <span class="hint">線＝式 (4.8) の解、点＝左右の粒子（少しならした値）、破線＝ボルツマン分布</span></h2>
+      <div class="canvas-wrap"><canvas id="plotC"></canvas></div>
+    </section>
+
+    <section class="card">
+      <h2><span class="tag">マクロ</span>自由エネルギーは減り続け、平衡で止まる</h2>
+      <div class="canvas-wrap"><canvas id="plotF"></canvas></div>
+    </section>
+
+    <section class="card">
+      <h2><span class="tag">マクロ</span>流れの内訳（左の容器） <span class="hint">拡散は濃い方から薄い方（上向き）、重力は下向き。平衡では各高さで打ち消す</span></h2>
+      <div class="canvas-wrap"><canvas id="plotJ"></canvas></div>
+    </section>
+  </div>
+
+  <div class="col">
+    <section class="card ctrl">
+      <h2>操作パネル</h2>
+      <div class="btns">
+        <button id="btn-play" class="primary"></button>
+        <button id="btn-reset">はじめから</button>
+      </div>
+      <div class="row"><label for="speed">進む速さ（τ／秒）</label><input type="range" id="speed" min="-2.5" max="-0.5" step="0.05" value="-1.5"><output id="speed-val"></output></div>
+
+      <div class="group-title">はじめの分布</div>
+      <div class="seg" id="init"><button data-value="uniform" aria-pressed="true">一様に混ぜる</button><button data-value="top">上の方に集める</button></div>
+
+      <div class="group-title">粒子と流体（途中で変えてよい）</div>
+      <div class="row"><label for="P">重力の強さ <i>P</i> = <i>m</i><sub>b</sub><i>gH</i>/<i>kT</i></label><input type="range" id="P" min="-4" max="10" step="0.5" value="5"><output id="P-val"></output></div>
+      <div class="row"><label for="k">右の容器の粘度の倍率 <i>k</i></label><input type="range" id="k" min="1" max="8" step="0.5" value="3"><output id="k-val"></output></div>
+      <div class="row"><label for="r"><i>r</i> = <i>D</i>/(<i>bkT</i>)（アインシュタインの関係なら 1）</label><input type="range" id="r" min="0.5" max="2" step="0.05" value="1"><output id="r-val"></output></div>
+
+      <div class="group-title">表示</div>
+      <div>
+        <label class="check"><input type="checkbox" id="c-bd" checked>粒子（ブラウン運動）</label>
+      </div>
+    </section>
+
+    <section class="card notes">
+      <h2>ねらい</h2>
+      <p>11 では、沈降平衡の分布 <span class="math">c(z) ∝ e<sup>−m<sub>b</sub>gz/kT</sup></span> を自由エネルギー最小から求めました。熱力学が教えるのは<b>行き先（平衡の分布）</b>です。でも、そこへ<b>どれだけ速く着くか</b>は教えてくれません。速さは拡散係数 <i>D</i> や移動度 <i>b</i>（粘度で決まる）による、熱力学とは別の情報です（教科書 4.5 節）。</p>
+      <p>ただし、<i>D</i> と <i>b</i> は勝手に決めてよいわけではありません。流れが止まる分布が平衡の分布と一致するには <b><i>D</i> = <i>bkT</i></b>（アインシュタインの関係）が必要です。</p>
+      <h3>やってみよう</h3>
+      <ol>
+        <li>再生する。左右とも、一様な分布から底に濃い指数関数の分布へ近づく。行き先（破線）は同じだが、粘度が <i>k</i> 倍の右は <i>k</i> 倍ゆっくり近づく。</li>
+        <li>自由エネルギーの差のグラフ：どちらも減り続け、0（平衡）で止まる。増えることはない（第二法則）。</li>
+        <li>流れの内訳：はじめは重力による下向きの流れが勝つ。分布が偏ると拡散の上向きの流れが育ち、平衡では各高さでぴったり打ち消す。粒子は動き続けているのに、正味の流れは 0。</li>
+        <li>「上の方に集める」から始める。はじめの状態が違っても、行き先は同じ。</li>
+        <li><i>P</i> を変える。<i>P</i> が大きい（重い・容器が高い）ほど底に集まり、早く平衡に近づく。<i>P</i> &lt; 0 は浮く粒子。</li>
+        <li><i>r</i> を 1 からずらす（アインシュタインの関係を破る）。流れが止まる分布が e<sup>−<i>Px</i>/<i>r</i></sup> になり、ボルツマン分布からずれる。自由エネルギーの差も 0 にならない。</li>
+      </ol>
+      <div class="q"><b>問い</b>　平衡の濃度の式 <span class="math">dc/dz = −m<sub>b</sub>g c/kT</span> を流れの式 <span class="math">J = −D dc/dz − b m<sub>b</sub>g c</span> に入れて、<i>J</i> = 0 になる条件を求めよう（教科書の途中の問い 4.2）。</div>
+      <div class="q"><b>問い</b>　例題4の粒子で <i>P</i> = 5（容器の高さ 80 µm）のとき、<i>H</i>²/<i>D</i> は約 4 時間。顕微鏡で沈降平衡を観察するとき、何に気をつける？　粒子の直径が半分なら？</div>
+      <div class="q"><b>問い</b>　粘度を上げても平衡の分布が変わらないのはなぜ？　「どこに着くか」と「どれだけ速く着くか」を決めるものを、それぞれ言葉で説明しよう。</div>
+      <details><summary>流れの式と時間の目安</summary>
+        <p>上向きを正とした粒子の流れは、拡散（フィックの法則）と重力による移動の和 <span class="math">J = −D ∂c/∂z − b m<sub>b</sub>g c</span>（式 4.6）。薄い層への出入りから <span class="math">∂c/∂t = −∂J/∂z</span>（式 4.8）。<i>x</i> = <i>z</i>/<i>H</i>、<i>τ</i> = <i>tD</i>/<i>H</i>² とすると <span class="math">∂c/∂τ = ∂²c/∂x² + (P/r) ∂c/∂x</span>、<i>P</i> = <i>m</i><sub>b</sub><i>gH</i>/<i>kT</i>、<i>r</i> = <i>D</i>/(<i>bkT</i>)。</p>
+        <p>時間の目安は、拡散で高さ <i>H</i> を広がる <span class="math">t<sub>D</sub> ~ H²/D</span>（<i>τ</i> = 1）と、沈む速さで <i>H</i> を進む <span class="math">t<sub>g</sub> = H/(b m<sub>b</sub> g)</span>（<i>τ</i> = <i>r</i>/<i>P</i>）。平衡へ近づく正確な時間ではなく目安。</p>
+        <p>ストークスの抵抗 <span class="math">b = 1/(6πηa)</span> から <span class="math">D = kT/(6πηa)</span>。粘度 η を <i>k</i> 倍にすると <i>D</i> と <i>b</i> がどちらも 1/<i>k</i> になり、行き先は同じで時間だけが <i>k</i> 倍になる。</p>
+      </details>
+      <details><summary>このモデルについて</summary>
+        <p>このページは粒子どうしの衝突（分子動力学）ではなく、<b>ブラウン運動の模型</b>です。水の分子は描かず、その効果をでたらめな押し（拡散）と抵抗（移動度）で表します。粒子1個の高さは 1 刻みごとに <span class="math">Δx = −(P/r) Δτ + √(2Δτ) ξ</span>（ξ は平均 0、分散 1 の乱数）で動き、底と上で跳ね返ります。横方向の動きは見た目のためだけです。</p>
+        <p>線は同じ式 (4.8) を、高さを 120 層に分けて解いたもの（教科書の付属プログラム sedimentation.py と同じ解き方：平衡を厳密に保つ流れの書き方と、陰解法）。<i>P</i> = 5 で付属プログラムの結果と 6 桁まで一致することをテストで確かめています。実際の長さ・時間（3次元・SI 単位）は例題4の粒子で換算しています。</p>
+      </details>
+    </section>
+  </div>
+</main>
+
+<script type="module" src="../assets/js/pages/21-transport.js"></script>
+</body>
+</html>

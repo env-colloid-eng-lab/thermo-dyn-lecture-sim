@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>21 Equilibrium distribution and approach time | Thermodynamics simulations</title>
+<link rel="icon" href="../../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body>
+<header class="site-header"><div class="inner">
+  <h1>21 Equilibrium distribution and approach time</h1><span class="sub">Thermodynamics decides "where it ends up", not "how fast it gets there" ― diffusion, sedimentation and the Einstein relation</span>
+  <nav>
+    <a href="../index.html">Contents</a>
+    <a href="01-operations.html">01 Walls & operations</a>
+    <a href="02-equilibrium.html">02 Relaxation to equilibrium</a>
+    <a href="03-processes.html">03 Quasi-static vs. irreversible</a>
+    <a href="04-isothermal.html">04 Isothermal energy balance</a>
+    <a href="05-extensive.html">05 Extensive & intensive</a>
+    <a href="06-heat-capacity.html">06 Heat capacity</a>
+    <a href="07-entropy.html">07 Entropy</a>
+    <a href="08-heat-engines.html">08 Heat engines</a>
+    <a href="09-osmosis.html">09 Osmotic pressure</a>
+    <a href="10-max-work.html">10 Reversible vs. irreversible</a>
+    <a href="11-sedimentation.html">11 Sedimentation</a>
+    <a href="12-partitions.html">12 Partitions & equilibrium</a>
+    <a href="13-chain.html">13 Chain elasticity</a>
+    <a href="14-stability.html">14 Atmospheric stability</a>
+    <a href="15-greenhouse.html">15 Radiation & greenhouse</a>
+    <a href="16-phase.html">16 Phase equilibrium & vapor</a>
+    <a href="17-rce.html">17 Radiative-convective eq.</a>
+    <a href="18-steady-state.html">18 Equilibrium vs. steady state</a>
+    <a href="19-membrane.html">19 Membrane potential</a>
+    <a href="20-binding.html">20 Binding equilibrium</a>
+    <a href="21-transport.html" aria-current="page">21 Equilibrium &amp; approach time</a>
+    <a href="../../sims/21-transport.html" lang="ja" hreflang="ja">日本語</a>
+    <button id="btn-proj" title="Enlarge text">Projector mode</button>
+  </nav>
+</div></header>
+
+<main class="layout">
+  <div class="col">
+    <section class="card">
+      <h2><span class="tag">Model</span>Colloidal particles in water (Brownian motion) <span class="hint">left: viscosity η, right: viscosity <i>k</i>η (same particles, same gravity)</span></h2>
+      <div class="twin">
+        <div><h3>Left: viscosity η</h3><div class="canvas-wrap"><canvas id="boxL"></canvas></div></div>
+        <div><h3>Right: viscosity <i>k</i>η</h3><div class="canvas-wrap"><canvas id="boxR"></canvas></div></div>
+      </div>
+      <div class="readouts wrap" style="margin-top:8px">
+        <div class="stat"><span class="k">Time τ = <i>tD</i>/<i>H</i>² (with <i>D</i> of the left)</span><span class="v" id="r-t">–</span></div>
+        <div class="stat"><span class="k">Real time (particle of Example 4)</span><span class="v" id="r-real">–</span></div>
+        <div class="stat"><span class="k">Settling time scale τ<sub>g</sub> = <i>D</i>/(<i>H</i>·<i>v</i><sub>drift</sub>) = <i>r</i>/<i>P</i></span><span class="v" id="r-tg">–</span></div>
+        <div class="stat"><span class="k">Free energy above equilibrium (left)</span><span class="v" id="r-FL">–</span></div>
+        <div class="stat"><span class="k">Free energy above equilibrium (right)</span><span class="v" id="r-FR">–</span></div>
+      </div>
+      <p class="hint" style="margin:4px 0 0">The free energy difference is per particle in units of <i>kT</i>, ∫ <i>c</i> ln(<i>c</i>/<i>c</i><sub>eq</sub>) d<i>x</i> (<i>c</i><sub>eq</sub>: Boltzmann distribution). Real times are for the particle of Example 4 (diameter 1 µm, density difference 50 kg/m³, water at 25 °C, gravitational length 16 µm) with <i>H</i> = <i>P</i> × 16 µm.</p>
+      <p class="q" id="r-dir" style="margin-top:8px"></p>
+    </section>
+
+    <section class="card">
+      <h2><span class="tag">Macro</span>Concentration by height <span class="hint">lines = solution of eq. (4.8), dots = particles on the left and right (slightly smoothed), dashed = Boltzmann distribution</span></h2>
+      <div class="canvas-wrap"><canvas id="plotC"></canvas></div>
+    </section>
+
+    <section class="card">
+      <h2><span class="tag">Macro</span>The free energy keeps decreasing and stops at equilibrium</h2>
+      <div class="canvas-wrap"><canvas id="plotF"></canvas></div>
+    </section>
+
+    <section class="card">
+      <h2><span class="tag">Macro</span>Breakdown of the flow (left container) <span class="hint">diffusion goes from dense to dilute (upward), gravity downward; in equilibrium they cancel at every height</span></h2>
+      <div class="canvas-wrap"><canvas id="plotJ"></canvas></div>
+    </section>
+  </div>
+
+  <div class="col">
+    <section class="card ctrl">
+      <h2>Controls</h2>
+      <div class="btns">
+        <button id="btn-play" class="primary"></button>
+        <button id="btn-reset">Start over</button>
+      </div>
+      <div class="row"><label for="speed">Speed (τ per second)</label><input type="range" id="speed" min="-2.5" max="-0.5" step="0.05" value="-1.5"><output id="speed-val"></output></div>
+
+      <div class="group-title">Initial distribution</div>
+      <div class="seg" id="init"><button data-value="uniform" aria-pressed="true">Mixed uniformly</button><button data-value="top">Gathered near the top</button></div>
+
+      <div class="group-title">Particles and fluid (may be changed during a run)</div>
+      <div class="row"><label for="P">Strength of gravity <i>P</i> = <i>m</i><sub>b</sub><i>gH</i>/<i>kT</i></label><input type="range" id="P" min="-4" max="10" step="0.5" value="5"><output id="P-val"></output></div>
+      <div class="row"><label for="k">Viscosity factor of the right container <i>k</i></label><input type="range" id="k" min="1" max="8" step="0.5" value="3"><output id="k-val"></output></div>
+      <div class="row"><label for="r"><i>r</i> = <i>D</i>/(<i>bkT</i>) (1 for the Einstein relation)</label><input type="range" id="r" min="0.5" max="2" step="0.05" value="1"><output id="r-val"></output></div>
+
+      <div class="group-title">Display</div>
+      <div>
+        <label class="check"><input type="checkbox" id="c-bd" checked>Particles (Brownian motion)</label>
+      </div>
+    </section>
+
+    <section class="card notes">
+      <h2>Goal</h2>
+      <p>In 11 we found the sedimentation equilibrium distribution <span class="math">c(z) ∝ e<sup>−m<sub>b</sub>gz/kT</sup></span> from the minimum of the free energy. What thermodynamics tells us is the <b>destination (the equilibrium distribution)</b>. It does not tell us <b>how fast</b> the system gets there. The speed depends on the diffusion coefficient <i>D</i> and the mobility <i>b</i> (set by the viscosity), information separate from thermodynamics (textbook section 4.5).</p>
+      <p>However, <i>D</i> and <i>b</i> cannot be chosen freely. For the distribution where the flow stops to agree with the equilibrium distribution, we need <b><i>D</i> = <i>bkT</i></b> (the Einstein relation).</p>
+      <h3>Try it</h3>
+      <ol>
+        <li>Play. In both containers the distribution goes from uniform toward an exponential that is dense at the bottom. The destination (dashed) is the same, but the right one, with <i>k</i> times the viscosity, approaches <i>k</i> times more slowly.</li>
+        <li>The free energy difference plot: both keep decreasing and stop at 0 (equilibrium). It never increases (the second law).</li>
+        <li>The flow breakdown: at first the downward flow due to gravity wins. As the distribution becomes uneven, the upward diffusion flow grows, and in equilibrium they cancel exactly at every height. Particles keep moving, yet the net flow is 0.</li>
+        <li>Start from "Gathered near the top". Even from a different initial state, the destination is the same.</li>
+        <li>Change <i>P</i>. The larger <i>P</i> (heavier particles or a taller container), the more they collect at the bottom and the faster they approach equilibrium. <i>P</i> &lt; 0 means floating particles.</li>
+        <li>Move <i>r</i> away from 1 (break the Einstein relation). The distribution where the flow stops becomes e<sup>−<i>Px</i>/<i>r</i></sup> and departs from the Boltzmann distribution. The free energy difference does not reach 0 either.</li>
+      </ol>
+      <div class="q"><b>Question</b> Put the equilibrium concentration gradient <span class="math">dc/dz = −m<sub>b</sub>g c/kT</span> into the flow equation <span class="math">J = −D dc/dz − b m<sub>b</sub>g c</span> and find the condition for <i>J</i> = 0 (textbook in-text question 4.2).</div>
+      <div class="q"><b>Question</b> For the particle of Example 4 with <i>P</i> = 5 (container height 80 µm), <i>H</i>²/<i>D</i> is about 4 hours. What should you watch out for when observing sedimentation equilibrium under a microscope? What if the particle diameter is halved?</div>
+      <div class="q"><b>Question</b> Why does raising the viscosity not change the equilibrium distribution? Explain in words what decides "where it ends up" and what decides "how fast it gets there".</div>
+      <details><summary>The flow equation and time scales</summary>
+        <p>The upward particle flow is the sum of diffusion (Fick's law) and movement due to gravity, <span class="math">J = −D ∂c/∂z − b m<sub>b</sub>g c</span> (eq. 4.6). Counting what enters and leaves a thin layer gives <span class="math">∂c/∂t = −∂J/∂z</span> (eq. 4.8). With <i>x</i> = <i>z</i>/<i>H</i> and <i>τ</i> = <i>tD</i>/<i>H</i>², <span class="math">∂c/∂τ = ∂²c/∂x² + (P/r) ∂c/∂x</span>, <i>P</i> = <i>m</i><sub>b</sub><i>gH</i>/<i>kT</i>, <i>r</i> = <i>D</i>/(<i>bkT</i>).</p>
+        <p>The time scales are <span class="math">t<sub>D</sub> ~ H²/D</span> for diffusion to spread over the height <i>H</i> (<i>τ</i> = 1), and <span class="math">t<sub>g</sub> = H/(b m<sub>b</sub> g)</span> for settling across <i>H</i> (<i>τ</i> = <i>r</i>/<i>P</i>). These are rough scales, not the exact time to approach equilibrium.</p>
+        <p>From Stokes drag <span class="math">b = 1/(6πηa)</span>, <span class="math">D = kT/(6πηa)</span>. Multiplying the viscosity η by <i>k</i> makes both <i>D</i> and <i>b</i> 1/<i>k</i>, so the destination is the same and only the time becomes <i>k</i> times longer.</p>
+      </details>
+      <details><summary>About the model</summary>
+        <p>This page is not a simulation of colliding particles (molecular dynamics) but a <b>model of Brownian motion</b>. Water molecules are not drawn; their effect is represented by random kicks (diffusion) and drag (mobility). Each step, a particle's height moves by <span class="math">Δx = −(P/r) Δτ + √(2Δτ) ξ</span> (ξ is a random number with mean 0 and variance 1) and bounces back at the bottom and top. The horizontal motion is only for display.</p>
+        <p>The lines solve the same eq. (4.8) with the height split into 120 layers (the same method as the textbook's accompanying program sedimentation.py: a flux form that keeps equilibrium exact, and an implicit time step). Tests confirm agreement with that program's results to 6 digits at <i>P</i> = 5. Real lengths and times (3D, SI units) are converted with the particle of Example 4.</p>
+      </details>
+    </section>
+  </div>
+</main>
+
+<script type="module" src="../../assets/js/pages/21-transport.js"></script>
+</body>
+</html>
