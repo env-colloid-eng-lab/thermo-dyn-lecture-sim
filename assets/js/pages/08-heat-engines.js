@@ -1,6 +1,7 @@
 // 08-heat-engines.js ― sims/08-heat-engines.html と en/sims/08-heat-engines.html の共通スクリプト。表示する文字は tr('日本語', 'English') で書く
 import { Gas } from '../engine.js';
-import { CycleRunner, cycleDef } from '../cycles.js';
+import { CycleRunner, cycleDef, cycleTheory } from '../cycles.js';
+import { idealGas, adiabatVolumeRatio } from '../dims.js';
 import { SimView } from '../render.js';
 import { XYPlot, SERIES } from '../plot.js';
 import { $, fmt, fmtSigned, bindRange, bindCheck, segmented, Loop, bindPlayPause, setupCommon, bindSpeed } from '../ui.js';
@@ -11,7 +12,7 @@ const H = 60, N = 200, X1 = 30, R = 2, XMAX = 155;
 let gas, view, run, simRate = 0.1, frame = 0;
 let type = 'carnot', dir = 'engine', Th = 2, Tc = 1, pspeed = 0.06;
 let cur = [], prev = null, curTS = [], prevTS = null, Tsm = null;   // P–V 図の軌跡（いまのサイクル・直前のサイクル）
-let thSlider, tcSlider;
+let thSlider, tcSlider, show3d = false;
 
 const pv = new XYPlot($('pv'), { height: 320, xmin: 0, xmax: XMAX * H, ymin: 0, ymax: 1, xlabel: tr('V（面積）', 'V (area)'), ylabel: 'P', xd: 0, yd: 4 });
 
@@ -92,6 +93,29 @@ function build() {
     { label: tr(`等温線 T = ${fmt(Tc, 1)}`, `Isotherm T = ${fmt(Tc, 1)}`), color: SERIES[0], dash: [3, 4], fn: (V) => (N * Tc) / V },
   ];
   drawTable(null);
+  draw3d();
+}
+
+/** 2次元（このシミュレーション）と「3次元なら」の理論値の比較（式だけ。粒子は 2次元のまま） */
+function draw3d() {
+  $('d3').hidden = !show3d;
+  if (!show3d) return;
+  const eng = dir === 'engine', st = type === 'stirling';
+  const col = (d) => {
+    const g = idealGas(d), th = cycleTheory(type, dir, { Th, Tc, r: R, cv: g.cv });
+    return { cv: fmt(g.cv, 2), adi: d === 2 ? tr('<i>TV</i> = 一定', '<i>TV</i> = const.') : tr('<i>TV</i><sup>2/3</sup> = 一定', '<i>TV</i><sup>2/3</sup> = const.'),
+      vr: fmt(adiabatVolumeRatio(d, Th, Tc), 2), qv: fmt(N * g.cv * (Th - Tc), 0), main: fmt(th.main, 3), carnot: fmt(th.carnot, 3) };
+  };
+  const a = col(2), b = col(3);
+  const rows = [
+    [tr('定積熱容量 <i>C<sub>V</sub></i>/<i>Nk</i>', 'Heat capacity <i>C<sub>V</sub></i>/<i>Nk</i>'), a.cv, b.cv],
+    [tr('準静的な断熱過程', 'Quasi-static adiabatic process'), a.adi, b.adi],
+    st ? [tr('定積過程で出し入れする熱 <i>C<sub>V</sub></i>(<i>T</i><sub>h</sub> − <i>T</i><sub>c</sub>)', 'Heat exchanged in an isochoric step <i>C<sub>V</sub></i>(<i>T</i><sub>h</sub> − <i>T</i><sub>c</sub>)'), a.qv, b.qv]
+       : [tr('断熱で <i>T</i><sub>h</sub> → <i>T</i><sub>c</sub> にする体積比 (<i>T</i><sub>h</sub>/<i>T</i><sub>c</sub>)<sup><i>d</i>/2</sup>', 'Volume ratio to go from <i>T</i><sub>h</sub> to <i>T</i><sub>c</sub> adiabatically (<i>T</i><sub>h</sub>/<i>T</i><sub>c</sub>)<sup><i>d</i>/2</sup>'), a.vr, b.vr],
+    [(eng ? tr('理論の η（準静的', 'Theoretical η (quasi-static') : tr('理論の COP（準静的', 'Theoretical COP (quasi-static')) + (st ? tr('・再生器なし）', ', no regenerator)') : tr('）', ')')), a.main, b.main],
+    [tr('カルノーの上限', 'Carnot limit'), a.carnot, b.carnot],
+  ];
+  $('d3-tbl').querySelector('tbody').innerHTML = rows.map((r) => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join('');
 }
 
 function drawTable(c) {
@@ -146,6 +170,7 @@ tcSlider = bindRange('Tc', (v) => { Tc = v; if (Th / Tc > 2.5) { Th = Math.floor
 bindSpeed('speed', (v) => { simRate = v; });
 bindCheck('c-heat', (on) => { if (view) view.opt.showHeat = on; });
 bindCheck('c-speed', (on) => { if (view) view.opt.colorMode = on ? 'speed' : 'species'; $('lg-speed').hidden = !on; });
+bindCheck('c-3d', (on) => { show3d = on; draw3d(); }, false);
 $('btn-reset').addEventListener('click', build);
 build();
 

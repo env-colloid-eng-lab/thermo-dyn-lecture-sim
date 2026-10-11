@@ -59,19 +59,22 @@ export function cycleSteps(type, dir, p) {
   return steps;
 }
 
-/** 理論値 */
+/**
+ * 理論値。cv は1粒子あたりの定積熱容量（k 単位）。シミュレーションの 2次元気体は cv = 1、
+ * 「3次元なら」の比較では cv = 3/2 を渡す。カルノーの値は cv によらない。
+ */
 export function cycleTheory(type, dir, p) {
-  const { Th, Tc, r } = p, L = Math.log(r);
+  const { Th, Tc, r } = p, L = Math.log(r), cv = p.cv ?? 1;
   const carnotEta = 1 - Tc / Th, carnotCOP = Th / (Th - Tc);
   if (dir === 'engine') {
     if (type === 'carnot') return { main: carnotEta, regen: carnotEta, carnot: carnotEta };
-    // スターリング（再生器なし）: Qh = N Th ln r + N(Th−Tc)、W = N(Th−Tc) ln r
-    return { main: ((Th - Tc) * L) / (Th * L + (Th - Tc)), regen: carnotEta, carnot: carnotEta };
+    // スターリング（再生器なし）: Qh = N Th ln r + N cv (Th−Tc)、W = N(Th−Tc) ln r
+    return { main: ((Th - Tc) * L) / (Th * L + cv * (Th - Tc)), regen: carnotEta, carnot: carnotEta };
   }
   if (type === 'carnot') return { main: carnotCOP, regen: carnotCOP, carnot: carnotCOP };
-  // 逆スターリング（再生器なし）: 高温側へ出す正味の熱 = N Th ln r − N(Th−Tc)
-  //   低温側から受け取る正味の熱 N(Tc ln r − (Th−Tc)) が負なら、ヒートポンプとしては働かない（COP < 1）
-  return { main: (Th * L - (Th - Tc)) / ((Th - Tc) * L), regen: carnotCOP, carnot: carnotCOP };
+  // 逆スターリング（再生器なし）: 高温側へ出す正味の熱 = N Th ln r − N cv (Th−Tc)
+  //   低温側から受け取る正味の熱 N(Tc ln r − cv (Th−Tc)) が負なら、ヒートポンプとしては働かない（COP < 1）
+  return { main: (Th * L - cv * (Th - Tc)) / ((Th - Tc) * L), regen: carnotCOP, carnot: carnotCOP };
 }
 
 export class CycleRunner {

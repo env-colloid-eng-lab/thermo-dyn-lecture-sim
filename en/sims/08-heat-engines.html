@@ -63,7 +63,7 @@
         <div class="arrow"><span>Heat <i>Q</i><sub>c</sub></span><div class="bar q" id="a-c"></div></div>
         <div class="box out" style="background:#eef4fd;border-color:#b8cdf0"><span class="t">Cold reservoir <i>T</i><sub>c</sub> = <span id="f-Tc"></span></span><span class="n" id="f-Qc"></span><span class="t" id="f-Qc-t"></span></div>
       </div>
-      <div class="readouts">
+      <div class="readouts wrap">
         <div class="stat"><span class="k" id="k-main">Efficiency η (measured)</span><span class="v" id="r-main">–</span></div>
         <div class="stat"><span class="k" id="k-th">Theory (quasi-static)</span><span class="v" id="r-th"></span></div>
         <div class="stat" id="st-regen"><span class="k" id="k-regen">With regenerator (measured)</span><span class="v" id="r-regen">–</span></div>
@@ -72,6 +72,10 @@
         <div class="stat"><span class="k">Entropy change of the reservoirs (per cycle)</span><span class="v" id="r-sgen">–</span></div>
       </div>
       <p class="q" id="r-warn" hidden></p>
+      <div id="d3" hidden style="margin-top:8px">
+        <p class="hint" style="margin:0 0 4px"><b>If 3D (comparison)</b>: the particles stay 2D. Theoretical values for the current conditions (<i>T</i><sub>h</sub>, <i>T</i><sub>c</sub>, isothermal volume ratio r = 2), computed from the same formulas with 3 degrees of freedom.</p>
+        <div class="table-wrap"><table class="tbl" id="d3-tbl"><thead><tr><th></th><th>2D (this simulation)</th><th>If 3D</th></tr></thead><tbody></tbody></table></div>
+      </div>
     </section>
 
     <section class="card">
@@ -120,6 +124,7 @@
       <div>
         <label class="check"><input type="checkbox" id="c-heat" checked>Heat exchange</label>
         <label class="check"><input type="checkbox" id="c-speed">Color = speed</label>
+        <label class="check"><input type="checkbox" id="c-3d">If 3D (comparison)</label>
       </div>
     </section>
 
@@ -135,6 +140,7 @@
         <li>"Stirling": the isothermal processes are connected by constant-volume processes. Without a regenerator (a heat-storage material that holds the heat exchanged at constant volume), the efficiency drops. In the heat-pump direction, without a regenerator the device may not even be able to pump heat out of the cold side (look at <i>Q</i> in the table).</li>
         <li>Look at the T–S diagram. The Carnot cycle is a rectangle (isothermal = horizontal, adiabatic = vertical). The heat received on the hot side is <span class="math">T<sub>h</sub>ΔS</span>, the heat discarded to the cold side is <span class="math">T<sub>c</sub>ΔS</span>, and the enclosed area is the work done on the surroundings. Hence <span class="math">η = 1 − T<sub>c</sub>/T<sub>h</sub></span>.</li>
         <li>Look at the total of "Δ<i>S</i> of reservoir" in the table. The gas returns to its initial state after one cycle, so the total entropy change is just that of the reservoirs. It is ≈ 0 for a slow Carnot cycle and positive (irreversible) when the piston is fast or for Stirling without a regenerator.</li>
+        <li>Turn on "If 3D (comparison)". The Carnot efficiency is the same in 2D and 3D, while Stirling without a regenerator becomes less efficient in 3D. Which quantities depend on the working substance and which do not?</li>
       </ol>
       <div class="q"><b>Question</b> The total entropy change of the reservoirs in one cycle, <span class="math">−Q<sub>h</sub>/T<sub>h</sub> − Q<sub>c</sub>/T<sub>c</sub></span>, is never negative (the second law, Clausius inequality). From this and the first law <span class="math">−W = Q<sub>h</sub> + Q<sub>c</sub></span>, derive that the efficiency cannot exceed <span class="math">η ≤ 1 − T<sub>c</sub>/T<sub>h</sub></span>.</div>
       <div class="q"><b>Question</b> Under every setting, the efficiency never exceeds the "Carnot limit". Explain why a heat engine that exceeded it would contradict the second law (the Clausius principle and the Thomson principle).</div>
@@ -150,6 +156,7 @@
         <p><b>Stirling</b>: the constant-volume processes exchange heat <span class="math">Nk(T<sub>h</sub> − T<sub>c</sub>)</span>. Without a regenerator this heat is also exchanged with the reservoirs, so <span class="math">η = (T<sub>h</sub> − T<sub>c</sub>) ln r / (T<sub>h</sub> ln r + T<sub>h</sub> − T<sub>c</sub>)</span>. With an ideal regenerator, the constant-volume heat just goes back and forth within the cycle, and the efficiency equals the Carnot efficiency.</p>
         <p>For the reverse Stirling cycle (heat-pump direction) without a regenerator, the net heat received from the cold side is <span class="math">Nk(T<sub>c</sub> ln r − (T<sub>h</sub> − T<sub>c</sub>))</span>. If <span class="math">T<sub>c</sub> ln r &lt; T<sub>h</sub> − T<sub>c</sub></span>, this is negative: the work done from outside is simply dumped as heat into both reservoirs, and the device does not work as a heat pump (the COP shown is then less than 1).</p>
         <p>The pressure on the P–V diagram is drawn from the equation of state <span class="math">NkT/V</span>. When the piston moves fast, the gas near the moving piston is out of equilibrium, and the pressure the piston actually feels differs from <span class="math">NkT/V</span>. For this reason, the shaded area and the net work −<i>W</i> in the table (counted collision by collision) agree well only when the piston moves slowly.</p>
+        <p><b>If 3D</b> (monatomic ideal gas, <span class="math">C<sub>V</sub> = (3/2)Nk</span>, adiabats <span class="math">TV<sup>2/3</sup> = const.</span>): in the Carnot cycle, the volume ratio needed to go from <i>T</i><sub>h</sub> to <i>T</i><sub>c</sub> adiabatically becomes <span class="math">(T<sub>h</sub>/T<sub>c</sub>)<sup>3/2</sup></span> (it is <span class="math">T<sub>h</sub>/T<sub>c</sub></span> in 2D), but the isothermal heat is still <span class="math">NkT ln r</span>, so the efficiency <span class="math">1 − T<sub>c</sub>/T<sub>h</sub></span> does not change. The Carnot efficiency does not depend on the working substance (it is fixed by the second law). For Stirling without a regenerator, the isochoric heat grows to <span class="math">(3/2)Nk(T<sub>h</sub> − T<sub>c</sub>)</span>, so <span class="math">η = (T<sub>h</sub> − T<sub>c</sub>) ln r / (T<sub>h</sub> ln r + (3/2)(T<sub>h</sub> − T<sub>c</sub>))</span> becomes smaller.</p>
         <p>In the simulation the piston speed is finite and there is a temperature difference between the gas and the reservoirs, so the measured values are smaller than the theoretical ones. Because the number of particles is small, the value for each single cycle fluctuates a lot.</p>
       </details>
     </section>
