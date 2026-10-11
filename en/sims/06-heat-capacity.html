@@ -76,10 +76,7 @@
       </div>
       <p class="hint" id="tbl-note" hidden>* The piston reached the end of its range during the measurement, so the pressure was no longer constant from that point on.</p>
       <p class="hint" id="tbl-empty">No measurements yet. Press "Measure" on the right.</p>
-      <div id="d3" hidden style="margin-top:8px">
-        <p class="hint" style="margin:0 0 4px"><b>If 3D (comparison)</b>: the particles stay 2D. The 3D values are computed from the same formulas with 3 degrees of freedom (dash-dot lines on the graph). "Measured" is the average of <i>C</i>/<i>N</i> in the table.</p>
-        <div class="table-wrap"><table class="tbl" id="d3-tbl"><thead><tr><th></th><th>Measured (average)</th><th>2D theory</th><th>If 3D</th></tr></thead><tbody></tbody></table></div>
-      </div>
+      <p class="hint" style="margin:6px 0 0"><b>Note</b> The measured values are for a 2D gas (2 degrees of freedom per particle): <i>C<sub>V</sub></i>/<i>N</i> = 1, <i>C<sub>P</sub></i>/<i>N</i> = 2. For a 3D monatomic gas (3 degrees of freedom) they would be 3/2 and 5/2 (see "Theoretical values" below).</p>
     </section>
 
     <section class="card">
@@ -108,7 +105,6 @@
       <div>
         <label class="check"><input type="checkbox" id="c-heat" checked>Heat exchange</label>
         <label class="check"><input type="checkbox" id="c-speed">Color = speed</label>
-        <label class="check"><input type="checkbox" id="c-3d">If 3D (comparison)</label>
       </div>
       <div class="btns"><button id="btn-clear">Clear results table</button></div>
     </section>
@@ -122,7 +118,6 @@
         <li>Measure with different <i>N</i>. <i>C</i> is proportional to <i>N</i> (an extensive variable), but <i>C</i>/<i>N</i> does not change.</li>
         <li>Switch to "Constant pressure" and measure. The piston moves outward and the gas does work on the outside (<i>W</i> &lt; 0). What is <i>C</i>/<i>N</i> now?</li>
         <li>Also try a "cooling" measurement with the reservoir temperature below 1 (<i>Q</i> &lt; 0, Δ<i>T</i> &lt; 0).</li>
-        <li>Turn on "If 3D (comparison)". Both <i>C<sub>V</sub></i> and <i>C<sub>P</sub></i> increase, but the difference <i>C<sub>P</sub></i> − <i>C<sub>V</sub></i> = <i>Nk</i> is the same as in 2D. Why?</li>
       </ol>
       <div class="q"><b>Question</b> Heating at constant pressure needs more heat than at constant volume. Where did the extra heat go? Explain it with the first law, Δ<i>U</i> = <i>Q</i> + <i>W</i>.</div>
       <div class="q"><b>Question</b> Even if you separate the gas from the reservoir before it reaches the reservoir temperature, <i>C</i> still comes out right. Why?</div>

@@ -71,11 +71,8 @@
         <div class="stat"><span class="k">サイクル数</span><span class="v" id="r-n">0</span></div>
         <div class="stat"><span class="k">熱源のエントロピー変化（1サイクル平均）</span><span class="v" id="r-sgen">–</span></div>
       </div>
+      <p class="hint" style="margin:6px 0 0"><b>注</b>　2次元の気体（1粒子の自由度は 2）での結果です。カルノーの効率は作業物質によりませんが、再生器なしのスターリングの効率などは自由度によって変わり、3次元の気体（単原子なら自由度 3）とは値が違います（下の「理論値」）。</p>
       <p class="q" id="r-warn" hidden></p>
-      <div id="d3" hidden style="margin-top:8px">
-        <p class="hint" style="margin:0 0 4px"><b>3次元なら（比較）</b>：粒子は 2次元のまま。いまの条件（<i>T</i><sub>h</sub>, <i>T</i><sub>c</sub>, 等温の体積比 r = 2）での理論値を、同じ式に自由度 3 を入れて計算したもの。</p>
-        <div class="table-wrap"><table class="tbl" id="d3-tbl"><thead><tr><th></th><th>2次元（このシミュレーション）</th><th>3次元なら</th></tr></thead><tbody></tbody></table></div>
-      </div>
     </section>
 
     <section class="card">
@@ -124,7 +121,6 @@
       <div>
         <label class="check"><input type="checkbox" id="c-heat" checked>熱のやりとり</label>
         <label class="check"><input type="checkbox" id="c-speed">色＝速さ</label>
-        <label class="check"><input type="checkbox" id="c-3d">3次元なら（比較）</label>
       </div>
     </section>
 
@@ -140,7 +136,6 @@
         <li>「スターリング」：等温過程の間を定積過程でつなぐ。再生器（定積で出し入れする熱をためておく蓄熱材）がないと効率は下がる。ヒートポンプの向きでは、再生器がないと低温側から熱をくみ上げることすらできない場合がある（表の <i>Q</i> を見よう）。</li>
         <li>T–S 図を見る。カルノーサイクルは長方形（等温は水平、断熱は垂直）。高温側で受け取る熱は <span class="math">T<sub>h</sub>ΔS</span>、低温側へ捨てる熱は <span class="math">T<sub>c</sub>ΔS</span>、囲む面積が外へした仕事。だから <span class="math">η = 1 − T<sub>c</sub>/T<sub>h</sub></span>。</li>
         <li>表の「熱源の Δ<i>S</i>」の合計を見る。気体は1サイクルで元の状態に戻るので、全体のエントロピー変化は熱源の分だけ。ゆっくり回したカルノーでは ≈ 0、ピストンが速いときや再生器なしのスターリングでは正（不可逆）。</li>
-        <li>「3次元なら（比較）」をオンにする。カルノーの効率は 2次元と 3次元で同じ。再生器なしのスターリングは 3次元のほうが効率が下がる。作業物質によって変わる量・変わらない量はどれ？</li>
       </ol>
       <div class="q"><b>問い</b>　1サイクルでの熱源のエントロピー変化の合計 <span class="math">−Q<sub>h</sub>/T<sub>h</sub> − Q<sub>c</sub>/T<sub>c</sub></span> は負にならない（第二法則、クラウジウスの不等式）。このことと第一法則 <span class="math">−W = Q<sub>h</sub> + Q<sub>c</sub></span> から、効率が <span class="math">η ≤ 1 − T<sub>c</sub>/T<sub>h</sub></span> を超えられないことを導いてみよう。</div>
       <div class="q"><b>問い</b>　どの条件でも、効率は「カルノーの上限」を超えない。もし超える熱機関があったら、第二法則（クラウジウスの原理・トムソンの原理）と矛盾することを説明してみよう。</div>

@@ -4,12 +4,11 @@ import { SimView } from '../render.js';
 import { XYPlot, TimePlot, SERIES } from '../plot.js';
 import { $, fmt, fmtSigned, bindRange, bindCheck, segmented, Loop, bindPlayPause, setupCommon, updateLedger, bindSpeed } from '../ui.js';
 import { tr } from '../i18n.js';
-import { idealGas, adiabatT, adiabatP } from '../dims.js';
 
 setupCommon();
 const H = 60, X0 = 100, N = 300, T0 = 1.0;
 let gas, view, simRate = 0.1, frame = 0, cond = 'adi', speed = 0.02, speedCtl;
-let legs = [], cur = null, cycle = null, fe = null, refState = null, show3d = false;
+let legs = [], cur = null, cycle = null, fe = null, refState = null;
 
 const pv = new XYPlot($('pv'), { height: 300, xmin: 0, xmax: 6600, ymin: 0, ymax: null, xlabel: tr('V（面積）', 'V (area)'), ylabel: 'P' });
 const plotT = new TimePlot($('plotT'), { height: 150, ylabel: tr('温度 T', 'Temperature T'), yZero: true, window: 1500,
@@ -31,37 +30,12 @@ function setRefs() {
   const s = { V: Vsys(), U: gas.kinetic() };
   const P0 = s.U / s.V, V0 = s.V, T = s.U / gas.N;
   refState = { V0, P0, T };
-  applyRefs();
-}
-
-/** 基準の状態（refState）から引く等温線・断熱線 */
-function applyRefs() {
-  const { V0, P0, T } = refState;
   pv.refs = [
     { label: tr(`等温線 (T=${T.toFixed(2)})`, `Isotherm (T=${T.toFixed(2)})`), color: '#9a988f', dash: [5, 4], fn: (V) => (P0 * V0) / V },
     { label: tr('断熱線 PV²=一定', 'Adiabat PV²=const.'), color: SERIES[2], dash: [2, 3], fn: (V) => P0 * (V0 / V) ** 2 },
   ];
-  // 「3次元なら」：同じ始点から引いた 3次元の断熱線（式だけ。粒子は 2次元のまま）
-  if (show3d) pv.refs.push({ label: tr('3次元なら 断熱線 PV^(5/3)=一定', 'If 3D: adiabat PV^(5/3)=const.'), color: SERIES[3], dash: [8, 3, 2, 3], fn: (V) => adiabatP(3, P0, V0, V) });
   const Vmin = gas.Xmin * H;
   pv.opt.ymax = Math.min(P0 * (V0 / Vmin) ** 2 * 1.15, P0 * 6);
-  draw3d();
-}
-
-/** 2次元（このシミュレーション）と「3次元なら」の比較表（式から計算した値） */
-function draw3d() {
-  $('d3').hidden = !show3d;
-  if (!show3d || !refState) return;
-  const g2 = idealGas(2), g3 = idealGas(3), { V0, T } = refState, Vc = +$('xc').value * H;
-  const rows = [
-    [tr('内部エネルギー <i>U</i>', 'Internal energy <i>U</i>'), '<i>NkT</i>', '(3/2)<i>NkT</i>'],
-    [tr('比熱比 γ = <i>C<sub>P</sub></i>/<i>C<sub>V</sub></i>', 'Heat capacity ratio γ = <i>C<sub>P</sub></i>/<i>C<sub>V</sub></i>'), fmt(g2.gamma, 3), fmt(g3.gamma, 3)],
-    [tr('準静的・断熱', 'Quasi-static adiabatic'), tr('<i>PV</i>² = 一定、<i>TV</i> = 一定', '<i>PV</i>² = const., <i>TV</i> = const.'), tr('<i>PV</i><sup>5/3</sup> = 一定、<i>TV</i><sup>2/3</sup> = 一定', '<i>PV</i><sup>5/3</sup> = const., <i>TV</i><sup>2/3</sup> = const.')],
-    [tr(`準静的・断熱に <i>V</i> = ${fmt(V0, 0)} → ${fmt(Vc, 0)}（圧縮したときの位置）にしたときの <i>T</i>（はじめ ${fmt(T, 3)}）`, `<i>T</i> after a quasi-static adiabatic change <i>V</i> = ${fmt(V0, 0)} → ${fmt(Vc, 0)} (compressed position), starting from ${fmt(T, 3)}`),
-      fmt(adiabatT(2, T, V0, Vc), 3), fmt(adiabatT(3, T, V0, Vc), 3)],
-    [tr('温位の指数 <i>k</i>/<i>c<sub>P</sub></i>', 'Exponent of potential temperature <i>k</i>/<i>c<sub>P</sub></i>'), fmt(g2.kcp, 3), fmt(g3.kcp, 3)],
-  ];
-  $('d3-tbl').querySelector('tbody').innerHTML = rows.map((r) => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join('');
 }
 
 function build() {
@@ -125,11 +99,10 @@ segmented('pspeed', (v) => {
   // 準静的は時間がかかるので再生速度を自動で上げる（手動で変更可）
   if (speedCtl) speedCtl.set(speed <= 0.02 ? 30 : speed <= 0.06 ? 10 : speed <= 1 ? 1.5 : 1);
 }, false);
-bindRange('xc', () => { draw3d(); }, (v) => v.toFixed(0));
+bindRange('xc', () => {}, (v) => v.toFixed(0));
 speedCtl = bindSpeed('speed', (v) => { simRate = v; });
 bindCheck('c-speed', (on) => { if (view) view.opt.colorMode = on ? 'speed' : 'species'; $('lg-speed').hidden = !on; });
 bindCheck('c-arrow', (on) => { if (view) view.opt.arrows = on; });
-bindCheck('c-3d', (on) => { show3d = on; if (refState) applyRefs(); }, false);
 
 function leaveFreeExpansion() {
   if (fe) { build(); }

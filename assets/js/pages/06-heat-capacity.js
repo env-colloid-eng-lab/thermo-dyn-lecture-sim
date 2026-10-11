@@ -5,44 +5,19 @@ import { SimView } from '../render.js';
 import { TimePlot, XYPlot, SERIES } from '../plot.js';
 import { $, fmt, fmtSigned, bindRange, bindCheck, segmented, Loop, bindPlayPause, setupCommon, bindSpeed } from '../ui.js';
 import { tr } from '../i18n.js';
-import { idealGas } from '../dims.js';
 
 setupCommon();
 const H = 60, X0 = 45, T0 = 1;   // 定圧で熱源の温度 3 まで温めてもピストンが端に届かない大きさ
-let gas, view, run = null, simRate = 0.1, frame = 0, mode = 'V', N = 300, Tb = 2, show3d = false;
+let gas, view, run = null, simRate = 0.1, frame = 0, mode = 'V', N = 300, Tb = 2;
 const results = [];
 
 const plotT = new TimePlot($('plotT'), { height: 170, ylabel: tr('温度 T', 'Temperature T'), yZero: true, window: 1500,
   series: [{ key: 'T', label: tr('気体の温度 T', 'Gas temperature T'), color: SERIES[0] }, { key: 'Tb', label: tr('接触中の熱源の温度', 'Temperature of reservoir in contact'), color: '#d6453d', dash: [6, 4] }] });
 const plotQ = new XYPlot($('plotQ'), { height: 260, xmin: -0.8, xmax: 2.6, ymin: -1.8, ymax: 6.5, xlabel: 'ΔT', ylabel: 'Q/N', xd: 2, yd: 2 });
-const g2 = idealGas(2), g3 = idealGas(3);
-/** 理論の直線。「3次元なら」は式だけの比較（粒子は 2次元のまま） */
-function setRefs() {
-  plotQ.refs = [
-    { label: tr('定積の理論 Q/N = ΔT', 'Constant-volume theory Q/N = ΔT'), color: SERIES[0], dash: [6, 4], fn: (x) => g2.cv * x },
-    { label: tr('定圧の理論 Q/N = 2ΔT', 'Constant-pressure theory Q/N = 2ΔT'), color: SERIES[1], dash: [6, 4], fn: (x) => g2.cp * x },
-  ];
-  if (show3d) plotQ.refs.push(
-    { label: tr('3次元なら 定積 Q/N = (3/2)ΔT', 'If 3D: constant volume Q/N = (3/2)ΔT'), color: SERIES[0], dash: [8, 3, 2, 3], fn: (x) => g3.cv * x },
-    { label: tr('3次元なら 定圧 Q/N = (5/2)ΔT', 'If 3D: constant pressure Q/N = (5/2)ΔT'), color: SERIES[1], dash: [8, 3, 2, 3], fn: (x) => g3.cp * x });
-}
-setRefs();
-
-/** 測定（平均）・2次元の理論・「3次元なら」の比較表 */
-function draw3d() {
-  $('d3').hidden = !show3d;
-  if (!show3d) return;
-  const avg = (m) => { const r = results.filter((x) => x.mode === m); return r.length ? r.reduce((a, x) => a + x.c, 0) / r.length : null; };
-  const cV = avg('V'), cP = avg('P'), f = (v) => (v == null ? tr('―', '–') : fmt(v, 2));
-  const rows = [
-    [tr('内部エネルギー <i>U</i>', 'Internal energy <i>U</i>'), tr('―', '–'), '<i>NkT</i>', '(3/2)<i>NkT</i>'],
-    [tr('定積 <i>C<sub>V</sub></i>/<i>Nk</i>', 'Constant volume <i>C<sub>V</sub></i>/<i>Nk</i>'), f(cV), fmt(g2.cv, 2), fmt(g3.cv, 2)],
-    [tr('定圧 <i>C<sub>P</sub></i>/<i>Nk</i>', 'Constant pressure <i>C<sub>P</sub></i>/<i>Nk</i>'), f(cP), fmt(g2.cp, 2), fmt(g3.cp, 2)],
-    [tr('差 (<i>C<sub>P</sub></i> − <i>C<sub>V</sub></i>)/<i>Nk</i>', 'Difference (<i>C<sub>P</sub></i> − <i>C<sub>V</sub></i>)/<i>Nk</i>'), f(cV != null && cP != null ? cP - cV : null), fmt(g2.cp - g2.cv, 2), fmt(g3.cp - g3.cv, 2)],
-    [tr('比 γ = <i>C<sub>P</sub></i>/<i>C<sub>V</sub></i>', 'Ratio γ = <i>C<sub>P</sub></i>/<i>C<sub>V</sub></i>'), f(cV != null && cP != null ? cP / cV : null), fmt(g2.gamma, 2), fmt(g3.gamma, 2)],
-  ];
-  $('d3-tbl').querySelector('tbody').innerHTML = rows.map((r) => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td></tr>`).join('');
-}
+plotQ.refs = [
+  { label: tr('定積の理論 Q/N = ΔT', 'Constant-volume theory Q/N = ΔT'), color: SERIES[0], dash: [6, 4], fn: (x) => x },
+  { label: tr('定圧の理論 Q/N = 2ΔT', 'Constant-pressure theory Q/N = 2ΔT'), color: SERIES[1], dash: [6, 4], fn: (x) => 2 * x },
+];
 
 function build() {
   run = null;
@@ -70,7 +45,6 @@ function drawResults() {
     pts(m).forEach((p, k) => plotQ.paths.push({ label: k === 0 ? label : '', color, pts: [p], ends: true }));
   }
   plotQ.draw();
-  draw3d();
 }
 
 segmented('mode', (v) => { mode = v; build(); }, false);
@@ -79,7 +53,6 @@ bindRange('Tb', (v) => { Tb = v; if (gas && !run) gas.Tbath = v; }, (v) => v.toF
 bindSpeed('speed', (v) => { simRate = v; });
 bindCheck('c-heat', (on) => { if (view) view.opt.showHeat = on; });
 bindCheck('c-speed', (on) => { if (view) view.opt.colorMode = on ? 'speed' : 'species'; $('lg-speed').hidden = !on; });
-bindCheck('c-3d', (on) => { show3d = on; setRefs(); drawResults(); }, false);
 $('btn-reset').addEventListener('click', build);
 $('btn-measure').addEventListener('click', () => {
   if (run && run.phase !== 'done') return;

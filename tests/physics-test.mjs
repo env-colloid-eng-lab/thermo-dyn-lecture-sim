@@ -3,8 +3,7 @@
 import { Gas, DIATHERMAL, ADIABATIC, SEMIPERMEABLE } from '../assets/js/engine.js';
 import { HeatCapacityRun } from '../assets/js/experiments.js';
 import { lnChoose, binomHalf } from '../assets/js/entropy.js';
-import { CycleRunner, cycleTheory } from '../assets/js/cycles.js';
-import * as DIM from '../assets/js/dims.js';
+import { CycleRunner } from '../assets/js/cycles.js';
 import { sampleEnd, chainVar } from '../assets/js/chain.js';
 import * as CL from '../assets/js/climate.js';
 import * as TR from '../assets/js/transport.js';
@@ -517,30 +516,6 @@ const f = (v, d = 3) => Number(v).toFixed(d);
   check('到達時間: ブラウン運動の粒子の高さの分布もボルツマン分布になる', h.every((v, i) => Math.abs(v - e10[i]) < 0.15 + 0.06 * e10[i]), h.map((v) => f(v, 2)).join(' '));
   const sc = TR.realScales(5);
   check('到達時間: 例題4の粒子で D = 4.37×10⁻¹³ m²/s、重力長 16.0 µm、P = 5 で H²/D ≈ 4.1 時間', Math.abs(TR.EX4.D / 4.365e-13 - 1) < 0.002 && Math.abs(TR.EX4.lg / 1.602e-5 - 1) < 0.002 && Math.abs(sc.tD / 3600 - 4.08) < 0.01, `H²/D=${f(sc.tD / 3600, 2)} 時間`);
-}
-
-// 「3次元なら」の比較（03・06・08）：式だけ。2次元の値はシミュレーションの約束（γ = 2 など）と一致すること
-{
-  const g2 = DIM.idealGas(2), g3 = DIM.idealGas(3);
-  check('3次元なら: 2次元は cv = 1, cp = 2, γ = 2, 温位の指数 1/2', g2.cv === 1 && g2.cp === 2 && g2.gamma === 2 && g2.kcp === 0.5);
-  check('3次元なら: 3次元は cv = 3/2, cp = 5/2, γ = 5/3, 温位の指数 2/5（どちらも cp − cv = 1）', g3.cv === 1.5 && g3.cp === 2.5 && Math.abs(g3.gamma - 5 / 3) < 1e-15 && Math.abs(g3.kcp - 0.4) < 1e-15 && g2.cp - g2.cv === 1 && g3.cp - g3.cv === 1);
-  // 断熱線：体積を半分にすると 2次元は T が 2 倍、3次元は 2^(2/3) 倍。P V^γ と T V^(2/d) が一定
-  const V0 = 6000, V1 = 3000;
-  const okAdi = [2, 3].every((d) => { const T1 = DIM.adiabatT(d, 1, V0, V1), P1 = DIM.adiabatP(d, 1 / V0, V0, V1);
-    return Math.abs(P1 * V1 / T1 - 1 / V0 * V0) < 1e-12 && Math.abs(T1 * V1 ** (2 / d) - V0 ** (2 / d)) < 1e-9 * V0; });
-  check('3次元なら: 断熱線は PV = NkT と T V^(2/d) = 一定を両方満たす', okAdi && DIM.adiabatT(2, 1, V0, V1) === 2 && Math.abs(DIM.adiabatT(3, 1, V0, V1) - 2 ** (2 / 3)) < 1e-12);
-  // 準静的な断熱変化 dU = −P dV（U = cv N T）を数値積分しても同じ温度になる
-  for (const d of [2, 3]) {
-    const cv = DIM.idealGas(d).cv; let T = 1, V = V0; const n = 20000, dV = (V1 - V0) / n;
-    for (let k = 0; k < n; k++) { const Vm = V + dV / 2, Tm = T - (T / Vm) * (dV / 2) / cv; T -= (Tm / Vm) * dV / cv; V += dV; }
-    check(`3次元なら: d = ${d} で dU = −P dV を積分した温度が断熱線の式と一致`, Math.abs(T / DIM.adiabatT(d, 1, V0, V1) - 1) < 1e-8, `T=${f(T, 6)}`);
-  }
-  // サイクル：カルノーは cv によらない。再生器なしのスターリングは cv が大きいほど効率が下がる
-  const P = { Th: 2, Tc: 1, r: 2 }, L = Math.log(2);
-  const st2 = cycleTheory('stirling', 'engine', P), st3 = cycleTheory('stirling', 'engine', { ...P, cv: 1.5 });
-  check('3次元なら: カルノーの効率と COP は 2次元と 3次元で同じ', cycleTheory('carnot', 'engine', { ...P, cv: 1.5 }).main === cycleTheory('carnot', 'engine', P).main && cycleTheory('carnot', 'pump', { ...P, cv: 1.5 }).main === cycleTheory('carnot', 'pump', P).main);
-  check('3次元なら: 再生器なしのスターリングの効率 = W/Qh（Qh = N Th ln r + N cv (Th − Tc)）', Math.abs(st2.main - L / (2 * L + 1)) < 1e-12 && Math.abs(st3.main - L / (2 * L + 1.5)) < 1e-12 && st3.main < st2.main, `2次元 ${f(st2.main)}・3次元 ${f(st3.main)}`);
-  check('3次元なら: 断熱で Th → Tc にする体積比は (Th/Tc)^(d/2)', DIM.adiabatVolumeRatio(2, 2, 1) === 2 && Math.abs(DIM.adiabatVolumeRatio(3, 2, 1) - 2 ** 1.5) < 1e-12);
 }
 
 console.log(fails ? `\n${fails} 件失敗` : '\nすべて成功');
