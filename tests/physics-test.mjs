@@ -6,6 +6,7 @@ import { lnChoose, binomHalf } from '../assets/js/entropy.js';
 import { CycleRunner } from '../assets/js/cycles.js';
 import { sampleEnd, chainVar } from '../assets/js/chain.js';
 import * as CL from '../assets/js/climate.js';
+import * as TR from '../assets/js/transport.js';
 import { xEqBath, xEqIsolated, twoRegionF, boltzmannLayers, lnMultinomial, meltT } from '../assets/js/levels.js';
 
 let fails = 0;
@@ -482,6 +483,39 @@ const f = (v, d = 3) => Number(v).toFixed(d);
   check('結合: K_d は ε/kT だけで決まる（ε=2,T=1 と ε=3,T=1.5 で同じ割合）', Math.abs(b.f - c2.f) < 0.05 && Math.abs(b.f - b.c / (b.Kd + b.c)) < 0.05, `f=${f(b.f, 3)} と ${f(c2.f, 3)}`);
   const sat = run(300, 4, 1, 34);
   check('結合: リガンドが多いと飽和に近づく（f → 1、1 は超えない）', sat.f > 0.85 && sat.f <= 1 && Math.abs(sat.f - sat.c / (sat.Kd + sat.c)) < 0.05, `f=${f(sat.f, 3)} 理論=${f(sat.c / (sat.Kd + sat.c), 3)}`);
+}
+
+// --- 21 平衡の分布と到達時間：式 (4.8) を教科書の付属プログラム（sedimentation.py、P = 5、120 層、dτ = 0.002）と比べる ---
+{
+  const s = new TR.Sediment1D({ n: 120, P: 5 });
+  const ref = [[0.02, 0.539766], [0.05, 0.250377], [0.1, 0.063287], [0.2, 0.003284]];
+  const got = [], F0 = s.excessF();
+  let mono = true, last = F0, minC = 1, massErr = 0;
+  for (const [tt] of ref) { while (s.t < tt - 1e-9) { s.step(0.002); const F = s.excessF(); if (F > last + 1e-12) mono = false; last = F; minC = Math.min(minC, ...s.c); massErr = Math.max(massErr, Math.abs(s.mass() - 1)); } got.push(s.excessF()); }
+  check('到達時間: 平衡との自由エネルギーの差が付属プログラムと一致（τ = 0, 0.02, 0.05, 0.1, 0.2）', Math.abs(F0 - 0.883729) < 1e-5 && ref.every(([, v], i) => Math.abs(got[i] - v) < 1e-5), got.map((v) => f(v, 6)).join(' '));
+  check('到達時間: 粒子数は保存、濃度は負にならず、自由エネルギーは減り続ける', massErr < 1e-10 && minC > 0 && mono, `質量の誤差=${massErr.toExponential(1)}`);
+  while (s.t < 1 - 1e-9) s.step(0.002);
+  const ceq = TR.sedimentEq(120, 5); let L1 = 0; for (let i = 0; i < 120; i++) L1 += Math.abs(s.c[i] - ceq[i]) / 120;
+  check('到達時間: 行き先は沈降平衡（ボルツマン分布）', L1 < 1e-6, `L1=${L1.toExponential(2)}`);
+  // 粘度を k 倍：D も b も 1/k なので、同じ実時間で無次元時間が 1/k しか進まない。行き先は同じ
+  // 実時間を左の D で測り、右の容器は1刻みで無次元時間が 1/3 しか進まない（ページと同じ進め方）
+  const dt = 0.0005, a1 = new TR.Sediment1D({ n: 60, P: 5 }), a3 = new TR.Sediment1D({ n: 60, P: 5 }), b3 = new TR.Sediment1D({ n: 60, P: 5 });
+  for (let i = 0; i < 200; i++) { a1.step(dt); a3.step(dt / 3); }            // 実時間 0.1
+  for (let i = 0; i < 600; i++) b3.step(dt / 3);                             // 右の容器で実時間 0.3
+  check('到達時間: 粘度が3倍なら同じ分布に3倍の時間で着く', a3.excessF() > 2 * a1.excessF() && Math.abs(b3.excessF() - a1.excessF()) < 0.03 * a1.excessF(), `実時間 0.1 で左 ${f(a1.excessF(), 4)}・右 ${f(a3.excessF(), 4)}、右は実時間 0.3 で ${f(b3.excessF(), 4)}`);
+  // アインシュタインの関係を破ると（r ≠ 1）、流れの止まる分布がボルツマン分布にならない
+  const br = new TR.Sediment1D({ n: 60, P: 5, r: 2 }); for (let i = 0; i < 1000; i++) br.step(0.005);
+  check('到達時間: D ≠ bkT（r = 2）だと行き先がボルツマン分布からずれる（自由エネルギーの差が残る）', br.excessF() > 0.1, `残る差=${f(br.excessF(), 3)}`);
+  // ブラウン運動の粒子も同じ分布に着く
+  let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const gauss = () => Math.sqrt(-2 * Math.log(1 - rnd())) * Math.cos(2 * Math.PI * rnd());
+  const xs = Float64Array.from({ length: 4000 }, rnd);
+  for (let t = 0; t < 1.5; t += 2e-4) TR.brownianStep(xs, 5, 2e-4, gauss);
+  const h = new Array(10).fill(0); for (const x of xs) h[Math.min(9, Math.floor(x * 10))] += 10 / xs.length;
+  const e10 = TR.sedimentEq(10, 5);
+  check('到達時間: ブラウン運動の粒子の高さの分布もボルツマン分布になる', h.every((v, i) => Math.abs(v - e10[i]) < 0.15 + 0.06 * e10[i]), h.map((v) => f(v, 2)).join(' '));
+  const sc = TR.realScales(5);
+  check('到達時間: 例題4の粒子で D = 4.37×10⁻¹³ m²/s、重力長 16.0 µm、P = 5 で H²/D ≈ 4.1 時間', Math.abs(TR.EX4.D / 4.365e-13 - 1) < 0.002 && Math.abs(TR.EX4.lg / 1.602e-5 - 1) < 0.002 && Math.abs(sc.tD / 3600 - 4.08) < 0.01, `H²/D=${f(sc.tD / 3600, 2)} 時間`);
 }
 
 console.log(fails ? `\n${fails} 件失敗` : '\nすべて成功');
