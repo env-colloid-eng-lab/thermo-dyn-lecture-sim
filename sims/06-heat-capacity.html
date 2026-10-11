@@ -76,10 +76,7 @@
       </div>
       <p class="hint" id="tbl-note" hidden>※ 測定中にピストンが可動範囲の端に達したため、途中から定圧ではなくなっています。</p>
       <p class="hint" id="tbl-empty">まだ測定していません。右の「測定する」を押してください。</p>
-      <div id="d3" hidden style="margin-top:8px">
-        <p class="hint" style="margin:0 0 4px"><b>3次元なら（比較）</b>：粒子は 2次元のまま。3次元の値は同じ式に自由度 3 を入れて計算したもの（グラフの一点鎖線）。測定は表の <i>C</i>/<i>N</i> の平均。</p>
-        <div class="table-wrap"><table class="tbl" id="d3-tbl"><thead><tr><th></th><th>測定（平均）</th><th>2次元の理論</th><th>3次元なら</th></tr></thead><tbody></tbody></table></div>
-      </div>
+      <p class="hint" style="margin:6px 0 0"><b>注</b>　測定値は2次元の気体（1粒子の自由度は 2）の結果です（<i>C<sub>V</sub></i>/<i>N</i> = 1、<i>C<sub>P</sub></i>/<i>N</i> = 2）。3次元の単原子気体（自由度 3）なら 3/2 と 5/2 になります（下の「理論値」）。</p>
     </section>
 
     <section class="card">
@@ -108,7 +105,6 @@
       <div>
         <label class="check"><input type="checkbox" id="c-heat" checked>熱のやりとり</label>
         <label class="check"><input type="checkbox" id="c-speed">色＝速さ</label>
-        <label class="check"><input type="checkbox" id="c-3d">3次元なら（比較）</label>
       </div>
       <div class="btns"><button id="btn-clear">結果の表を消す</button></div>
     </section>
@@ -122,7 +118,6 @@
         <li><i>N</i> を変えて測る。<i>C</i> は <i>N</i> に比例する（示量変数）が、<i>C</i>/<i>N</i> は変わらない。</li>
         <li>「定圧」に切り替えて測定。ピストンが外へ動き、気体が外へ仕事をする（<i>W</i> &lt; 0）。<i>C</i>/<i>N</i> はいくつになる？</li>
         <li>熱源の温度を 1 より低くして「冷やす」測定もしてみよう（<i>Q</i> &lt; 0, Δ<i>T</i> &lt; 0）。</li>
-        <li>「3次元なら（比較）」をオンにする。<i>C<sub>V</sub></i> と <i>C<sub>P</sub></i> はどちらも増えるが、差 <i>C<sub>P</sub></i> − <i>C<sub>V</sub></i> = <i>Nk</i> は 2次元と同じ。なぜだろう？</li>
       </ol>
       <div class="q"><b>問い</b>　定圧で温めると、定積のときより多くの熱が必要になる。余分な熱はどこへ行った？ 第一法則 Δ<i>U</i> = <i>Q</i> + <i>W</i> で説明してみよう。</div>
       <div class="q"><b>問い</b>　熱源の温度まで上がりきる前に熱源から離しても、<i>C</i> は正しく求まる。なぜ？</div>

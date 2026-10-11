@@ -62,6 +62,7 @@
         <span class="term"><b>W</b><span id="l-W"></span></span>
         <span class="note">Totals since "Reset" or since an experiment was set up (<i>W</i>: work done on the gas, <i>Q</i>: heat received by the gas).</span>
       </div>
+      <p class="hint" style="margin:6px 0 0"><b>Note</b> This simulation is a 2D gas (2 degrees of freedom per particle), so the values shown are 2D results. They differ from those of a 3D gas (3 degrees of freedom if monatomic). For example, a quasi-static adiabatic change follows <i>PV</i>² = const. in 2D but <i>PV</i><sup>5/3</sup> = const. in 3D (see "Comparison with theory" below).</p>
       <div id="result" class="q" hidden></div>
     </section>
 
@@ -69,10 +70,6 @@
       <h2><span class="tag">Macro</span>P–V diagram <span class="hint">Shaded area = work done by the piston in the latest operation <span class="math">−∫P dV</span></span></h2>
       <div class="canvas-wrap"><canvas id="pv"></canvas></div>
       <p class="hint"><b style="color:#eb6834">Orange</b>: pressure obtained from the force the piston actually received (= the pressure that determines the work). <b style="color:#2a78d6">Blue</b>: pressure <span class="math">NkT/V</span> obtained from the instantaneous internal energy via the equation of state. When the piston moves slowly the two overlap; when it moves fast they separate.</p>
-      <div id="d3" hidden style="margin-top:8px">
-        <p class="hint" style="margin:0 0 4px"><b>If 3D (comparison)</b>: the particles stay 2D. The 3D values are computed from the same formulas with 3 degrees of freedom (the purple dash-dot line on the P–V diagram is the 3D adiabat).</p>
-        <div class="table-wrap"><table class="tbl" id="d3-tbl"><thead><tr><th></th><th>2D (this simulation)</th><th>If 3D</th></tr></thead><tbody></tbody></table></div>
-      </div>
       <div class="canvas-wrap" style="margin-top:6px"><canvas id="plotT"></canvas></div>
     </section>
   </div>
@@ -117,7 +114,6 @@
       <div>
         <label class="check"><input type="checkbox" id="c-speed">Color = speed</label>
         <label class="check"><input type="checkbox" id="c-arrow">Velocity arrows</label>
-        <label class="check"><input type="checkbox" id="c-3d">If 3D (comparison)</label>
       </div>
     </section>
 
@@ -131,7 +127,6 @@
         <li>Compress with "Isothermal" and "Quasi-static". <i>W</i> &gt; 0, yet Δ<i>U</i> ≈ 0. Where did the energy go? (→ 04)</li>
         <li>Look at the "Potential temperature θ" readout. In a quasi-static adiabatic round trip θ stays constant; in a very fast round trip θ rises. Isothermal compression lowers θ. What does θ represent? (See "Potential temperature and entropy" below.)</li>
         <li>Free expansion: set it up and remove the partition. What are <i>W</i>, <i>Q</i>, Δ<i>U</i>, and <i>T</i>? Can you draw the intermediate states on the P–V diagram?</li>
-        <li>Turn on "If 3D (comparison)". The 3D adiabat is less steep than the 2D one. Why does a 3D gas warm up less for the same compression? (See "Comparison with theory" below.)</li>
       </ol>
       <div class="q"><b>Question</b> Even when surrounded by adiabatic walls, a fast round trip makes the gas's <i>U</i> increase (an <b>irreversible adiabatic process</b>). Conversely, is there an operation that keeps everything adiabatic and only lowers <i>U</i> to bring the gas back?</div>
       <div class="q"><b>Question</b> In a fast compression, particles "pile up" in front of the piston, and the pressure on the piston becomes larger than <span class="math">NkT/V</span>. What does that do to the work? What about a fast expansion?</div>

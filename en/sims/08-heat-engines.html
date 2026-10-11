@@ -71,11 +71,8 @@
         <div class="stat"><span class="k">Cycles</span><span class="v" id="r-n">0</span></div>
         <div class="stat"><span class="k">Entropy change of the reservoirs (per cycle)</span><span class="v" id="r-sgen">–</span></div>
       </div>
+      <p class="hint" style="margin:6px 0 0"><b>Note</b> These are results for a 2D gas (2 degrees of freedom per particle). The Carnot efficiency does not depend on the working substance, but quantities such as the efficiency of Stirling without a regenerator depend on the degrees of freedom and differ from those of a 3D gas (3 degrees of freedom if monatomic; see "Theoretical values" below).</p>
       <p class="q" id="r-warn" hidden></p>
-      <div id="d3" hidden style="margin-top:8px">
-        <p class="hint" style="margin:0 0 4px"><b>If 3D (comparison)</b>: the particles stay 2D. Theoretical values for the current conditions (<i>T</i><sub>h</sub>, <i>T</i><sub>c</sub>, isothermal volume ratio r = 2), computed from the same formulas with 3 degrees of freedom.</p>
-        <div class="table-wrap"><table class="tbl" id="d3-tbl"><thead><tr><th></th><th>2D (this simulation)</th><th>If 3D</th></tr></thead><tbody></tbody></table></div>
-      </div>
     </section>
 
     <section class="card">
@@ -124,7 +121,6 @@
       <div>
         <label class="check"><input type="checkbox" id="c-heat" checked>Heat exchange</label>
         <label class="check"><input type="checkbox" id="c-speed">Color = speed</label>
-        <label class="check"><input type="checkbox" id="c-3d">If 3D (comparison)</label>
       </div>
     </section>
 
@@ -140,7 +136,6 @@
         <li>"Stirling": the isothermal processes are connected by constant-volume processes. Without a regenerator (a heat-storage material that holds the heat exchanged at constant volume), the efficiency drops. In the heat-pump direction, without a regenerator the device may not even be able to pump heat out of the cold side (look at <i>Q</i> in the table).</li>
         <li>Look at the T–S diagram. The Carnot cycle is a rectangle (isothermal = horizontal, adiabatic = vertical). The heat received on the hot side is <span class="math">T<sub>h</sub>ΔS</span>, the heat discarded to the cold side is <span class="math">T<sub>c</sub>ΔS</span>, and the enclosed area is the work done on the surroundings. Hence <span class="math">η = 1 − T<sub>c</sub>/T<sub>h</sub></span>.</li>
         <li>Look at the total of "Δ<i>S</i> of reservoir" in the table. The gas returns to its initial state after one cycle, so the total entropy change is just that of the reservoirs. It is ≈ 0 for a slow Carnot cycle and positive (irreversible) when the piston is fast or for Stirling without a regenerator.</li>
-        <li>Turn on "If 3D (comparison)". The Carnot efficiency is the same in 2D and 3D, while Stirling without a regenerator becomes less efficient in 3D. Which quantities depend on the working substance and which do not?</li>
       </ol>
       <div class="q"><b>Question</b> The total entropy change of the reservoirs in one cycle, <span class="math">−Q<sub>h</sub>/T<sub>h</sub> − Q<sub>c</sub>/T<sub>c</sub></span>, is never negative (the second law, Clausius inequality). From this and the first law <span class="math">−W = Q<sub>h</sub> + Q<sub>c</sub></span>, derive that the efficiency cannot exceed <span class="math">η ≤ 1 − T<sub>c</sub>/T<sub>h</sub></span>.</div>
       <div class="q"><b>Question</b> Under every setting, the efficiency never exceeds the "Carnot limit". Explain why a heat engine that exceeded it would contradict the second law (the Clausius principle and the Thomson principle).</div>
